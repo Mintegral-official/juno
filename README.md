@@ -225,5 +225,3 @@ index := builder.build()  // 开始构建索引
 
 索引构建模块会支持多种数据源，如文件、mongo、mysql等
 
-
-
