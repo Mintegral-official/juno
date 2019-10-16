@@ -158,15 +158,29 @@ DocInfo:  json结构
 
 ```json
 {
-	“Id” :  12345,
-	“Index” : {[
-    {“field”: “country”, “value” : “cn”},
-    {“field”: “platform”, “value” : “android”},
-	]},
-	“Storage” : {
-    {“field”: “package”, “type”: “string”, “value” : “com.juno”},
-    {“field”: “price”, “type” : “float64”, “value” : 2.3},’
-  } 
+    "Id": 12345,
+    "Index": [
+        {
+            "field": "country",
+            "value": "cn"
+        },
+        {
+            "field": "platform",
+            "value": "android"
+        }
+    ],
+    "Storage": [
+        {
+            "field": "package",
+            "type": "string",
+            "value": "com.juno"
+        },
+        {
+            "field": "price",
+            "type": "float64",
+            "value": 2.3
+        }
+    ]
 }
 ```
 
