@@ -5,12 +5,12 @@ import (
 )
 
 type Index interface {
-	Add(doc *DocInfo)
-	Del(doc *DocInfo)
-	UpDate(doc *DocInfo)
+	Add(doc *DocInfo) error
+	Del(doc *DocInfo) error
+	Update(doc *DocInfo) error
 
 	Dump(filename string)
-	Load()
+	Load(filename string)
 
-	Search(query *query.Query)
+	Search(query *query.Query) *query.SearchResult
 }

@@ -1,7 +1,6 @@
 package query
 
 type OP int64
-type DocId uint64
 
 const (
 	InvalidDocid = 0xffffffff
