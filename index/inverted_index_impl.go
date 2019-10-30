@@ -3,6 +3,7 @@ package index
 import (
 	"errors"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/helpers"
 	"sync"
 )
 
@@ -19,13 +20,13 @@ func (sii *SimpleInvertedIndex) Add(fieldName string, id document.DocId) error {
 	if ok {
 		sl, ok := v.(*SkipList)
 		if ok {
-			sl.Add(id)
+			sl.Add(id, nil)
 		} else {
 			return errors.New("Parse  error")
 		}
 	} else {
-		sl := NewSkipList(12)
-		sl.Add(id)
+		sl := NewSkipList(12, helpers.DocIdFunc)
+		sl.Add(id, nil)
 		sii.data.Store(fieldName, sl)
 	}
 	return nil
@@ -41,10 +42,10 @@ func (sii *SimpleInvertedIndex) Del(fieldName string, id document.DocId) {
 	}
 }
 
-func (sii *SimpleInvertedIndex) Iterator(fieldName string) InvertedIterator {
-	v, ok := sii.data.Load(fieldName)
+func (slii *SimpleInvertedIndex) Iterator(fieldName string) InvertedIterator {
+	v, ok := slii.data.Load(fieldName)
 	if ok {
-		sl, ok := v.(*SkipList)
+		sl, ok := v.(*SkipListIterator)
 		if ok {
 			return sl.Iterator()
 		}
