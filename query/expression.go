@@ -1,7 +1,10 @@
 package query
 
+import (
+	"github.com/Mintegral-official/juno/document"
+)
+
 type OP int64
-type DocId uint64
 
 const (
 	InvalidDocid = 0xffffffff
@@ -22,8 +25,8 @@ const (
 
 type Expression interface {
 	HasNext() bool
-	Next() DocId
-	FindGE(t DocId) DocId
+	Next() document.DocId
+	FindGE(t document.DocId) document.DocId
 }
 
 func NewExpression(name string) Expression {
