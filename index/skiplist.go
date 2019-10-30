@@ -166,11 +166,10 @@ func (skipList *SkipList) Contains(key interface{}) bool {
 	return true
 }
 
-func (skipList *SkipList) Del(key interface{}) *Element {
-
+func (skipList *SkipList) Del(key interface{}) bool {
 	prevs := skipList.findPreElements(key)
 	if prevs == nil {
-		return nil
+		return false
 	}
 
 	if element := prevs[0].next[0]; element != nil && skipList.keyFunc.Compare(element.key, key) == 0 {
@@ -178,10 +177,9 @@ func (skipList *SkipList) Del(key interface{}) *Element {
 			prevs[k].next[k] = v
 		}
 		skipList.length--
-		return element
+		return true
 	}
-
-	return nil
+	return false
 }
 
 //import "github.com/Mintegral-official/juno/document"
