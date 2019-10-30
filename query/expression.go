@@ -1,5 +1,9 @@
 package query
 
+import (
+	"github.com/Mintegral-official/juno/document"
+)
+
 type OP int64
 
 const (
@@ -21,8 +25,8 @@ const (
 
 type Expression interface {
 	HasNext() bool
-	Next() DocId
-	FindGE(t DocId) DocId
+	Next() document.DocId
+	FindGE(t document.DocId) document.DocId
 }
 
 func NewExpression(name string) Expression {

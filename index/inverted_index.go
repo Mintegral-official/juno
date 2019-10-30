@@ -1,9 +1,9 @@
 package index
 
+import "github.com/Mintegral-official/juno/document"
+
 type InvertedIndex interface {
-	Add(id DocId)
-	Del(id DocId)
-	HasNext() bool
-	Next() DocId
-	GetGE(id DocId) DocId
+	Add(fieldName string, id document.DocId) error
+	Del(fieldName string, id document.DocId)
+	Iterator(fieldName string) InvertedIterator
 }
