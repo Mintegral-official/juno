@@ -18,7 +18,6 @@ type elementNode struct {
 type Element struct {
 	elementNode
 	key, value interface{}
-	score      float64
 }
 
 func (element *Element) Key() interface{} {

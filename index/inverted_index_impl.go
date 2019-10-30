@@ -43,6 +43,7 @@ func (sii *SimpleInvertedIndex) Del(fieldName string, id document.DocId) bool {
 	}
 	ok = sl.Del(id)
 	if ok {
+		sii.data.Store(fieldName, sl)
 		return true
 	}
 	return false
