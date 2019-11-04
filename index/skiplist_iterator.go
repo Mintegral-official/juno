@@ -6,15 +6,15 @@ import (
 
 type SkipListIterator struct {
 	*SkipList
-	index int
+	index int64
 }
 
-func NewSKipListIterator(level int, keyFunc helpers.Comparable) *SkipListIterator {
+func NewSKipListIterator(level int32, keyFunc helpers.Comparable) *SkipListIterator {
 	if level <= 0 || level > DEFAULT_MAX_LEVEL {
 		level = DEFAULT_MAX_LEVEL
 	}
 	return &SkipListIterator{
-		SkipList: NewSkipList(level, keyFunc),
+		SkipList: NewSkipList(DEFAULT_MAX_LEVEL, keyFunc),
 		index:    0,
 	}
 }
@@ -27,38 +27,44 @@ func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 }
 
 func (slIterator *SkipListIterator) HasNext() bool {
+
 	if slIterator == nil {
 		return false
 	}
 	return slIterator.index < slIterator.length
 }
 
-func (slIterator *SkipListIterator) Next() interface{} {
+func (slIterator *SkipListIterator) Next() *Element {
 	if slIterator == nil {
-		return 0
+		return nil
 	}
-	//fmt.Println(slIterator.length)
+
+	v := slIterator.header.next[0]
+
+	slIterator.header.next[0] = slIterator.header.getNext(0).next[0]
 	slIterator.index++
-	v := slIterator.elementNode.next[0].key
-	slIterator.elementNode.next[0] = slIterator.elementNode.next[0].next[0]
-	return v
+	return (*Element)(v)
 
 }
 
 func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 
-	prev := &slIterator.elementNode
-	for i := slIterator.level - 1; i >= 0; i-- {
+	if slIterator == nil {
+		return nil
+	}
+
+	prev := slIterator.header
+	for i := int(slIterator.level) - 1; i >= 0; i-- {
 		for {
-			if prev.next == nil || prev.next[i] == nil || prev.next[i].key == nil {
+			if prev.next == nil || prev.next[i] == nil || prev.getNext(i).key == nil {
 				break
 			}
-			if slIterator.keyFunc.Compare(prev.next[i].key, key) == 0 {
-				return prev.next[i].value
+			if slIterator.cmp.Compare(prev.getNext(i).key, key) == 0 {
+				return prev.getNext(i).value
 			}
 
-			if slIterator.keyFunc.Compare(prev.next[i].key, key) < 0 {
-				prev = &prev.next[i].elementNode
+			if slIterator.cmp.Compare(prev.getNext(i).key, key) < 0 {
+				prev = prev.getNext(i)
 				continue
 			} else {
 				//	i--
@@ -69,10 +75,10 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 	for {
 		if prev.next == nil || prev.next[0] == nil {
 			return nil
-		} else if slIterator.keyFunc.Compare(prev.next[0].key, key) < 0 {
-			prev = &prev.next[0].elementNode
+		} else if slIterator.cmp.Compare(prev.getNext(0).key, key) < 0 {
+			prev = prev.getNext(0)
 		} else {
-			return prev.next[0].value
+			return prev.getNext(0).value
 		}
 	}
 }

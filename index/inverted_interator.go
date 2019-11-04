@@ -2,6 +2,6 @@ package index
 
 type InvertedIterator interface {
 	HasNext() bool
-	Next() interface{}
+	Next() *Element
 	GetGE(id interface{}) interface{}
 }

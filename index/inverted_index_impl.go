@@ -16,16 +16,14 @@ func NewSimpleInvertedIndex() *SimpleInvertedIndex {
 }
 
 func (sii *SimpleInvertedIndex) Add(fieldName string, id document.DocId) error {
-	v, ok := sii.data.Load(fieldName)
-	if ok {
-		sl, ok := v.(*SkipList)
-		if ok {
+	if v, ok := sii.data.Load(fieldName); ok {
+		if sl, ok := v.(*SkipList); ok {
 			sl.Add(id, nil)
 		} else {
 			return errors.New("Parse  error")
 		}
 	} else {
-		sl := NewSkipList(12, helpers.DocIdFunc)
+		sl := NewSkipList(DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
 		sl.Add(id, nil)
 		sii.data.Store(fieldName, sl)
 	}
@@ -41,19 +39,17 @@ func (sii *SimpleInvertedIndex) Del(fieldName string, id document.DocId) bool {
 	if !ok {
 		return false
 	}
-	ok = sl.Del(id)
-	if ok {
-		sii.data.Store(fieldName, sl)
-		return true
-	}
-	return false
+	sl.Del(id)
+
+	sii.data.Store(fieldName, sl)
+	return true
+
 }
 
 func (slii *SimpleInvertedIndex) Iterator(fieldName string) InvertedIterator {
-	v, ok := slii.data.Load(fieldName)
-	if ok {
-		sl, ok := v.(*SkipListIterator)
-		if ok {
+
+	if v, ok := slii.data.Load(fieldName); ok {
+		if sl, ok := v.(*SkipListIterator); ok {
 			return sl.Iterator()
 		}
 	}

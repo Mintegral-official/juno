@@ -30,6 +30,7 @@ func (i *Index) Add(doc *document.DocInfo) error {
 	if err != nil {
 		return err
 	}
+	_ = i.Dump(fileName)
 	return nil
 }
 
@@ -39,10 +40,15 @@ func (i *Index) Del(doc *document.DocInfo) error {
 	}
 	fileName := "" // TODO
 	i.invertedIndex.Del(fileName, doc.Id)
+	_ = i.Dump(fileName)
 	return nil
 }
 
 func (i *Index) Update(filename string) error {
+    err := i.Dump(filename)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
