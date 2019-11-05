@@ -6,7 +6,8 @@ import (
 
 type SkipListIterator struct {
 	*SkipList
-	index int64
+	index   int64
+	element *Element
 }
 
 func NewSkipListIterator(level int32, keyFunc helpers.Comparable) *SkipListIterator {
@@ -16,6 +17,7 @@ func NewSkipListIterator(level int32, keyFunc helpers.Comparable) *SkipListItera
 	return &SkipListIterator{
 		SkipList: NewSkipList(DEFAULT_MAX_LEVEL, keyFunc),
 		index:    0,
+		element:  newNode(nil, nil, DEFAULT_MAX_LEVEL),
 	}
 }
 
@@ -44,7 +46,7 @@ func (slIterator *SkipListIterator) Next() *Element {
 		return nil
 	}
 	slIterator.header.next[0] = slIterator.header.getNext(0).next[0]
-	//slIterator.index++
+	slIterator.index++
 	return (*Element)(v)
 
 }

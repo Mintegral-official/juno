@@ -70,13 +70,12 @@ func (skipList *SkipList) Add(key, value interface{}) {
 	}
 
 	h := skipList.randLevel()
-
-	if h > skipList.level {
-		for i := skipList.level; i < h; i++ {
-			skipList.previousNodeCache[i] = skipList.header
-		}
-		atomic.StoreInt32(&skipList.level, h)
-	}
+	//if h > skipList.level {
+	//	for i := skipList.level; i < h; i++ {
+	//		skipList.previousNodeCache[i] = skipList.header
+	//	}
+	//	atomic.StoreInt32(&skipList.level, h)
+	//}
 	x := newNode(key, value, h)
 	for i, n := range skipList.previousNodeCache[:h] {
 		x.setNext(i, n.getNext(i))
@@ -112,7 +111,7 @@ func (skipList *SkipList) Get(key interface{}) (*Element, error) {
 	if x, ok := skipList.findGE(key, true, prev); ok {
 		return x, nil
 	}
-	return nil, helpers.ERROR_ELEMENT_ERROR
+	return nil, helpers.ELEMENT_NOTFOUND
 }
 
 func (skipList *SkipList) Len() int64 {
@@ -122,7 +121,10 @@ func (skipList *SkipList) Len() int64 {
 func (skipList *SkipList) findGE(key interface{}, flag bool, element [DEFAULT_MAX_LEVEL]*Element) (*Element, bool) {
 	x := skipList.header
 	h := int(atomic.LoadInt32(&skipList.level)) - 1
-	for {
+	for h >= 0 {
+		if x == nil {
+			return nil, false
+		}
 		next := x.getNext(h)
 		cmp := 1
 		if next != nil {
@@ -149,7 +151,7 @@ func (skipList *SkipList) findGE(key interface{}, flag bool, element [DEFAULT_MA
 func (skipList *SkipList) findLT(key interface{}) (*Element, bool) {
 	x := skipList.header
 	h := int(atomic.LoadInt32(&skipList.level)) - 1
-	for {
+	for h >= 0 {
 		next := x.getNext(h)
 		if next == nil || skipList.cmp.Compare(next.key, key) >= 0 {
 			if h == 0 {

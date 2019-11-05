@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	"unsafe"
 )
 
 var s *SkipListIterator = NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
@@ -18,20 +17,20 @@ func random(min, max int) int {
 
 var arr [15000000]int
 
-func init() {
-
-	for i := 0; i < 15000000; i++ {
-		arr[i] = random(0, 500000000)
-	}
-
-	for i := 0; i < 15000000; i++ {
-		s.Add(arr[i], [1]byte{})
-	}
-
-	var sl SkipList
-	var el Element
-	fmt.Printf("Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
-}
+//func init() {
+//
+//	for i := 0; i < 15000000; i++ {
+//		arr[i] = random(0, 500000000)
+//	}
+//
+//	for i := 0; i < 15000000; i++ {
+//		s.Add(arr[i], [1]byte{})
+//	}
+//
+//	var sl SkipList
+//	var el Element
+//	fmt.Printf("Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
+//}
 
 func TestNewSkipList(t *testing.T) {
 	go func() {

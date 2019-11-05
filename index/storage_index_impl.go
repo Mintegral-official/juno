@@ -20,9 +20,9 @@ func (ssi *SimpleStorageIndex) Get(fieldName string, id document.DocId) interfac
 			if res, err := sl.Get(id); err != nil {
 				return res
 			}
-			return helpers.ERROR_DOCUMENT_ERROR
+			return helpers.DOCUMENT_ERROR
 		} else {
-			return helpers.ERROR_PARSE_ERROR
+			return helpers.PARSE_ERROR
 		}
 	}
 	return nil
@@ -33,7 +33,7 @@ func (ssi *SimpleStorageIndex) Add(fieldName string, id document.DocId, value in
 		if sl, ok := v.(*SkipList); ok {
 			sl.Add(id, value)
 		} else {
-			return helpers.ERROR_PARSE_ERROR
+			return helpers.PARSE_ERROR
 		}
 	} else {
 		sl := NewSkipList(DEFAULT_MAX_LEVEL, helpers.DocIdFunc)

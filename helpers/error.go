@@ -9,7 +9,9 @@ import "errors"
  */
 
 var (
-	ERROR_ELEMENT_ERROR = errors.New("Element Not Found")
-	ERROR_PARSE_ERROR = errors.New("Parse Error")
-	ERROR_DOCUMENT_ERROR = errors.New("Parse Error")
+	ELEMENT_NOTFOUND = errors.New("Element Not Found")
+	PARSE_ERROR = errors.New("Parse Error")
+	DOCUMENT_ERROR = errors.New("doc is nil")
+	DEL_FAILED = errors.New("del failed")
+
 )
