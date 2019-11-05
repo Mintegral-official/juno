@@ -25,12 +25,10 @@ func (i *Index) Add(doc *document.DocInfo) error {
 	if doc == nil {
 		return errors.New("doc is nil")
 	}
-	fileName := "" //TODO
-	err := i.invertedIndex.Add(fileName, doc.Id)
+	err := i.invertedIndex.Add(doc.Fields[doc.Id].Name, doc.Id)
 	if err != nil {
 		return err
 	}
-	_ = i.Dump(fileName)
 	return nil
 }
 
@@ -38,15 +36,15 @@ func (i *Index) Del(doc *document.DocInfo) error {
 	if doc == nil {
 		return errors.New("doc is nil")
 	}
-	fileName := "" // TODO
-	i.invertedIndex.Del(fileName, doc.Id)
-	_ = i.Dump(fileName)
+	for j := range doc.Fields {
+		i.invertedIndex.Del(doc.Fields[j].Name, doc.Id)
+	}
+
 	return nil
 }
 
 func (i *Index) Update(filename string) error {
-    err := i.Dump(filename)
-	if err != nil {
+	if err := i.Dump(filename); err != nil {
 		return err
 	}
 	return nil
