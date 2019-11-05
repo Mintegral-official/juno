@@ -9,7 +9,7 @@ type SkipListIterator struct {
 	index int64
 }
 
-func NewSKipListIterator(level int32, keyFunc helpers.Comparable) *SkipListIterator {
+func NewSkipListIterator(level int32, keyFunc helpers.Comparable) *SkipListIterator {
 	if level <= 0 || level > DEFAULT_MAX_LEVEL {
 		level = DEFAULT_MAX_LEVEL
 	}
@@ -31,7 +31,7 @@ func (slIterator *SkipListIterator) HasNext() bool {
 	if slIterator == nil {
 		return false
 	}
-	return slIterator.index < slIterator.length
+	return slIterator.header.next[0] != nil
 }
 
 func (slIterator *SkipListIterator) Next() *Element {
@@ -40,9 +40,11 @@ func (slIterator *SkipListIterator) Next() *Element {
 	}
 
 	v := slIterator.header.next[0]
-
+	if slIterator.header.getNext(0) == nil {
+		return nil
+	}
 	slIterator.header.next[0] = slIterator.header.getNext(0).next[0]
-	slIterator.index++
+	//slIterator.index++
 	return (*Element)(v)
 
 }
