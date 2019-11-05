@@ -25,9 +25,11 @@ func (i *Index) Add(doc *document.DocInfo) error {
 	if doc == nil {
 		return errors.New("doc is nil")
 	}
-	err := i.invertedIndex.Add(doc.Fields[doc.Id].Name, doc.Id)
-	if err != nil {
-		return err
+	for j := range doc.Fields {
+		err := i.invertedIndex.Add(doc.Fields[j].Name, doc.Id)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
