@@ -23,9 +23,6 @@ func newNode(key, value interface{}, level int32) *Element {
 }
 
 func (element *Element) getNext(n int) *Element {
-	if element.next[n] == nil {
-		return nil
-	}
 	return (*Element)(atomic.LoadPointer(&element.next[n]))
 }
 

@@ -81,8 +81,10 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 				} else {
 					return prev
 				}
-			} else {
-				return nil
+			} else if prev != nil{
+				return prev
+ 			} else {
+ 				return nil
 			}
 		}
 	}

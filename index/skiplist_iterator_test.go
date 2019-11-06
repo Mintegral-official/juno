@@ -1,6 +1,7 @@
 package index
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -72,6 +73,19 @@ func add1(s *SkipListIterator) {
 	}
 }
 
+func TestSkipListIterator_First(t *testing.T) {
+	a := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
+	for i := 0; i < 1000; i++ {
+		a.Add(i, nil)
+	}
+	fmt.Println(a.GetGE(10))
+	fmt.Println(a.GetGE(324))
+	a.Del(10)
+	a.Del(324)
+	fmt.Println(a.GetGE(10))
+	fmt.Println(a.GetGE(324))
+}
+
 func BenchmarkSkipListIterator_GetGE(b *testing.B) {
 	a := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
 	add1(a)
@@ -100,8 +114,8 @@ func BenchmarkNewSkipListIterator_Next(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		for s1.HasNext() {
-			s1.Next()
+		for a.HasNext() {
+			a.Next()
 		}
 	}
 }
@@ -113,8 +127,8 @@ func BenchmarkNewSkipListIterator_Next_RunParallel(b *testing.B) {
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			for s1.HasNext() {
-				s1.Next()
+			for a.HasNext() {
+				a.Next()
 			}
 		}
 	})
