@@ -56,12 +56,16 @@ func (slIterator *SkipListIterator) Next() *Element {
 }
 
 func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
-
-	if slIterator.index == slIterator.Len() {
+	var prev *Element
+	if slIterator.index == slIterator.length {
 		return nil
+	} else if slIterator.Next() == nil {
+		prev = slIterator.header.getNext(0)
+	} else {
+		prev = slIterator.Next()
 	}
-	prev := slIterator.Next()
-	if prev == nil || prev.getNext(0) == nil {
+	//fmt.Println(prev)
+	if prev == nil {
 		return nil
 	}
 	k := prev.key

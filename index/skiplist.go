@@ -79,7 +79,7 @@ func (skipList *SkipList) Add(key, value interface{}) {
 		x.setNext(i, n.getNext(i))
 		n.setNext(i, x)
 	}
-	atomic.AddInt64(&skipList.length, 1)
+	skipList.length++
 }
 
 func (skipList *SkipList) Del(key interface{}) {
