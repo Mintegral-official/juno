@@ -23,6 +23,9 @@ func newNode(key, value interface{}, level int32) *Element {
 }
 
 func (element *Element) getNext(n int) *Element {
+	if element.next[n] == nil {
+		return nil
+	}
 	return (*Element)(atomic.LoadPointer(&element.next[n]))
 }
 
@@ -70,12 +73,7 @@ func (skipList *SkipList) Add(key, value interface{}) {
 	}
 
 	h := skipList.randLevel()
-	//if h > skipList.level {
-	//	for i := skipList.level; i < h; i++ {
-	//		skipList.previousNodeCache[i] = skipList.header
-	//	}
-	//	atomic.StoreInt32(&skipList.level, h)
-	//}
+
 	x := newNode(key, value, h)
 	for i, n := range skipList.previousNodeCache[:h] {
 		x.setNext(i, n.getNext(i))

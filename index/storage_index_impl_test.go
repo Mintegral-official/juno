@@ -6,8 +6,11 @@ import (
 )
 
 func TestNewSimpleStorageIndex(t *testing.T) {
-	s := NewSimpleStorageIndex()
     Convey("Get", t, func() {
-    	So(s.Get("filename", 1), ShouldBeNil)
+		s := NewSimpleStorageIndex()
+    	So(s.Get("fieldName", 1), ShouldBeNil)
+    	So(s.Add("fieldName", 1, 1), ShouldBeNil)
+    	So(s.Del("fieldName", 1), ShouldBeTrue)
+    	So(s.Iterator("fieldName"), ShouldBeNil)
 	})
 }
