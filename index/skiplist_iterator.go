@@ -32,6 +32,8 @@ func (slIterator *SkipListIterator) First() bool {
 
 func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 	if slIterator != nil {
+		slIterator.index = 0
+		slIterator.element = nil
 		return slIterator
 	}
 	return nil
@@ -39,7 +41,7 @@ func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 
 func (slIterator *SkipListIterator) HasNext() bool {
 
-	if slIterator.element == nil {
+	if slIterator.element == nil  && slIterator.index < slIterator.length {
 		return slIterator.First()
 	}
 	slIterator.element = slIterator.element.getNext(0)
@@ -50,7 +52,7 @@ func (slIterator *SkipListIterator) Next() *Element {
 	if slIterator.element == nil {
 		return nil
 	}
-	v := slIterator.element.getNext(0)
+	v := slIterator.element
 	slIterator.index++
 	return v
 }
