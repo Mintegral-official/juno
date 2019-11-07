@@ -7,6 +7,7 @@ type IndexType int64
 const (
 	INVERTED_INDEX_TYPE = iota
 	STORAGE_INDEX_TYPE
+	INDEX_TYPE
 )
 
 type Field struct {

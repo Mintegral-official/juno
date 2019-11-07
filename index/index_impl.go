@@ -1,6 +1,7 @@
 package index
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -33,6 +34,11 @@ func (i *IndexImpl) Add(doc *document.DocInfo) error {
 			err = i.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value)
 		}
 
+		if doc.Fields[j].IndexType == document.INDEX_TYPE {
+			err = i.invertedIndex.Add(doc.Fields[j].Name, doc.Id)
+			err = i.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value)
+		}
+
 		if err != nil {
 			return err
 		}
@@ -42,7 +48,7 @@ func (i *IndexImpl) Add(doc *document.DocInfo) error {
 
 func (i *IndexImpl) Del(doc *document.DocInfo) error {
 	if doc == nil {
-		return errors.New("doc is nil")
+		return helpers.DOCUMENT_ERROR
 	}
 	var flag bool
 	for j := range doc.Fields {
@@ -53,8 +59,12 @@ func (i *IndexImpl) Del(doc *document.DocInfo) error {
 		if doc.Fields[j].IndexType == document.STORAGE_INDEX_TYPE {
 			flag = i.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		}
+		if doc.Fields[j].IndexType == document.INDEX_TYPE {
+			flag = i.invertedIndex.Del(doc.Fields[j].Name, doc.Id)
+			flag = i.storageIndex.Del(doc.Fields[j].Name, doc.Id)
+		}
 		if !flag {
-			return errors.New("del failed")
+			return helpers.DEL_FAILED
 		}
 	}
 

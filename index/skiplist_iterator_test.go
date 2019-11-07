@@ -7,14 +7,6 @@ import (
 	"testing"
 )
 
-var s1 = NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
-
-func init() {
-	for i := 0; i < 200000; i++ {
-		s1.Add(arr[i], nil)
-	}
-}
-
 func TestNewSkipListIterator(t *testing.T) {
 	a := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
 	for i := 0; i < 100; i++ {
@@ -69,7 +61,7 @@ func getGE(s *SkipListIterator) {
 
 func add1(s *SkipListIterator) {
 	for i := 0; i < 200000; i++ {
-		s.Add(arr[i], nil)
+		s.Add(arr[i], [1]byte{})
 	}
 }
 
@@ -103,7 +95,7 @@ func BenchmarkSkipListIterator_GetGE_RunParallel(b *testing.B) {
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			getGE(s1)
+			getGE(a)
 		}
 	})
 }

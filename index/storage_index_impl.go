@@ -36,7 +36,7 @@ func (ssi *SimpleStorageIndex) Add(fieldName string, id document.DocId, value in
 			return helpers.PARSE_ERROR
 		}
 	} else {
-		sl := NewSkipList(DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
+		sl := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
 		sl.Add(id, value)
 		ssi.data.Store(fieldName, sl)
 	}
