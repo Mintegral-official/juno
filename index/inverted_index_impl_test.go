@@ -8,29 +8,29 @@ import (
 	"testing"
 )
 
-func TestSimpleInvertedIndex_Add(t *testing.T) {
-	s := NewSimpleInvertedIndex()
+func TestInvertedIndexImpl_Add(t *testing.T) {
+	s := NewInvertedIndexImpl()
 	Convey("Add", t, func() {
         So(s.Add("fileName", 1), ShouldBeNil)
 	})
 }
 
-func TestSimpleInvertedIndex_Del(t *testing.T) {
-	s := NewSimpleInvertedIndex()
+func TestInvertedIndexImpl_Del(t *testing.T) {
+	s := NewInvertedIndexImpl()
 	Convey("Del", t, func() {
 		So(s.Del("filename", 1), ShouldBeFalse)
 	})
 }
 
-func TestSimpleInvertedIndex_Iterator(t *testing.T) {
-	s := NewSimpleInvertedIndex()
+func TestInvertedIndexImpl_Iterator(t *testing.T) {
+	s := NewInvertedIndexImpl()
 	Convey("Iterator", t, func() {
 		So(s.Iterator("filename"), ShouldBeNil)
 	})
 }
 
-func TestSimpleInvertedIndex(t *testing.T) {
-	s := NewSimpleInvertedIndex()
+func TestInvertedIndexImpl(t *testing.T) {
+	s := NewInvertedIndexImpl()
 	s.data.Store("fieldName1", NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
 	s.data.Store("fieldName2", nil)
 	s.data.Store("fieldName4", NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc))

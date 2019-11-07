@@ -6,15 +6,15 @@ import (
 	"sync"
 )
 
-type SimpleInvertedIndex struct {
+type InvertedIndexImpl struct {
 	data sync.Map
 }
 
-func NewSimpleInvertedIndex() *SimpleInvertedIndex {
-	return &SimpleInvertedIndex{data: sync.Map{}}
+func NewInvertedIndexImpl() *InvertedIndexImpl {
+	return &InvertedIndexImpl{data: sync.Map{}}
 }
 
-func (sii *SimpleInvertedIndex) Add(fieldName string, id document.DocId) error {
+func (sii *InvertedIndexImpl) Add(fieldName string, id document.DocId) error {
 	if v, ok := sii.data.Load(fieldName); ok {
 		if sl, ok := v.(*SkipListIterator); ok {
 			sl.Add(id, nil)
@@ -29,7 +29,7 @@ func (sii *SimpleInvertedIndex) Add(fieldName string, id document.DocId) error {
 	return nil
 }
 
-func (sii *SimpleInvertedIndex) Del(fieldName string, id document.DocId) bool {
+func (sii *InvertedIndexImpl) Del(fieldName string, id document.DocId) bool {
 
 	if v, ok := sii.data.Load(fieldName); ok {
 		if sl, ok := v.(*SkipListIterator); ok {
@@ -41,7 +41,7 @@ func (sii *SimpleInvertedIndex) Del(fieldName string, id document.DocId) bool {
     return false
 }
 
-func (slii *SimpleInvertedIndex) Iterator(fieldName string) InvertedIterator {
+func (slii *InvertedIndexImpl) Iterator(fieldName string) InvertedIterator {
 	if v, ok := slii.data.Load(fieldName); ok {
 		if sl, ok := v.(*SkipListIterator); ok {
 			return sl.Iterator()

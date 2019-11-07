@@ -6,15 +6,15 @@ import (
 	"sync"
 )
 
-type SimpleStorageIndex struct {
+type StorageIndexImpl struct {
 	data sync.Map
 }
 
-func NewSimpleStorageIndex() *SimpleStorageIndex {
-	return &SimpleStorageIndex{data: sync.Map{}}
+func NewStorageIndexImpl() *StorageIndexImpl {
+	return &StorageIndexImpl{data: sync.Map{}}
 }
 
-func (ssi *SimpleStorageIndex) Get(fieldName string, id document.DocId) interface{} {
+func (ssi *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{} {
 	if v, ok := ssi.data.Load(fieldName); ok {
 		if sl, ok := v.(*SkipListIterator); ok {
 			if res, err := sl.Get(id); err == nil {
@@ -28,7 +28,7 @@ func (ssi *SimpleStorageIndex) Get(fieldName string, id document.DocId) interfac
 	return nil
 }
 
-func (ssi *SimpleStorageIndex) Add(fieldName string, id document.DocId, value interface{}) error {
+func (ssi *StorageIndexImpl) Add(fieldName string, id document.DocId, value interface{}) error {
 	if v, ok := ssi.data.Load(fieldName); ok {
 		if sl, ok := v.(*SkipListIterator); ok {
 			sl.Add(id, value)
@@ -43,7 +43,7 @@ func (ssi *SimpleStorageIndex) Add(fieldName string, id document.DocId, value in
 	return nil
 }
 
-func (ssi *SimpleStorageIndex) Del(fieldName string, id document.DocId) bool {
+func (ssi *StorageIndexImpl) Del(fieldName string, id document.DocId) bool {
 	if v, ok := ssi.data.Load(fieldName); ok {
 		if sl, ok := v.(*SkipListIterator); ok {
 			sl.Del(id)
@@ -54,7 +54,7 @@ func (ssi *SimpleStorageIndex) Del(fieldName string, id document.DocId) bool {
 	return false
 }
 
-func (ssi *SimpleStorageIndex) Iterator(fieldName string) InvertedIterator {
+func (ssi *StorageIndexImpl) Iterator(fieldName string) InvertedIterator {
 	if v, ok := ssi.data.Load(fieldName); ok {
 		if sl, ok := v.(*SkipListIterator); ok {
 			return sl.Iterator()

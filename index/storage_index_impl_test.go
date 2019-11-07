@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-func TestNewSimpleStorageIndex(t *testing.T) {
+func TestNewStorageIndexImpl(t *testing.T) {
     Convey("Get", t, func() {
-		s := NewSimpleStorageIndex()
+		s := NewStorageIndexImpl()
     	So(s.Get("fieldName", 1), ShouldBeNil)
 		So(s.Del("fieldName", 1), ShouldBeFalse)
 		So(s.Iterator("fieldName"), ShouldBeNil)
@@ -20,8 +20,8 @@ func TestNewSimpleStorageIndex(t *testing.T) {
 	})
 }
 
-func TestSimpleStorageIndex(t *testing.T) {
-	s := NewSimpleStorageIndex()
+func TestStorageIndexImpl(t *testing.T) {
+	s := NewStorageIndexImpl()
 	s.data.Store("fieldName1", NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
 	s.data.Store("fieldName2", nil)
 	s.data.Store("fieldName4", NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
