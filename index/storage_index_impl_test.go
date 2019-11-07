@@ -12,9 +12,11 @@ func TestNewSimpleStorageIndex(t *testing.T) {
     Convey("Get", t, func() {
 		s := NewSimpleStorageIndex()
     	So(s.Get("fieldName", 1), ShouldBeNil)
+		So(s.Del("fieldName", 1), ShouldBeFalse)
+		So(s.Iterator("fieldName"), ShouldBeNil)
     	So(s.Add("fieldName", 1, 1), ShouldBeNil)
-    	So(s.Del("fieldName", 1), ShouldBeFalse)
-    	So(s.Iterator("fieldName"), ShouldBeNil)
+    	So(s.Del("fieldName", 1), ShouldBeTrue)
+    	So(s.Iterator("fieldName"), ShouldNotBeNil)
 	})
 }
 

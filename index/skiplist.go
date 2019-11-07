@@ -23,14 +23,23 @@ func newNode(key, value interface{}, level int32) *Element {
 }
 
 func (element *Element) getNext(n int) *Element {
+	if element == nil {
+		return nil
+	}
 	return (*Element)(atomic.LoadPointer(&element.next[n]))
 }
 
 func (element *Element) setNext(n int, x *Element) {
+	if element == nil {
+		return
+	}
 	atomic.StorePointer(&element.next[n], unsafe.Pointer(x))
 }
 
 func (element *Element) Next(n int) *Element {
+	if element == nil {
+		return nil
+	}
 	return (*Element)(element.next[n])
 }
 

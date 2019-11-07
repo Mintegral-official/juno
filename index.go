@@ -2,7 +2,6 @@ package juno
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
@@ -45,7 +44,7 @@ func (i *Index) Add(doc *document.DocInfo) error {
 
 func (i *Index) Del(doc *document.DocInfo) error {
 	if doc == nil {
-		return errors.New("doc is nil")
+		return helpers.DOCUMENT_ERROR
 	}
 	var flag bool
 	for j := range doc.Fields {
@@ -57,7 +56,7 @@ func (i *Index) Del(doc *document.DocInfo) error {
 			flag = i.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		}
 		if !flag {
-			return errors.New("del failed")
+			return helpers.DEL_FAILED
 		}
 	}
 

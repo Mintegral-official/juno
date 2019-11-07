@@ -41,10 +41,10 @@ func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 
 func (slIterator *SkipListIterator) HasNext() bool {
 
-	if slIterator.element == nil  && slIterator.index < slIterator.length {
+	if slIterator.element == nil {
 		return slIterator.First()
 	}
-	slIterator.element = slIterator.element.getNext(0)
+	slIterator.element = slIterator.element.Next(0)
 	return slIterator.Valid()
 }
 
