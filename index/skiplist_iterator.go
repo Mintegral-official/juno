@@ -32,6 +32,8 @@ func (slIterator *SkipListIterator) First() bool {
 
 func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 	if slIterator != nil {
+		slIterator.index = 0
+		slIterator.element = nil
 		return slIterator
 	}
 	return nil
@@ -39,7 +41,7 @@ func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 
 func (slIterator *SkipListIterator) HasNext() bool {
 
-	if slIterator.element == nil {
+	if slIterator.element == nil  && slIterator.index < slIterator.length {
 		return slIterator.First()
 	}
 	slIterator.element = slIterator.element.getNext(0)
@@ -50,18 +52,22 @@ func (slIterator *SkipListIterator) Next() *Element {
 	if slIterator.element == nil {
 		return nil
 	}
-	v := slIterator.element.getNext(0)
+	v := slIterator.element
 	slIterator.index++
 	return v
 }
 
 func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
-
-	if slIterator.index == slIterator.Len() {
+	var prev *Element
+	if slIterator.index == slIterator.length {
 		return nil
+	} else if slIterator.Next() == nil {
+		prev = slIterator.header.getNext(0)
+	} else {
+		prev = slIterator.Next()
 	}
-	prev := slIterator.Next()
-	if prev == nil || prev.getNext(0) == nil {
+	//fmt.Println(prev)
+	if prev == nil {
 		return nil
 	}
 	k := prev.key
@@ -77,8 +83,10 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 				} else {
 					return prev
 				}
-			} else {
-				return nil
+			} else if prev != nil{
+				return prev
+ 			} else {
+ 				return nil
 			}
 		}
 	}

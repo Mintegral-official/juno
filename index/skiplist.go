@@ -23,9 +23,6 @@ func newNode(key, value interface{}, level int32) *Element {
 }
 
 func (element *Element) getNext(n int) *Element {
-	if element.next[n] == nil {
-		return nil
-	}
 	return (*Element)(atomic.LoadPointer(&element.next[n]))
 }
 
@@ -79,7 +76,7 @@ func (skipList *SkipList) Add(key, value interface{}) {
 		x.setNext(i, n.getNext(i))
 		n.setNext(i, x)
 	}
-	atomic.AddInt64(&skipList.length, 1)
+	skipList.length++
 }
 
 func (skipList *SkipList) Del(key interface{}) {

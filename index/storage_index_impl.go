@@ -16,8 +16,8 @@ func NewSimpleStorageIndex() *SimpleStorageIndex {
 
 func (ssi *SimpleStorageIndex) Get(fieldName string, id document.DocId) interface{} {
 	if v, ok := ssi.data.Load(fieldName); ok {
-		if sl, ok := v.(*SkipList); ok {
-			if res, err := sl.Get(id); err != nil {
+		if sl, ok := v.(*SkipListIterator); ok {
+			if res, err := sl.Get(id); err == nil {
 				return res
 			}
 			return helpers.DOCUMENT_ERROR
@@ -30,7 +30,7 @@ func (ssi *SimpleStorageIndex) Get(fieldName string, id document.DocId) interfac
 
 func (ssi *SimpleStorageIndex) Add(fieldName string, id document.DocId, value interface{}) error {
 	if v, ok := ssi.data.Load(fieldName); ok {
-		if sl, ok := v.(*SkipList); ok {
+		if sl, ok := v.(*SkipListIterator); ok {
 			sl.Add(id, value)
 		} else {
 			return helpers.PARSE_ERROR
@@ -45,7 +45,7 @@ func (ssi *SimpleStorageIndex) Add(fieldName string, id document.DocId, value in
 
 func (ssi *SimpleStorageIndex) Del(fieldName string, id document.DocId) bool {
 	if v, ok := ssi.data.Load(fieldName); ok {
-		if sl, ok := v.(*SkipList); ok {
+		if sl, ok := v.(*SkipListIterator); ok {
 			sl.Del(id)
 			ssi.data.Store(fieldName, sl)
 			return true
