@@ -1,28 +1,25 @@
-package juno
+package index
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/index"
-	"io/ioutil"
 )
 
-type Index struct {
-	invertedIndex index.InvertedIndex
-	storageIndex  index.StorageIndex
+type IndexImpl struct {
+	invertedIndex InvertedIndex
+	storageIndex  StorageIndex
 }
 
-func NewIndex(name string) *Index {
-	return &Index{
-		invertedIndex: index.NewSimpleInvertedIndex(),
-		storageIndex:  index.NewSimpleStorageIndex(),
+func NewIndex(name string) *IndexImpl {
+	return &IndexImpl{
+		invertedIndex: NewSimpleInvertedIndex(),
+		storageIndex:  NewSimpleStorageIndex(),
 	}
 
 }
 
-func (i *Index) Add(doc *document.DocInfo) error {
+func (i *IndexImpl) Add(doc *document.DocInfo) error {
 	if doc == nil {
 		return helpers.DOCUMENT_ERROR
 	}
@@ -43,7 +40,7 @@ func (i *Index) Add(doc *document.DocInfo) error {
 	return nil
 }
 
-func (i *Index) Del(doc *document.DocInfo) error {
+func (i *IndexImpl) Del(doc *document.DocInfo) error {
 	if doc == nil {
 		return errors.New("doc is nil")
 	}
@@ -64,29 +61,18 @@ func (i *Index) Del(doc *document.DocInfo) error {
 	return nil
 }
 
-func (i *Index) Update(filename string) error {
+func (i *IndexImpl) Update(filename string) error {
 	if err := i.Dump(filename); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (i *Index) Dump(filename string) error {
-	data, err := json.Marshal(i)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(filename, data, 0x77)
+func (i *IndexImpl) Dump(filename string) error {
+	// TODO
+	return nil
 }
 
-func (i *Index) Load(filename string) error {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, i)
-}
-
-func (i *Index) Search(query *Query) *index.SearchResult {
+func (i *IndexImpl) Load(filename string) error {
 	return nil
 }

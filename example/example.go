@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno"
+	index2 "github.com/Mintegral-official/juno/index"
 )
 
 func main() {
 	// 建立索引
-	index := juno.NewIndex("")
+	index := index2.NewIndex("")
 
 	//// 查询
 	//query := juno.NewQuery("")// 构建查询
