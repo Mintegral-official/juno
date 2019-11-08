@@ -23,7 +23,7 @@ var doc1 = &document.DocInfo{
 		},
 		{
 			Name:      "field1",
-			IndexType: 0,
+			IndexType: 2,
 			Value:     nil,
 		},
 	},
