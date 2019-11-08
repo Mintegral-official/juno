@@ -16,3 +16,7 @@ func (a *AndQuery) HasNext() bool {
 func (a *AndQuery) Next() document.DocId {
 	panic("implement me")
 }
+
+func (t *AndQuery) String() string {
+	return ""
+}

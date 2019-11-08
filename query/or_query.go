@@ -16,3 +16,7 @@ func (o *OrQuery) HasNext() bool {
 func (o *OrQuery) Next() document.DocId {
 	panic("implement me")
 }
+
+func (t *OrQuery) String() string {
+	return ""
+}

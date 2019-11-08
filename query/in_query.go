@@ -16,3 +16,7 @@ func (i *InQuery) HasNext() bool {
 func (i *InQuery) Next() document.DocId {
 	panic("implement me")
 }
+
+func (t *InQuery) String() string {
+	return ""
+}

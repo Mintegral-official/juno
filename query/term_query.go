@@ -20,3 +20,7 @@ func (t *TermQuery) HasNext() bool {
 func (t *TermQuery) Next() document.DocId {
 	panic("implement me")
 }
+
+func (t *TermQuery) String() string {
+	return ""
+}
