@@ -26,13 +26,9 @@ func (i *IndexImpl) Add(doc *document.DocInfo) error {
 		var err error
 		if doc.Fields[j].IndexType == document.INVERTED_INDEX_TYPE {
 			err = i.invertedIndex.Add(doc.Fields[j].Name, doc.Id)
-		}
-
-		if doc.Fields[j].IndexType == document.STORAGE_INDEX_TYPE {
+		} else if doc.Fields[j].IndexType == document.STORAGE_INDEX_TYPE {
 			err = i.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value)
-		}
-
-		if doc.Fields[j].IndexType == document.INDEX_TYPE {
+		} else if doc.Fields[j].IndexType == document.INDEX_TYPE {
 			err = i.invertedIndex.Add(doc.Fields[j].Name, doc.Id)
 			err = i.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value)
 		}
@@ -52,12 +48,9 @@ func (i *IndexImpl) Del(doc *document.DocInfo) error {
 	for j := range doc.Fields {
 		if doc.Fields[j].IndexType == document.INVERTED_INDEX_TYPE {
 			flag = i.invertedIndex.Del(doc.Fields[j].Name, doc.Id)
-		}
-
-		if doc.Fields[j].IndexType == document.STORAGE_INDEX_TYPE {
+		} else if doc.Fields[j].IndexType == document.STORAGE_INDEX_TYPE {
 			flag = i.storageIndex.Del(doc.Fields[j].Name, doc.Id)
-		}
-		if doc.Fields[j].IndexType == document.INDEX_TYPE {
+		} else if doc.Fields[j].IndexType == document.INDEX_TYPE {
 			flag = i.invertedIndex.Del(doc.Fields[j].Name, doc.Id)
 			flag = i.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		}
