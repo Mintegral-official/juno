@@ -1,8 +1,6 @@
 package index
 
 import (
-	"encoding/json"
-	"errors"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 )
@@ -14,8 +12,8 @@ type IndexImpl struct {
 
 func NewIndex(name string) *IndexImpl {
 	return &IndexImpl{
-		invertedIndex: NewSimpleInvertedIndex(),
-		storageIndex:  NewSimpleStorageIndex(),
+		invertedIndex: NewInvertedIndexImpl(),
+		storageIndex:  NewStorageIndexImpl(),
 	}
 
 }

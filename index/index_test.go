@@ -1,4 +1,4 @@
-package juno
+package index
 
 import (
 	"fmt"
