@@ -78,7 +78,7 @@ func TestNewIndex(t *testing.T) {
 
 	Convey("Add", t, func() {
 		index := NewIndex("index")
-		So(index.Add(nil), ShouldEqual, helpers.DOCUMENT_ERROR)
+		So(index.Add(nil), ShouldEqual, helpers.DocumentError)
 		So(index.Add(doc1), ShouldBeNil)
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)

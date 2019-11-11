@@ -30,7 +30,7 @@ func TestStorageIndexImpl(t *testing.T) {
 		So(s.Add("fieldName1", document.DocId(2), nil), ShouldBeNil)
 		So(s.Add("fieldName1", document.DocId(3), nil), ShouldBeNil)
 		So(s.Add("fieldName1", document.DocId(4), nil), ShouldBeNil)
-		So(s.Add("fieldName2", document.DocId(222), nil), ShouldEqual, helpers.PARSE_ERROR)
+		So(s.Add("fieldName2", document.DocId(222), nil), ShouldEqual, helpers.ParseError)
 		So(s.Add("fieldName4", document.DocId(444), nil), ShouldBeNil)
 		So(s.Add("fieldName", document.DocId(0), nil), ShouldEqual, nil)
 		a := s.Iterator("fieldName1")
@@ -50,10 +50,10 @@ func TestStorageIndexImpl(t *testing.T) {
 		}
 		So(c, ShouldEqual, 3)
 		So(s.Del("XXX", document.DocId(1)), ShouldBeFalse)
-		So(s.Get("fieldName1", document.DocId(1)), ShouldEqual, helpers.DOCUMENT_ERROR)
+		So(s.Get("fieldName1", document.DocId(1)), ShouldEqual, helpers.DocumentError)
 		So(s.Get("fieldName1", document.DocId(2)), ShouldNotBeNil)
 		fmt.Println("*******")
 		fmt.Println(s.Get("fieldName1", document.DocId(2)))
-		So(s.Get("fieldName2", document.DocId(2)), ShouldEqual, helpers.PARSE_ERROR)
+		So(s.Get("fieldName2", document.DocId(2)), ShouldEqual, helpers.ParseError)
 	})
 }

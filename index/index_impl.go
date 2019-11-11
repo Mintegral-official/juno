@@ -20,7 +20,7 @@ func NewIndex(name string) *IndexImpl {
 
 func (i *IndexImpl) Add(doc *document.DocInfo) error {
 	if doc == nil {
-		return helpers.DOCUMENT_ERROR
+		return helpers.DocumentError
 	}
 	for j := range doc.Fields {
 		var err error
@@ -42,7 +42,7 @@ func (i *IndexImpl) Add(doc *document.DocInfo) error {
 
 func (i *IndexImpl) Del(doc *document.DocInfo) error {
 	if doc == nil {
-		return helpers.DOCUMENT_ERROR
+		return helpers.DocumentError
 	}
 	var flag bool
 	for j := range doc.Fields {
@@ -55,7 +55,7 @@ func (i *IndexImpl) Del(doc *document.DocInfo) error {
 			flag = i.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		}
 		if !flag {
-			return helpers.DEL_FAILED
+			return helpers.DelFailed
 		}
 	}
 

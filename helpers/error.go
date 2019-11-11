@@ -1,6 +1,6 @@
 package helpers
 
-import "errors"
+import 	"github.com/pkg/errors"
 
 /**
  * @author: tangye
@@ -9,9 +9,9 @@ import "errors"
  */
 
 var (
-	ELEMENT_NOTFOUND = errors.New("Element Not Found")
-	PARSE_ERROR = errors.New("Parse Error")
-	DOCUMENT_ERROR = errors.New("doc is nil")
-	DEL_FAILED = errors.New("del failed")
-
+	ElementNotfound = errors.New("Element Not Found")
+	ParseError      = errors.New("Parse Error")
+	DocumentError   = errors.New("doc is nil")
+	DelFailed       = errors.New("del failed")
+    DocIdNotFound   = errors.New("DocId Not Found")
 )

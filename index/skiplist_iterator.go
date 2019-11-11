@@ -41,24 +41,28 @@ func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 
 func (slIterator *SkipListIterator) HasNext() bool {
 
-	if slIterator.element == nil {
+	if slIterator.element == nil && slIterator.index == 0 {
 		return slIterator.First()
 	}
 	slIterator.element = slIterator.element.Next(0)
 	return slIterator.Valid()
 }
 
-func (slIterator *SkipListIterator) Next() *Element {
+func (slIterator *SkipListIterator) Next() interface{} {
 	if slIterator.element == nil {
+		if slIterator.index == 0 {
+			return slIterator.header.getNext(0)
+		}
 		return nil
 	}
 	v := slIterator.element
+	// slIterator.element = slIterator.element.Next(0)
 	slIterator.index++
 	return v
 }
 
 func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
-	var prev *Element
+	var prev interface{}
 	if slIterator.index == slIterator.length {
 		return nil
 	} else if slIterator.Next() == nil {
@@ -70,7 +74,7 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 	if prev == nil {
 		return nil
 	}
-	k := prev.key
+	k := prev.(*Element).key
 	//fmt.Println(k, prev)
 	if slIterator.cmp.Compare(k, key) > 0 {
 		return nil

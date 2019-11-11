@@ -19,7 +19,7 @@ func (sii *InvertedIndexImpl) Add(fieldName string, id document.DocId) error {
 		if sl, ok := v.(*SkipListIterator); ok {
 			sl.Add(id, nil)
 		} else {
-			return helpers.PARSE_ERROR
+			return helpers.ParseError
 		}
 	} else {
 		sl := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc)

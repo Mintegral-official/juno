@@ -47,6 +47,7 @@ func TestSkipListIterator_Iterator(t *testing.T) {
 		}
 		So(a.index, ShouldEqual, 10)
 		So(a.GetGE(5), ShouldBeNil)
+		fmt.Println(a.GetGE(10))
 		So(a.GetGE(10), ShouldNotBeNil)
 		So(a.GetGE(11), ShouldNotBeNil)
 

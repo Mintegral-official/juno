@@ -46,14 +46,14 @@ func TestInvertedIndexImpl(t *testing.T) {
 		So(s.Iterator("fieldName1"), ShouldNotBeNil)
 		c := 0
 		for a.HasNext() {
-			fmt.Println(a.Next().key)
+			fmt.Println(a.Next().(*Element).key)
 			c++
 		}
 		So(c, ShouldEqual, 3)
 	})
 
 	Convey("Add", t, func() {
-		So(s.Add("fieldName2", 11), ShouldEqual, helpers.PARSE_ERROR)
+		So(s.Add("fieldName2", 11), ShouldEqual, helpers.ParseError)
 	})
 
 	Convey("Add", t, func() {

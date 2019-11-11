@@ -115,7 +115,7 @@ func (skipList *SkipList) Get(key interface{}) (*Element, error) {
 	if x, ok := skipList.findGE(key, true, prev); ok {
 		return x, nil
 	}
-	return nil, helpers.ELEMENT_NOTFOUND
+	return nil, helpers.ElementNotfound
 }
 
 func (skipList *SkipList) Len() int64 {

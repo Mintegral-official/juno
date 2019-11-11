@@ -82,7 +82,7 @@ func TestSkipList_Add_Del_Len(t *testing.T) {
 
 func TestSkipList_Get(t *testing.T) {
 	//fmt.Println(s.findGE(-1, true, s.previousNodeCache))
-	var s = NewSkipList(DEFAULT_MAX_LEVEL, helpers.IntCompare)
+	s := NewSkipList(DEFAULT_MAX_LEVEL, helpers.IntCompare)
 	var arr []int
 	arr = GenerateRandomNumber(0, 1500000000, 100)
 	for i := 0; i < 100; i++ {

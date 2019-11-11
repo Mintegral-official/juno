@@ -10,11 +10,13 @@ func NewNotAndQuery() *NotAndQuery {
 }
 
 func (n NotAndQuery) Next() (document.DocId, error) {
-	panic("implement me")
+	//	panic("implement me")
+	return 0, nil
 }
 
 func (n NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	panic("implement me")
+	// panic("implement me")
+	return 0, nil
 }
 
 func (n NotAndQuery) String() string {

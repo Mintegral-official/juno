@@ -3,8 +3,8 @@ package query
 import (
 	"fmt"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/pkg/errors"
 )
-import "github.com/pkg/errors"
 
 type AndQuery struct {
 	querys []Query
@@ -44,7 +44,24 @@ func (a *AndQuery) Next() (document.DocId, error) {
 }
 
 func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	panic("implement me")
+	curIdx := a.curIdx
+	res, err := a.querys[a.curIdx].GetGE(id)
+	// fmt.Println(err)
+	if err != nil {
+		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(res), curIdx))
+	}
+	curIdx++
+	for curIdx < len(a.querys) {
+		cur, err := a.querys[a.curIdx].GetGE(id)
+		if err != nil {
+			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(cur), curIdx))
+		}
+		if cur <= res {
+			res = cur
+		}
+		curIdx++
+	}
+    return res, nil
 }
 
 func (t *AndQuery) String() string {

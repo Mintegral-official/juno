@@ -20,9 +20,9 @@ func (ssi *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{
 			if res, err := sl.Get(id); err == nil {
 				return res
 			}
-			return helpers.DOCUMENT_ERROR
+			return helpers.DocumentError
 		} else {
-			return helpers.PARSE_ERROR
+			return helpers.ParseError
 		}
 	}
 	return nil
@@ -33,7 +33,7 @@ func (ssi *StorageIndexImpl) Add(fieldName string, id document.DocId, value inte
 		if sl, ok := v.(*SkipListIterator); ok {
 			sl.Add(id, value)
 		} else {
-			return helpers.PARSE_ERROR
+			return helpers.ParseError
 		}
 	} else {
 		sl := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
