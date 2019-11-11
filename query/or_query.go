@@ -9,11 +9,11 @@ func NewOrQuery() *OrQuery {
 	return &OrQuery{}
 }
 
-func (o *OrQuery) HasNext() bool {
+func (o *OrQuery) Next() (document.DocId, error) {
 	panic("implement me")
 }
 
-func (o *OrQuery) Next() document.DocId {
+func (o *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 	panic("implement me")
 }
 

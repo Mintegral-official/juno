@@ -1,9 +1,5 @@
 package query
 
-import (
-	"github.com/Mintegral-official/juno/document"
-)
-
 type OP int64
 
 const (
@@ -22,13 +18,3 @@ const (
 	NOT        // 非
 	IN         // 范围
 )
-
-type Expression interface {
-	HasNext() bool
-	Next() document.DocId
-	FindGE(t document.DocId) document.DocId
-}
-
-func NewExpression(name string) Expression {
-	return nil
-}

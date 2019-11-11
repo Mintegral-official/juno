@@ -13,11 +13,11 @@ func NewTermQuery() *TermQuery {
 	return &TermQuery{}
 }
 
-func (t *TermQuery) HasNext() bool {
+func (t *TermQuery) Next() (document.DocId, error) {
 	panic("implement me")
 }
 
-func (t *TermQuery) Next() document.DocId {
+func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	panic("implement me")
 }
 
