@@ -7,16 +7,18 @@ import (
 )
 
 type AndQuery struct {
-	querys []Query
-	curIdx int
+	querys   []Query
+	checkers []Checker
+	curIdx   int
 }
 
-func NewAndQuery(querys ...Query) *AndQuery {
+func NewAndQuery(querys []Query, checkers []Checker) *AndQuery {
 	if querys == nil {
 		return nil
 	}
 	return &AndQuery{
-		querys: querys,
+		querys:   querys,
+		checkers: checkers,
 	}
 }
 
@@ -38,7 +40,14 @@ func (a *AndQuery) Next() (document.DocId, error) {
 			target = cur
 		}
 		if (curIdx+1)%len(a.querys) == lastIdx {
-			return target, nil
+			if a.check(target) {
+				return target, nil
+			}
+			curIdx++
+			target, err = a.querys[curIdx].Next()
+			if err != nil {
+				return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(target), curIdx))
+			}
 		}
 	}
 }
@@ -56,14 +65,32 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		if err != nil {
 			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(cur), curIdx))
 		}
+
+		for !a.check(cur) {
+			cur, err = a.querys[a.curIdx].Next()
+			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(cur), curIdx))
+		}
+
 		if cur <= res {
 			res = cur
 		}
 		curIdx++
 	}
-    return res, nil
+	return res, nil
 }
 
-func (t *AndQuery) String() string {
+func (a *AndQuery) String() string {
 	return ""
+}
+
+func (a *AndQuery) check(id document.DocId) bool {
+	if a.checkers == nil {
+		return true
+	}
+	for _, c := range a.checkers {
+		if !c.Check(id) {
+			return false
+		}
+	}
+	return true
 }

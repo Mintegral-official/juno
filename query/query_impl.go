@@ -6,15 +6,15 @@ type QueryImpl struct {
 	query Query
 }
 
-func (q QueryImpl) Next() (document.DocId, error) {
+func (q *QueryImpl) Next() (document.DocId, error) {
 	return q.query.Next()
 }
 
-func (q QueryImpl) GetGE(id document.DocId) (document.DocId, error) {
+func (q *QueryImpl) GetGE(id document.DocId) (document.DocId, error) {
 	return q.query.GetGE(id)
 }
 
-func (q QueryImpl) String() string {
+func (q *QueryImpl) String() string {
 	return ""
 }
 

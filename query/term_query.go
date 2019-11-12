@@ -10,10 +10,10 @@ type TermQuery struct {
 	index.InvertedIterator
 }
 
-func NewTermQuery() *TermQuery {
+func NewTermQuery() (*TermQuery, error) {
 	return &TermQuery{
 		index.NewSkipListIterator(index.DEFAULT_MAX_LEVEL, helpers.DocIdFunc),
-	}
+	}, nil
 }
 
 func (t *TermQuery) Next() (document.DocId, error) {
@@ -46,9 +46,9 @@ func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 		if v, ok := k.Key().(document.DocId); ok {
 			return v, nil
 		}
-		return  0, helpers.DocIdNotFound
+		return 0, helpers.DocIdNotFound
 	}
-	return  0, helpers.ElementNotfound
+	return 0, helpers.ElementNotfound
 }
 
 func (t *TermQuery) String() string {
