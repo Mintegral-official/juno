@@ -60,6 +60,8 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(res), curIdx))
 	}
 	curIdx++
+
+	//TODO 这块逻辑有问题，这样计算的是并集而不是交集
 	for curIdx < len(a.querys) {
 		cur, err := a.querys[a.curIdx].GetGE(id)
 		if err != nil {
