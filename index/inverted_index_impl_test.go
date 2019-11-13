@@ -2,6 +2,7 @@ package index
 
 import (
 	"fmt"
+	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
@@ -11,7 +12,7 @@ import (
 func TestInvertedIndexImpl_Add(t *testing.T) {
 	s := NewInvertedIndexImpl()
 	Convey("Add", t, func() {
-        So(s.Add("fileName", 1), ShouldBeNil)
+		So(s.Add("fileName", 1), ShouldBeNil)
 	})
 }
 
@@ -31,9 +32,9 @@ func TestInvertedIndexImpl_Iterator(t *testing.T) {
 
 func TestInvertedIndexImpl(t *testing.T) {
 	s := NewInvertedIndexImpl()
-	s.data.Store("fieldName1", NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
+	s.data.Store("fieldName1", datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
 	s.data.Store("fieldName2", nil)
-	s.data.Store("fieldName4", NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
+	s.data.Store("fieldName4", datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
 	Convey("Add", t, func() {
 		So(s.Add("fieldName1", document.DocId(1)), ShouldBeNil)
 		So(s.Add("fieldName1", document.DocId(5)), ShouldBeNil)
@@ -46,7 +47,7 @@ func TestInvertedIndexImpl(t *testing.T) {
 		So(s.Iterator("fieldName1"), ShouldNotBeNil)
 		c := 0
 		for a.HasNext() {
-			fmt.Println(a.Next().(*Element).key)
+			fmt.Println(a.Next().(*datastruct.Element).Key())
 			c++
 		}
 		So(c, ShouldEqual, 3)
@@ -59,8 +60,8 @@ func TestInvertedIndexImpl(t *testing.T) {
 	Convey("Add", t, func() {
 		So(s.Add("fieldName", 111), ShouldBeNil)
 		if v, ok := s.data.Load("fieldName"); ok {
-			if v1, ok := v.(*SkipList); ok {
-				So(v1.length, ShouldEqual, 1)
+			if v1, ok := v.(*datastruct.SkipList); ok {
+				So(v1.Len(), ShouldEqual, 1)
 			}
 		}
 	})

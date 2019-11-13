@@ -1,4 +1,4 @@
-package index
+package datastruct
 
 import (
 	"sort"
@@ -39,7 +39,7 @@ func add3() {
 
 func get2() {
 	for i := 0; i < 100000; i++ {
-		binarySearch(slic,  arr[i])
+		binarySearch(slic, arr[i])
 	}
 }
 
@@ -99,5 +99,3 @@ func BenchmarkMap_Get_RunParallel(b *testing.B) {
 		}
 	})
 }
-
-

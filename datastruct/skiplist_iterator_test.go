@@ -1,4 +1,4 @@
-package index
+package datastruct
 
 import (
 	"fmt"

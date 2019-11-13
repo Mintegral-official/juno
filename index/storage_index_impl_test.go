@@ -2,6 +2,7 @@ package index
 
 import (
 	"fmt"
+	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
@@ -9,22 +10,22 @@ import (
 )
 
 func TestNewStorageIndexImpl(t *testing.T) {
-    Convey("Get", t, func() {
+	Convey("Get", t, func() {
 		s := NewStorageIndexImpl()
-    	So(s.Get("fieldName", 1), ShouldBeNil)
+		So(s.Get("fieldName", 1), ShouldBeNil)
 		So(s.Del("fieldName", 1), ShouldBeFalse)
 		So(s.Iterator("fieldName"), ShouldBeNil)
-    	So(s.Add("fieldName", 1, 1), ShouldBeNil)
-    	So(s.Del("fieldName", 1), ShouldBeTrue)
-    	So(s.Iterator("fieldName"), ShouldNotBeNil)
+		So(s.Add("fieldName", 1, 1), ShouldBeNil)
+		So(s.Del("fieldName", 1), ShouldBeTrue)
+		So(s.Iterator("fieldName"), ShouldNotBeNil)
 	})
 }
 
 func TestStorageIndexImpl(t *testing.T) {
 	s := NewStorageIndexImpl()
-	s.data.Store("fieldName1", NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
+	s.data.Store("fieldName1", datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
 	s.data.Store("fieldName2", nil)
-	s.data.Store("fieldName4", NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
+	s.data.Store("fieldName4", datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
 	Convey("ADD & GET &DEL & ITERATOR", t, func() {
 		So(s.Add("fieldName1", document.DocId(1), nil), ShouldBeNil)
 		So(s.Add("fieldName1", document.DocId(2), nil), ShouldBeNil)

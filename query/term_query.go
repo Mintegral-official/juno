@@ -1,25 +1,25 @@
 package query
 
 import (
+	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/index"
 )
 
 type TermQuery struct {
-	index.InvertedIterator
+	iterator datastruct.Iterator
 }
 
-func NewTermQuery() (*TermQuery, error) {
+func NewTermQuery(iter datastruct.Iterator) *TermQuery {
 	return &TermQuery{
-		index.NewSkipListIterator(index.DEFAULT_MAX_LEVEL, helpers.DocIdFunc),
-	}, nil
+		iterator: iter,
+	}
 }
 
 func (t *TermQuery) Next() (document.DocId, error) {
-	element := t.InvertedIterator.Next()
+	element := t.iterator.Next()
 	if element != nil {
-		v, ok := element.(*index.Element)
+		v, ok := element.(*datastruct.Element)
 		if !ok {
 			return 0, helpers.ElementNotfound
 		}
@@ -36,10 +36,10 @@ func (t *TermQuery) Next() (document.DocId, error) {
 }
 
 func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
-	v := t.InvertedIterator.GetGE(id)
+	v := t.iterator.GetGE(id)
 	// fmt.Printf("%T, %v\n", v, v)
 	if v != nil {
-		k, ok := v.(*index.Element)
+		k, ok := v.(*datastruct.Element)
 		if !ok {
 			return 0, helpers.ElementNotfound
 		}

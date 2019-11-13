@@ -1,4 +1,4 @@
-package index
+package datastruct
 
 import (
 	"github.com/Mintegral-official/juno/helpers"
@@ -17,7 +17,7 @@ func NewSkipListIterator(level int32, cmp helpers.Comparable) *SkipListIterator 
 	return &SkipListIterator{
 		SkipList: NewSkipList(DEFAULT_MAX_LEVEL, cmp),
 		index:    0,
-		element: nil,
+		element:  nil,
 	}
 }
 
@@ -30,7 +30,7 @@ func (slIterator *SkipListIterator) First() bool {
 	return slIterator.Valid()
 }
 
-func (slIterator *SkipListIterator) Iterator() InvertedIterator {
+func (slIterator *SkipListIterator) Iterator() Iterator {
 	if slIterator != nil {
 		slIterator.index = 0
 		slIterator.element = nil
@@ -87,10 +87,10 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 				} else {
 					return prev
 				}
-			} else if prev != nil{
+			} else if prev != nil {
 				return prev
- 			} else {
- 				return nil
+			} else {
+				return nil
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-package index
+package datastruct
 
 import (
 	"fmt"
@@ -136,11 +136,11 @@ func BenchmarkSkipList_FindGE(b *testing.B) {
 
 func BenchmarkSkipList_FindGE_RunParallel(b *testing.B) {
 	var s = NewSkipList(DEFAULT_MAX_LEVEL, helpers.IntCompare)
-    add(s, arr)
-    b.ResetTimer()
-    b.ReportAllocs()
-    b.RunParallel(func(pb *testing.PB) {
-    	// BenchmarkSkipListIterator_FindGE_RunParallel-8   	     300	   4641216 ns/op	   80010 B/op	   10000 allocs/op
+	add(s, arr)
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		// BenchmarkSkipListIterator_FindGE_RunParallel-8   	     300	   4641216 ns/op	   80010 B/op	   10000 allocs/op
 		for pb.Next() {
 			for i := 0; i < 100000; i++ {
 				s.findGE(arr[i], true, s.previousNodeCache)
@@ -155,7 +155,7 @@ func BenchmarkNewSkipList_FindLT(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	// BenchmarkNewSkipList_FindLT-8   	2000000000	         0.01 ns/op	       0 B/op	       0 allocs/op
-	for i := 0; i < b.N; i ++ {
+	for i := 0; i < b.N; i++ {
 		for i := 0; i < 100000; i++ {
 			s.findLT(arr[i])
 		}

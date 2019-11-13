@@ -1,6 +1,6 @@
-package index
+package datastruct
 
-type InvertedIterator interface {
+type Iterator interface {
 	HasNext() bool
 	Next() interface{}
 	GetGE(id interface{}) interface{}

@@ -2,30 +2,31 @@ package query
 
 import (
 	"fmt"
+	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/index"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
 func TestAndQuery(t *testing.T) {
-    a := NewAndQuery(nil)
-    fmt.Println(a)
+	a := NewAndQuery(nil, nil)
+	fmt.Println(a)
+	//So(a, ShouldBeNil)
 }
 
 func TestAndQuery_Next(t *testing.T) {
-	sl := index.NewSkipList(index.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
+	sl := datastruct.NewSkipList(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
 
 	sl.Add(document.DocId(1), [1]byte{})
 	sl.Add(document.DocId(2), [1]byte{})
 	sl.Add(document.DocId(3), [1]byte{})
 	sl.Add(document.DocId(4), [1]byte{})
 
-	sll := &index.SkipListIterator{
+	sll := &datastruct.SkipListIterator{
 		SkipList: sl,
 	}
-	a := NewAndQuery(&TermQuery{sll})
+	a := NewAndQuery([]Query{&TermQuery{sll}}, nil)
 
 	Convey("Next", t, func() {
 		v, e := a.Next()
