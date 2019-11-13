@@ -5,9 +5,15 @@ type FieldType int64
 type IndexType int64
 
 const (
-	INVERTED_INDEX_TYPE = iota
-	STORAGE_INDEX_TYPE
-	INDEX_TYPE
+	InvertedIndexType = iota
+	StorageIndexType
+	BothIndexType
+)
+
+const (
+	NumberFieldType = iota
+	StringFieldType
+	SelfDefinedFieldType
 )
 
 type Field struct {

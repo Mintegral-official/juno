@@ -108,3 +108,15 @@ func TestNewIndex(t *testing.T) {
 
 	})
 }
+
+func TestInterface(t *testing.T) {
+	var a, b interface{}
+	i := int64(1)
+	a = &i
+	b = &i
+
+	if b == a {
+		fmt.Println("xxxxxxxxxxxxxxx")
+	}
+
+}
