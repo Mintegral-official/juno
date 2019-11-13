@@ -49,11 +49,14 @@ func (slIterator *SkipListIterator) HasNext() bool {
 }
 
 func (slIterator *SkipListIterator) Next() interface{} {
-	_ = slIterator.Element
+	//_ = slIterator.Element
 	if slIterator.Element == nil {
 		if slIterator.Index == 0 {
-			slIterator.Element = slIterator.header.getNext(0).getNext(0)
+			slIterator.Element = slIterator.header.getNext(0)
 			slIterator.Index++
+			if slIterator.Element != nil {
+				slIterator.Element = slIterator.Element.getNext(0)
+			}
 			return slIterator.header.getNext(0)
 		}
 		return nil
@@ -69,7 +72,8 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 	if slIterator.Index == slIterator.length {
 		return nil
 	} else if slIterator.Element == nil && slIterator.Index == 0 {
-		prev = slIterator.header.getNext(0)
+		slIterator.Element = slIterator.header.getNext(0)
+		prev = slIterator.Element
 	} else {
 		prev = slIterator.Element
 	}
@@ -80,7 +84,7 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 	k := prev.(*Element).key
 	//fmt.Println(k, prev)
 	if slIterator.cmp.Compare(k, key) > 0 {
-		return nil
+		return prev
 	} else {
 		for {
 			if prev, ok := slIterator.findGE(key, true, slIterator.previousNodeCache); ok {

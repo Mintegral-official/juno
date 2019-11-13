@@ -53,8 +53,8 @@ func TestSkipListIterator_Iterator(t *testing.T) {
 			}
 		}
 		So(a.Index, ShouldEqual, 10)
-		So(a.GetGE(5), ShouldBeNil)
-		fmt.Println(a.GetGE(10))
+		So(a.GetGE(5), ShouldNotBeNil)
+		a.Del(10)
 		So(a.GetGE(10), ShouldNotBeNil)
 		So(a.GetGE(11), ShouldNotBeNil)
 
