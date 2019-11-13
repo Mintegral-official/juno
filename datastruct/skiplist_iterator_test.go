@@ -34,10 +34,17 @@ func TestSkipListIterator_Iterator(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		a.Add(i, nil)
 	}
+	// fmt.Println(a.HasNext())
+	//m := a.Iterator()
+	//fmt.Println(m.Next())
+	//fmt.Println(m.Next())
+	//fmt.Println(m.Next())
+	//fmt.Println(m.Next())
 	Convey("Next", t, func() {
 		So(a.GetGE(5), ShouldNotBeNil)
 		So(a.GetGE(10), ShouldNotBeNil)
 		c := 0
+	//	a = a.Iterator()
 		for a.HasNext() {
 			a.Next()
 			c++
@@ -45,7 +52,7 @@ func TestSkipListIterator_Iterator(t *testing.T) {
 				break
 			}
 		}
-		So(a.index, ShouldEqual, 10)
+		So(a.Index, ShouldEqual, 10)
 		So(a.GetGE(5), ShouldBeNil)
 		fmt.Println(a.GetGE(10))
 		So(a.GetGE(10), ShouldNotBeNil)

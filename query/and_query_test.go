@@ -12,46 +12,56 @@ import (
 func TestAndQuery(t *testing.T) {
 	a := NewAndQuery(nil, nil)
 	fmt.Println(a)
-	//So(a, ShouldBeNil)
 }
 
 func TestAndQuery_Next(t *testing.T) {
 	sl := datastruct.NewSkipList(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
 
 	sl.Add(document.DocId(1), [1]byte{})
-	sl.Add(document.DocId(2), [1]byte{})
 	sl.Add(document.DocId(3), [1]byte{})
-	sl.Add(document.DocId(4), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
+
+	sl1.Add(document.DocId(1), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
 
 	sll := &datastruct.SkipListIterator{
 		SkipList: sl,
+		Element:  nil,
 	}
-	a := NewAndQuery([]Query{&TermQuery{sll}}, nil)
+
+	sll1 := &datastruct.SkipListIterator{
+		SkipList: sl1,
+		Element:  nil,
+	}
 
 	Convey("Next", t, func() {
-		v, e := a.Next()
+		a := NewAndQuery([]Query{&TermQuery{sll}}, nil)
+		v, e := a.GetGE(document.DocId(1))
 		So(v, ShouldEqual, 1)
+		So(e, ShouldBeNil)
+		v, e = a.Next()
+		So(e, ShouldBeNil)
+		So(v, ShouldEqual, 4)
 		So(e, ShouldBeNil)
 		v, e = a.GetGE(document.DocId(1))
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+
 	})
 
-	fmt.Println(a.Next())
-	fmt.Println(a.GetGE(document.DocId(1)))
-
-	sl.Del(document.DocId(2))
-
-	fmt.Println(a.Next())
-	fmt.Println(a.GetGE(document.DocId(2)))
-
 	Convey("GetGE", t, func() {
+		a := NewAndQuery([]Query{&TermQuery{sll.Iterator()}, &TermQuery{sll1.Iterator()}}, nil)
 		v, e := a.Next()
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 		v, e = a.GetGE(document.DocId(2))
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
 	})
 
 }
