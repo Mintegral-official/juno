@@ -1,12 +1,17 @@
 package query
 
 import (
+	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
 func TestNewQueryImpl(t *testing.T) {
-	a := NewQuery(NewAndQuery(NewTermQuery()))
+	termQuery, err := NewTermQuery()
+	if err != nil {
+		fmt.Println(nil)
+	}
+	a := NewQuery(NewAndQuery( nil, termQuery))
 	Convey("Next", t, func() {
 		v, e := a.Next()
 		So(v, ShouldEqual, 0)

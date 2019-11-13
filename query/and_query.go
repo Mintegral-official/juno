@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/helpers"
 	"github.com/pkg/errors"
 )
 
@@ -12,7 +13,7 @@ type AndQuery struct {
 	curIdx   int
 }
 
-func NewAndQuery(querys []Query, checkers []Checker) *AndQuery {
+func NewAndQuery(checkers []Checker, querys ...Query) *AndQuery {
 	if querys == nil {
 		return nil
 	}
@@ -63,7 +64,7 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 
 	//TODO 这块逻辑有问题，这样计算的是并集而不是交集
 	for curIdx < len(a.querys) {
-		cur, err := a.querys[a.curIdx].GetGE(id)
+		cur, err := a.querys[a.curIdx].GetGE(res)
 		if err != nil {
 			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(cur), curIdx))
 		}
@@ -73,8 +74,8 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(cur), curIdx))
 		}
 
-		if cur <= res {
-			res = cur
+		if cur != res {
+			return 0, helpers.DocIdNotFound
 		}
 		curIdx++
 	}

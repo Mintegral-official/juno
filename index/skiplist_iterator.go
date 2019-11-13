@@ -6,8 +6,8 @@ import (
 
 type SkipListIterator struct {
 	*SkipList
-	index   int64
-	element *Element
+	Index   int64
+	Element *Element
 }
 
 func NewSkipListIterator(level int32, cmp helpers.Comparable) *SkipListIterator {
@@ -16,24 +16,24 @@ func NewSkipListIterator(level int32, cmp helpers.Comparable) *SkipListIterator 
 	}
 	return &SkipListIterator{
 		SkipList: NewSkipList(DEFAULT_MAX_LEVEL, cmp),
-		index:    0,
-		element: nil,
+		Index:    0,
+		Element: nil,
 	}
 }
 
 func (slIterator *SkipListIterator) Valid() bool {
-	return slIterator.element != nil
+	return slIterator.Element != nil
 }
 
 func (slIterator *SkipListIterator) First() bool {
-	slIterator.element = slIterator.header.getNext(0)
+	slIterator.Element = slIterator.header.getNext(0)
 	return slIterator.Valid()
 }
 
 func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 	if slIterator != nil {
-		slIterator.index = 0
-		slIterator.element = nil
+		slIterator.Index = 0
+		slIterator.Element = nil
 		return slIterator
 	}
 	return nil
@@ -41,34 +41,37 @@ func (slIterator *SkipListIterator) Iterator() InvertedIterator {
 
 func (slIterator *SkipListIterator) HasNext() bool {
 
-	if slIterator.element == nil && slIterator.index == 0 {
+	if slIterator.Element == nil && slIterator.Index == 0 {
 		return slIterator.First()
 	}
-	slIterator.element = slIterator.element.Next(0)
+	// slIterator.element = slIterator.element.Next(0)
 	return slIterator.Valid()
 }
 
 func (slIterator *SkipListIterator) Next() interface{} {
-	if slIterator.element == nil {
-		if slIterator.index == 0 {
+	_ = slIterator.Element
+	if slIterator.Element == nil {
+		if slIterator.Index == 0 {
+			slIterator.Element = slIterator.header.getNext(0).getNext(0)
+			slIterator.Index++
 			return slIterator.header.getNext(0)
 		}
 		return nil
 	}
-	v := slIterator.element
-	// slIterator.element = slIterator.element.Next(0)
-	slIterator.index++
+	v := slIterator.Element
+	slIterator.Element = slIterator.Element.getNext(0)
+	slIterator.Index++
 	return v
 }
 
 func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 	var prev interface{}
-	if slIterator.index == slIterator.length {
+	if slIterator.Index == slIterator.length {
 		return nil
-	} else if slIterator.Next() == nil {
+	} else if slIterator.Element == nil && slIterator.Index == 0 {
 		prev = slIterator.header.getNext(0)
 	} else {
-		prev = slIterator.Next()
+		prev = slIterator.Element
 	}
 	//fmt.Println(prev)
 	if prev == nil {
