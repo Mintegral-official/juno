@@ -29,6 +29,9 @@ func (a *AndQuery) Next() (document.DocId, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "no more data")
 	}
+	if curIdx == len(a.querys) - 1 {
+		return target, nil
+	}
 	for {
 		curIdx = (curIdx + 1) % len(a.querys)
 		cur, err := a.querys[curIdx].GetGE(target)
@@ -60,25 +63,7 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(res), curIdx))
 	}
-	curIdx++
 
-	//TODO 这块逻辑有问题，这样计算的是并集而不是交集
-	//for curIdx < len(a.querys) {
-	//	cur, err := a.querys[a.curIdx].GetGE(res)
-	//	if err != nil {
-	//		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(cur), curIdx))
-	//	}
-	//
-	//	for !a.check(cur) {
-	//		cur, err = a.querys[a.curIdx].Next()
-	//		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(cur), curIdx))
-	//	}
-	//
-	//	if cur != res {
-	//		return 0, helpers.DocIdNotFound
-	//	}
-	//	curIdx++
-	//}
 	for {
 		curIdx = (curIdx + 1) % len(a.querys)
 		cur, err := a.querys[curIdx].GetGE(res)
@@ -101,6 +86,10 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		}
 	}
 	//return res, nil
+}
+
+func (a *AndQuery) Current() (document.DocId, error) {
+	return 0, nil
 }
 
 func (a *AndQuery) String() string {

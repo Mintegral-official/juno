@@ -51,6 +51,10 @@ func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	return 0, helpers.ElementNotfound
 }
 
+func (t *TermQuery) Current() (document.DocId, error) {
+	return 0, nil
+}
+
 func (t *TermQuery) String() string {
 	return ""
 }

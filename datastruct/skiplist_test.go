@@ -47,7 +47,7 @@ func GenerateRandomNumber(start int, end int, count int) []int {
 
 func init() {
 	t := time.Now()
-	arr = GenerateRandomNumber(0, 1500000000, 200000)
+	//arr = GenerateRandomNumber(0, 1500000000, 200000)
 	fmt.Println(time.Since(t))
 
 	fmt.Println(len(arr))
