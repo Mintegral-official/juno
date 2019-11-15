@@ -1,6 +1,6 @@
 package helpers
 
-import 	"github.com/pkg/errors"
+import "github.com/pkg/errors"
 
 /**
  * @author: tangye
@@ -13,5 +13,6 @@ var (
 	ParseError      = errors.New("Parse Error")
 	DocumentError   = errors.New("doc is nil")
 	DelFailed       = errors.New("del failed")
-    DocIdNotFound   = errors.New("DocId Not Found")
+	DocIdNotFound   = errors.New("DocId Not Found")
+	NoMoreData      = errors.New("no more data")
 )

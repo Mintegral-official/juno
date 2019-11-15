@@ -105,6 +105,7 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 
 func (slIterator *SkipListIterator) Current() (interface{}, error) {
 	if slIterator.Element == nil && slIterator.Index == 0 {
+		slIterator.Element = slIterator.header.getNext(0)
 		return slIterator.header.getNext(0).Key(), nil
 	} else if slIterator.Element == nil {
 		return 0, helpers.ElementNotfound
