@@ -98,6 +98,47 @@ func TestOrQuery(t *testing.T) {
 
 	})
 
+}
+
+func TestNewAndQuery(t *testing.T) {
+
+	sl := datastruct.NewSkipList(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
+
+	sl.Add(document.DocId(1), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
+
+	sl1.Add(document.DocId(1), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	sl2 := datastruct.NewSkipList(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
+
+	sl2.Add(document.DocId(2), [1]byte{})
+	sl2.Add(document.DocId(5), [1]byte{})
+	sl2.Add(document.DocId(7), [1]byte{})
+	sl2.Add(document.DocId(8), [1]byte{})
+
+	sll := &datastruct.SkipListIterator{
+		SkipList: sl,
+		Element:  nil,
+	}
+
+	sll1 := &datastruct.SkipListIterator{
+		SkipList: sl1,
+		Element:  nil,
+	}
+
+	_ = &datastruct.SkipListIterator{
+		SkipList: sl1,
+		Element:  nil,
+	}
+
+
 	Convey("Next1", t, func() {
 		a := NewOrQuery([]Query{&TermQuery{sll.Iterator()}, &TermQuery{sll1.Iterator()}}, nil)
 		v, e := a.Next()
@@ -124,6 +165,17 @@ func TestOrQuery(t *testing.T) {
 		v, e = a.Next()
 		fmt.Println(v, e)
 
-	})
+		//v, e = a.Next()
+		//fmt.Println(v, e)
+		//
+		//v, e = a.Next()
+		//fmt.Println(v, e)
+		//
+		//v, e = a.Next()
+		//fmt.Println(v, e)
+		//
+		//v, e = a.Next()
+		//fmt.Println(v, e)
 
+	})
 }

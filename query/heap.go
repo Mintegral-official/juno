@@ -37,8 +37,7 @@ func (h Heap) Less(i, j int) bool {
 	if err != nil {
 		return true
 	}
-	//fmt.Println(iDocId, jDocId, 10000000)
-	return h.Compare(iDocId, jDocId) < 0
+	return h.Compare(iDocId, jDocId) <= 0
 }
 
 func (h Heap) Swap(i, j int) {

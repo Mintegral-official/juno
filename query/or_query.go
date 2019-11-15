@@ -10,6 +10,7 @@ import (
 type OrQuery struct {
 	querys   []Query
 	checkers []Checker
+	h        Heap
 	curIdx   int
 }
 
@@ -17,59 +18,50 @@ func NewOrQuery(querys []Query, checkers []Checker) *OrQuery {
 	if querys == nil {
 		return nil
 	}
+	h := &Heap{}
+	heap.Init(h)
+	for i := 0; i < len(querys); i++ {
+		heap.Push(h, querys[i])
+	}
 	return &OrQuery{
 		querys:   querys,
 		checkers: checkers,
+		h:        *h,
 	}
 }
 
 func (o *OrQuery) Next() (document.DocId, error) {
 	lastIdx := o.curIdx
 	curIdx := o.curIdx
-	h := &Heap{}
-	heap.Init(h)
-	for i := 0; i < len(o.querys); i++ {
-		heap.Push(h, o.querys[i])
-	}
-
-	q := heap.Pop(h).(Query)
-	target, err := q.Next()
+	top := o.h.Top().(Query)
+	target, err := top.Next()
+	// fmt.Println(target)
 	if err != nil {
-		target, err = q.Next()
+		return 0, errors.Wrap(err, "no more data")
 	}
-
-	if len(o.querys) == 1 {
+	heap.Fix(&o.h, 0)
+	if curIdx == lastIdx {
 		if o.check(target) {
-			return target, err
+			return target, nil
 		}
-		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(target), curIdx))
+
 	}
-	heap.Push(h, q)
-	for {
-		curIdx = (curIdx + 1) % len(o.querys)
-		tmp := h.Pop().(Query)
-		cur, err := tmp.Current()
-		//cur, err := tmp.GetGE(target)
-		for err != nil {
-			cur, err = tmp.Next()
-		}
-
-		if cur < target {
-			target = cur
-			lastIdx = curIdx
-		}
-
-		heap.Push(h, tmp)
-
-		if (curIdx+1)%len(o.querys) == lastIdx {
-
-			if o.check(target) {
-				return target, nil
-			}
-			curIdx++
-		}
-		//fmt.Println(curIdx)
-	}
+	return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(target), curIdx))
+	//for {
+	//	curIdx = (curIdx + 1) % len(o.querys)
+	//	top := o.h.Top().(Query)
+	//	target, err = top.Next()
+	//	heap.Fix(&o.h, 0)
+	//	if err != nil {
+	//		return 0, errors.Wrap(err, "no more data")
+	//	}
+	//	if curIdx == lastIdx {
+	//		if o.check(target) {
+	//			return target, nil
+	//		}
+	//		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(target), curIdx))
+	//	}
+	//}
 }
 
 func (o *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
