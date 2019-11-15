@@ -98,4 +98,32 @@ func TestOrQuery(t *testing.T) {
 
 	})
 
+	Convey("Next1", t, func() {
+		a := NewOrQuery([]Query{&TermQuery{sll.Iterator()}, &TermQuery{sll1.Iterator()}}, nil)
+		v, e := a.Next()
+		fmt.Println(v, e)
+
+		v, e = a.Next()
+		fmt.Println(v, e)
+
+		v, e = a.Next()
+		fmt.Println(v, e)
+
+		v, e = a.Next()
+		fmt.Println(v, e)
+
+		v, e = a.Next()
+		fmt.Println(v, e)
+
+		v, e = a.Next()
+		fmt.Println(v, e)
+
+		v, e = a.Next()
+		fmt.Println(v, e)
+
+		v, e = a.Next()
+		fmt.Println(v, e)
+
+	})
+
 }

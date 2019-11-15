@@ -1,4 +1,7 @@
 package main
+
+import "fmt"
+
 //
 ///**
 // * @author: tangye
@@ -151,3 +154,11 @@ package main
 //	fmt.Println(c)
 //
 //}
+
+func main() {
+	s := []byte("")
+	s1 := append(s, 'a')
+	s2 := append(s, 'b')
+
+	fmt.Println(string(s1), string(s2))
+}

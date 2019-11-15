@@ -29,8 +29,15 @@ func (h Heap) Len() int {
 }
 
 func (h Heap) Less(i, j int) bool {
-	iDocId, _ := (h[i]).Current()
-	jDocId, _ := (h[j]).Current()
+	iDocId, err := (h[i]).Current()
+	if err != nil {
+		return false
+	}
+	jDocId, err := (h[j]).Current()
+	if err != nil {
+		return true
+	}
+	//fmt.Println(iDocId, jDocId, 10000000)
 	return h.Compare(iDocId, jDocId) < 0
 }
 

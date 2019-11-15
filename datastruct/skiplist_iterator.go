@@ -102,3 +102,11 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 		}
 	}
 }
+
+func (slIterator *SkipListIterator) Current() (interface{}, error) {
+	cur := slIterator.Element
+	if cur == nil {
+		return nil, helpers.DocumentError
+	}
+	return cur.Key(), nil
+}

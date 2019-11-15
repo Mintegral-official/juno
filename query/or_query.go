@@ -33,33 +33,42 @@ func (o *OrQuery) Next() (document.DocId, error) {
 	}
 
 	q := heap.Pop(h).(Query)
-	target, err := q.Current()
-	for err != nil {
+	target, err := q.Next()
+	if err != nil {
 		target, err = q.Next()
 	}
 
 	if len(o.querys) == 1 {
-		return target, err
+		if o.check(target) {
+			return target, err
+		}
+		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(target), curIdx))
 	}
-
+	heap.Push(h, q)
 	for {
 		curIdx = (curIdx + 1) % len(o.querys)
-		tmp := heap.Pop(h).(Query)
-		cur, err := tmp.GetGE(target)
+		tmp := h.Pop().(Query)
+		cur, err := tmp.Current()
+		//cur, err := tmp.GetGE(target)
 		for err != nil {
 			cur, err = tmp.Next()
 		}
+
 		if cur < target {
-			lastIdx = curIdx
 			target = cur
+			lastIdx = curIdx
 		}
+
+		heap.Push(h, tmp)
+
 		if (curIdx+1)%len(o.querys) == lastIdx {
+
 			if o.check(target) {
 				return target, nil
 			}
 			curIdx++
-			heap.Push(h, tmp)
 		}
+		//fmt.Println(curIdx)
 	}
 }
 
@@ -97,7 +106,6 @@ func (o *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (o *OrQuery) Current() (document.DocId, error) {
-
 	return o.querys[o.curIdx].Current()
 }
 

@@ -52,7 +52,11 @@ func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (t *TermQuery) Current() (document.DocId, error) {
-	return 0, nil
+	v, err := t.iterator.Current()
+	if err != nil {
+		return 0, err
+	}
+	return v.(document.DocId), err
 }
 
 func (t *TermQuery) String() string {
