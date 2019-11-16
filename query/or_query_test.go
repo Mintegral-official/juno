@@ -117,6 +117,11 @@ func TestOrQuery_GetGE(t *testing.T) {
 		So(v, ShouldEqual, 9)
 		So(e, ShouldBeNil)
 
+		v, e = a.GetGE(10)
+		// fmt.Println(v, e)
+		So(v, ShouldEqual, 10)
+		So(e, ShouldBeNil)
+
 		v, e = a.GetGE(11)
 		// fmt.Println(v, e)
 		So(v, ShouldEqual, 0)

@@ -59,6 +59,7 @@ func (o *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 	curIdx := o.curIdx
 	lastIdx := o.curIdx
 	res, err := o.querys[o.curIdx].GetGE(id)
+	// fmt.Println(res)
 	if err != nil {
 		curIdx++
 	}
@@ -66,15 +67,27 @@ func (o *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 	for {
 		curIdx = (curIdx + 1) % len(o.querys)
 		cur, err := o.querys[curIdx].GetGE(id)
+		//fmt.Println(cur, err)
 		if err != nil {
-			return 0, helpers.NoMoreData
-		}
-		if cur != res {
-			if cur <= res {
-				res = cur
+			if res > cur {
+				if o.check(res) {
+					return res, nil
+				}
+				curIdx++
+				res, err = o.querys[curIdx].Next()
+				if err != nil {
+					curIdx++
+				}
+			} else {
+				return 0, helpers.NoMoreData
 			}
+		}
+
+		if cur < res {
+			res = cur
 			lastIdx = curIdx
 		}
+
 		if (curIdx+1)%len(o.querys) == lastIdx {
 			if o.check(res) {
 				return res, nil
