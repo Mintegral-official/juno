@@ -31,65 +31,65 @@ func NewSkipList(level int32, cmp helpers.Comparable) *SkipList {
 	}
 }
 
-func (skipList *SkipList) Add(key, value interface{}) {
-	prev := skipList.previousNodeCache
-	if m, ok := skipList.findGE(key, true, prev); ok && skipList.cmp.Compare(m.key, key) == 0 {
+func (sl *SkipList) Add(key, value interface{}) {
+	prev := sl.previousNodeCache
+	if m, ok := sl.findGE(key, true, prev); ok && sl.cmp.Compare(m.key, key) == 0 {
 		h := int32(len(m.next))
 		x := newNode(key, value, h)
-		for i, n := range skipList.previousNodeCache[:h] {
+		for i, n := range sl.previousNodeCache[:h] {
 			x.setNext(i, m.getNext(i))
 			n.setNext(i, x)
 		}
 		return
 	}
 
-	h := skipList.randLevel()
+	h := sl.randLevel()
 
 	x := newNode(key, value, h)
-	for i, n := range skipList.previousNodeCache[:h] {
+	for i, n := range sl.previousNodeCache[:h] {
 		x.setNext(i, n.getNext(i))
 		n.setNext(i, x)
 	}
-	skipList.length++
+	sl.length++
 }
 
-func (skipList *SkipList) Del(key interface{}) {
-	prev := skipList.previousNodeCache
-	x, ok := skipList.findGE(key, true, prev)
+func (sl *SkipList) Del(key interface{}) {
+	prev := sl.previousNodeCache
+	x, ok := sl.findGE(key, true, prev)
 	if !ok {
 		return
 	}
 
 	h := len(x.next)
-	for i, n := range skipList.previousNodeCache[:h] {
+	for i, n := range sl.previousNodeCache[:h] {
 		if n.Next(i) != nil {
 			n.setNext(i, n.Next(i).Next(i))
 		}
 	}
-	atomic.AddInt64(&skipList.length, -1)
+	atomic.AddInt64(&sl.length, -1)
 }
 
-func (skipList *SkipList) Contains(key interface{}) bool {
-	prev := skipList.previousNodeCache
-	_, ok := skipList.findGE(key, true, prev)
+func (sl *SkipList) Contains(key interface{}) bool {
+	prev := sl.previousNodeCache
+	_, ok := sl.findGE(key, true, prev)
 	return ok
 }
 
-func (skipList *SkipList) Get(key interface{}) (*Element, error) {
-	prev := skipList.previousNodeCache
-	if x, ok := skipList.findGE(key, true, prev); ok {
+func (sl *SkipList) Get(key interface{}) (*Element, error) {
+	prev := sl.previousNodeCache
+	if x, ok := sl.findGE(key, true, prev); ok {
 		return x, nil
 	}
 	return nil, helpers.ElementNotfound
 }
 
-func (skipList *SkipList) Len() int64 {
-	return atomic.LoadInt64(&skipList.length)
+func (sl *SkipList) Len() int64 {
+	return atomic.LoadInt64(&sl.length)
 }
 
-func (skipList *SkipList) findGE(key interface{}, flag bool, element [DEFAULT_MAX_LEVEL]*Element) (*Element, bool) {
-	x := skipList.header
-	h := int(atomic.LoadInt32(&skipList.level)) - 1
+func (sl *SkipList) findGE(key interface{}, flag bool, element [DEFAULT_MAX_LEVEL]*Element) (*Element, bool) {
+	x := sl.header
+	h := int(atomic.LoadInt32(&sl.level)) - 1
 	for h >= 0 {
 		if x == nil {
 			return nil, false
@@ -97,14 +97,14 @@ func (skipList *SkipList) findGE(key interface{}, flag bool, element [DEFAULT_MA
 		next := x.getNext(h)
 		cmp := 1
 		if next != nil {
-			cmp = skipList.cmp.Compare(next.key, key)
+			cmp = sl.cmp.Compare(next.key, key)
 		}
 		if cmp < 0 {
 			x = next
 		} else {
 			if flag {
 				element[h] = x
-				skipList.previousNodeCache[h] = element[h]
+				sl.previousNodeCache[h] = element[h]
 			} else if cmp == 0 {
 				return next, true
 			}
@@ -117,14 +117,14 @@ func (skipList *SkipList) findGE(key interface{}, flag bool, element [DEFAULT_MA
 	return nil, false
 }
 
-func (skipList *SkipList) findLT(key interface{}) (*Element, bool) {
-	x := skipList.header
-	h := int(atomic.LoadInt32(&skipList.level)) - 1
+func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
+	x := sl.header
+	h := int(atomic.LoadInt32(&sl.level)) - 1
 	for h >= 0 {
 		next := x.getNext(h)
-		if next == nil || skipList.cmp.Compare(next.key, key) >= 0 {
+		if next == nil || sl.cmp.Compare(next.key, key) >= 0 {
 			if h == 0 {
-				if x == skipList.header {
+				if x == sl.header {
 					return nil, false
 				}
 				return x, true
@@ -137,13 +137,17 @@ func (skipList *SkipList) findLT(key interface{}) (*Element, bool) {
 	return nil, false
 }
 
-func (skipList *SkipList) randLevel() int32 {
+func (sl *SkipList) randLevel() int32 {
 	var l int32 = 1
-	for ((skipList.randSource.Int63() >> 32) & 0xFFFF) < DEFAULT_PROBABILITY {
+	for ((sl.randSource.Int63() >> 32) & 0xFFFF) < DEFAULT_PROBABILITY {
 		l++
 	}
 	if l > DEFAULT_MAX_LEVEL {
 		l = DEFAULT_MAX_LEVEL
 	}
 	return l
+}
+
+func (sl *SkipList) Iterator() *SkipListIterator {
+	return NewSkipListIterator(sl.header, sl.cmp)
 }
