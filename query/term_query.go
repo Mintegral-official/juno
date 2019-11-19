@@ -26,6 +26,8 @@ func (t *TermQuery) Next() (document.DocId, error) {
 		if v == nil {
 			return 0, helpers.ElementNotfound
 		}
+		//v = datastruct.ElementCopy(v)
+		//t.iterator.Next()
 		if v, ok := v.Key().(document.DocId); ok {
 			return v, nil
 		} else {
@@ -37,10 +39,12 @@ func (t *TermQuery) Next() (document.DocId, error) {
 
 func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	v := t.iterator.GetGE(id)
-	// fmt.Printf("%T, %v\n", v, v)
 	if v != nil {
 		k, ok := v.(*datastruct.Element)
 		if !ok {
+			return 0, helpers.ElementNotfound
+		}
+		if k == nil {
 			return 0, helpers.ElementNotfound
 		}
 		if v, ok := k.Key().(document.DocId); ok {
@@ -52,11 +56,20 @@ func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (t *TermQuery) Current() (document.DocId, error) {
-	v, err := t.iterator.Current()
-	if err != nil {
-		return 0, err
+	v := t.iterator.Current()
+	if v == nil {
+		return 0, helpers.ElementNotfound
 	}
-	return v.(document.DocId), err
+	res, ok := v.(*datastruct.Element)
+	if !ok {
+		return 0, helpers.ElementNotfound
+	}
+
+	if res == nil {
+		return 0, helpers.ElementNotfound
+	}
+
+	return res.Key().(document.DocId), nil
 }
 
 func (t *TermQuery) String() string {

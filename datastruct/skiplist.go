@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	DEFAULT_MAX_LEVEL   = 12
-	DEFAULT_PROBABILITY = 0x3FFF
+	DefaultMaxLevel    = 12
+	DefaultProbability = 0x3FFF
 )
 
 type SkipList struct {
@@ -18,17 +18,23 @@ type SkipList struct {
 	header            *Element
 	level             int32
 	length            int64
-	previousNodeCache [DEFAULT_MAX_LEVEL]*Element
+	previousNodeCache [DefaultMaxLevel]*Element
 }
 
-func NewSkipList(level int32, cmp helpers.Comparable) *SkipList {
+func NewSkipList(level int32, cmp helpers.Comparable) (*SkipList, error) {
+	if cmp == nil {
+		return nil, helpers.ComparableError
+	}
+	if level < 0 || level > DefaultMaxLevel {
+		level = DefaultMaxLevel
+	}
 	return &SkipList{
 		cmp:        cmp,
 		randSource: rand.New(rand.NewSource(time.Now().UnixNano())),
 		level:      level,
 		length:     0,
-		header:     newNode(nil, nil, DEFAULT_MAX_LEVEL),
-	}
+		header:     newNode(nil, nil, level),
+	}, nil
 }
 
 func (sl *SkipList) Add(key, value interface{}) {
@@ -84,12 +90,12 @@ func (sl *SkipList) Get(key interface{}) (*Element, error) {
 }
 
 func (sl *SkipList) Len() int64 {
-	return atomic.LoadInt64(&sl.length)
+	return sl.length
 }
 
-func (sl *SkipList) findGE(key interface{}, flag bool, element [DEFAULT_MAX_LEVEL]*Element) (*Element, bool) {
+func (sl *SkipList) findGE(key interface{}, flag bool, element [DefaultMaxLevel]*Element) (*Element, bool) {
 	x := sl.header
-	h := int(atomic.LoadInt32(&sl.level)) - 1
+	h := int(sl.level) - 1
 	for h >= 0 {
 		if x == nil {
 			return nil, false
@@ -119,7 +125,7 @@ func (sl *SkipList) findGE(key interface{}, flag bool, element [DEFAULT_MAX_LEVE
 
 func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
 	x := sl.header
-	h := int(atomic.LoadInt32(&sl.level)) - 1
+	h := int(sl.level) - 1
 	for h >= 0 {
 		next := x.getNext(h)
 		if next == nil || sl.cmp.Compare(next.key, key) >= 0 {
@@ -139,15 +145,16 @@ func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
 
 func (sl *SkipList) randLevel() int32 {
 	var l int32 = 1
-	for ((sl.randSource.Int63() >> 32) & 0xFFFF) < DEFAULT_PROBABILITY {
+	for ((sl.randSource.Int63() >> 32) & 0xFFFF) < DefaultProbability {
 		l++
 	}
-	if l > DEFAULT_MAX_LEVEL {
-		l = DEFAULT_MAX_LEVEL
+	if l > DefaultMaxLevel || l < 0 {
+		l = DefaultMaxLevel
 	}
 	return l
 }
 
 func (sl *SkipList) Iterator() *SkipListIterator {
-	return NewSkipListIterator(sl.header, sl.cmp)
+	x := ElementCopy(sl.header)
+	return NewSkipListIterator(x, sl.cmp)
 }

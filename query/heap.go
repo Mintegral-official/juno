@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 )
@@ -33,7 +32,7 @@ func (h Heap) Less(i, j int) bool {
 	iDocId, iErr := (h[i]).Current()
 	jDocId, jErr := (h[j]).Current()
 
-	fmt.Println("!!!!!!!!!!!!!!: ", i, j, iDocId, iErr, jDocId, jErr)
+	// fmt.Println("!!!!!!!!!!!!!!: ", i, j, iDocId, iErr, jDocId, jErr)
 
 	if iErr != nil && jErr != nil {
 		return true

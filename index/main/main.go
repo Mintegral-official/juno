@@ -155,10 +155,19 @@ import "fmt"
 //
 //}
 
-func main() {
-	s := []byte("")
-	s1 := append(s, 'a')
-	s2 := append(s, 'b')
+type x struct {
+	a int
+}
 
-	fmt.Println(string(s1), string(s2))
+func main() {
+	x := &x{a:1}
+	y := *x
+	z := &y
+
+	fmt.Println(x, y, z)
+
+	z.a = 100
+
+	fmt.Println(x, y, z)
+
 }

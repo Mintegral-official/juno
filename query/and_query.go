@@ -89,7 +89,20 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (a *AndQuery) Current() (document.DocId, error) {
-	return 0, nil
+	res, err := a.querys[0].Current()
+	if err != nil {
+		return 0, err
+	}
+	for i := 1; i < len(a.querys); i++ {
+		tar, err := a.querys[i].Current()
+		if err != nil {
+			return 0, err
+		}
+		if tar != res {
+			tar, err = a.querys[i].Next()
+		}
+	}
+	return res, nil
 }
 
 func (a *AndQuery) String() string {

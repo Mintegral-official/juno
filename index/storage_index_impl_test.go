@@ -23,9 +23,11 @@ func TestNewStorageIndexImpl(t *testing.T) {
 
 func TestStorageIndexImpl(t *testing.T) {
 	s := NewStorageIndexImpl()
-	s.data.Store("fieldName1", datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
+	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	s.data.Store("fieldName1", sl1)
 	s.data.Store("fieldName2", nil)
-	s.data.Store("fieldName4", datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
+	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	s.data.Store("fieldName4", sl2)
 	Convey("ADD & GET &DEL & ITERATOR", t, func() {
 		So(s.Add("fieldName1", document.DocId(1), nil), ShouldBeNil)
 		So(s.Add("fieldName1", document.DocId(2), nil), ShouldBeNil)
@@ -46,15 +48,16 @@ func TestStorageIndexImpl(t *testing.T) {
 		a = s.Iterator("fieldName1")
 		c = 0
 		for a.HasNext() {
-			fmt.Println(a.Next())
-			c++
+			if a.Next() != nil {
+				c++
+			}
 		}
 		So(c, ShouldEqual, 3)
 		So(s.Del("XXX", document.DocId(1)), ShouldBeFalse)
 		So(s.Get("fieldName1", document.DocId(1)), ShouldEqual, helpers.DocumentError)
 		So(s.Get("fieldName1", document.DocId(2)), ShouldNotBeNil)
-		fmt.Println("*******")
-		fmt.Println(s.Get("fieldName1", document.DocId(2)))
+		//	fmt.Println("*******")
+		//	fmt.Println(s.Get("fieldName1", document.DocId(2)))
 		So(s.Get("fieldName2", document.DocId(2)), ShouldEqual, helpers.ParseError)
 	})
 }

@@ -38,3 +38,16 @@ func (element *Element) Next(n int) *Element {
 func (element *Element) Key() interface{} {
 	return element.key
 }
+
+func ElementCopy(element *Element) *Element {
+	if element == nil {
+		return nil
+	}
+	var e = newNode(nil, nil, int32(len(element.next)))
+	e.key = element.key
+	e.value = element.value
+	for i, v := range element.next {
+		e.next[i] = v
+	}
+	return e
+}

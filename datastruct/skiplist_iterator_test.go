@@ -1,13 +1,14 @@
 package datastruct
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
 func TestNewSkipListIterator(t *testing.T) {
-	sl := NewSkipList(DEFAULT_MAX_LEVEL, helpers.IntCompare)
+	sl, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
 	sl.Add(1, nil)
 	sl.Add(3, nil)
 	// slt := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
@@ -24,23 +25,23 @@ func TestNewSkipListIterator(t *testing.T) {
 		So(v, ShouldNotBeNil)
 		So(v.Key(), ShouldEqual, 3)
 
-		So(iter.HasNext(), ShouldBeFalse)
+		So(iter.HasNext(), ShouldBeTrue)
 		iter.Next()
 		So(iter.Current(), ShouldBeNil)
 	})
 }
 
 func TestSkipListIterator_Iterator(t *testing.T) {
-	sl := NewSkipList(DEFAULT_MAX_LEVEL, helpers.IntCompare)
+	s, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
 	for i := 0; i < 100; i++ {
-		sl.Add(i, nil)
+		s.Add(i, nil)
 	}
 	for i := 101; i < 150; i += 3 {
-		sl.Add(i, nil)
+		s.Add(i, nil)
 	}
 
 	Convey("Next", t, func() {
-		iter := sl.Iterator()
+		iter := s.Iterator()
 		So(iter.HasNext(), ShouldBeTrue)
 		v := iter.Current().(*Element)
 		So(v, ShouldNotBeNil)
@@ -75,12 +76,32 @@ func TestSkipListIterator_Iterator(t *testing.T) {
 		So(elem.(*Element).Key(), ShouldEqual, 104)
 		So(iter.HasNext(), ShouldBeTrue)
 
+		v = iter.GetGE(147).(*Element)
+		So(v, ShouldNotBeNil)
+		So(v.Key(), ShouldEqual, 149)
+		elem = iter.Current()
+		So(elem, ShouldNotBeNil)
+		So(elem.(*Element), ShouldNotBeNil)
+		So(elem.(*Element).Key(), ShouldEqual, 149)
+		So(iter.HasNext(), ShouldBeTrue)
+
 		v = iter.GetGE(160).(*Element)
 		So(v, ShouldBeNil)
 		elem = iter.Current()
 		So(elem, ShouldBeNil)
 		So(iter.HasNext(), ShouldBeFalse)
 	})
+}
+
+func TestSkipListIterator_GetGE(t *testing.T) {
+	s, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	for i := 0; i < 100; i++ {
+		s.Add(i, nil)
+	}
+	a := s.Iterator()
+	fmt.Println(a.GetGE(99))
+	fmt.Println(a.GetGE(99))
+	fmt.Println(a.GetGE(99))
 }
 
 //

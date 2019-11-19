@@ -1,6 +1,8 @@
 package datastruct
 
-import "github.com/Mintegral-official/juno/helpers"
+import (
+	"github.com/Mintegral-official/juno/helpers"
+)
 
 type SkipListIterator struct {
 	Element *Element
@@ -9,24 +11,29 @@ type SkipListIterator struct {
 
 func NewSkipListIterator(element *Element, cmp helpers.Comparable) *SkipListIterator {
 	sli := &SkipListIterator{element, cmp}
-	sli.Next()
+	 _ = sli.Next()
 	return sli
 }
 
 func (slIterator *SkipListIterator) HasNext() bool {
-	return slIterator.Element != nil && slIterator.Element.next[0] != nil
+	return slIterator.Element != nil
 }
 
-func (slIterator *SkipListIterator) Next() {
+func (slIterator *SkipListIterator) Next() interface{} {
+	if slIterator.Element == nil {
+		return nil
+	}
 	next := slIterator.Element.Next(0)
 	if next == nil {
+		res := slIterator.Element
 		slIterator.Element = nil
-		return
+		return res
 	}
 	for i, v := range next.next {
 		slIterator.Element.next[i] = v
 	}
 	slIterator.Element.key, slIterator.Element.value = next.key, next.value
+	return slIterator.Element
 }
 
 func (slIterator *SkipListIterator) GetLE(key interface{}) interface{} {
@@ -58,7 +65,8 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 		return nil
 	}
 	c := slIterator.cmp.Compare(key, e.key)
-	if c != 0 {
+	// fmt.Println(e.key, key, c)
+	if c > 0 {
 		slIterator.Next()
 	}
 	return slIterator.Element

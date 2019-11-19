@@ -83,29 +83,39 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
 		if1 := index.invertedIndex.Iterator("field1")
+		c := 0
 		for if1.HasNext() {
-			fmt.Println(if1.Next())
+			if if1.Next() != nil {
+				c++
+			}
 		}
-		fmt.Println("************************************")
+		So(c, ShouldEqual, 3)
+
 		if2 := index.invertedIndex.Iterator("field2")
+		c = 0
 		for if2.HasNext() {
-			fmt.Println(if2.Next())
+			if if2.Next() != nil {
+				c++
+			}
 		}
-
-		fmt.Println("************************************")
-		sf1 := index.storageIndex.Iterator("field2")
+		So(c, ShouldEqual, 2)
+		sf1 := index.storageIndex.Iterator("field1")
+		c = 0
 		for sf1.HasNext() {
-			fmt.Println(sf1.Next())
+			if sf1.Next() != nil {
+				c++
+			}
 		}
-
-		fmt.Println("************************************")
+		So(c, ShouldEqual, 2)
 		sf2 := index.storageIndex.Iterator("field2")
+		c = 0
 		for sf2.HasNext() {
-			fmt.Println(sf2.Next())
+			if sf2.Next() != nil {
+				c++
+			}
 		}
-
+		So(c, ShouldEqual, 1)
 		So(index.Del(doc1), ShouldBeNil)
-
 	})
 }
 

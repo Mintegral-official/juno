@@ -1,7 +1,6 @@
 package index
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -32,9 +31,11 @@ func TestInvertedIndexImpl_Iterator(t *testing.T) {
 
 func TestInvertedIndexImpl(t *testing.T) {
 	s := NewInvertedIndexImpl()
-	s.data.Store("fieldName1", datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
+	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	s.data.Store("fieldName1", sl1)
 	s.data.Store("fieldName2", nil)
-	s.data.Store("fieldName4", datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc))
+	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	s.data.Store("fieldName4", sl2)
 	Convey("Add", t, func() {
 		So(s.Add("fieldName1", document.DocId(1)), ShouldBeNil)
 		So(s.Add("fieldName1", document.DocId(5)), ShouldBeNil)
@@ -47,7 +48,8 @@ func TestInvertedIndexImpl(t *testing.T) {
 		So(s.Iterator("fieldName1"), ShouldNotBeNil)
 		c := 0
 		for a.HasNext() {
-			fmt.Println(a.Next().(*datastruct.Element).Key())
+			// fmt.Println(a.Current())
+			a.Next()
 			c++
 		}
 		So(c, ShouldEqual, 3)

@@ -17,7 +17,7 @@ func NewStorageIndexImpl() *StorageIndexImpl {
 
 func (ssi *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{} {
 	if v, ok := ssi.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipListIterator); ok {
+		if sl, ok := v.(*datastruct.SkipList); ok {
 			if res, err := sl.Get(id); err == nil {
 				return res
 			}
@@ -31,13 +31,16 @@ func (ssi *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{
 
 func (ssi *StorageIndexImpl) Add(fieldName string, id document.DocId, value interface{}) error {
 	if v, ok := ssi.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipListIterator); ok {
+		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Add(id, value)
 		} else {
 			return helpers.ParseError
 		}
 	} else {
-		sl := datastruct.NewSkipListIterator(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
+		sl, err := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+		if err != nil {
+			return err
+		}
 		sl.Add(id, value)
 		ssi.data.Store(fieldName, sl)
 	}
@@ -46,7 +49,7 @@ func (ssi *StorageIndexImpl) Add(fieldName string, id document.DocId, value inte
 
 func (ssi *StorageIndexImpl) Del(fieldName string, id document.DocId) bool {
 	if v, ok := ssi.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipListIterator); ok {
+		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Del(id)
 			ssi.data.Store(fieldName, sl)
 			return true
@@ -57,7 +60,7 @@ func (ssi *StorageIndexImpl) Del(fieldName string, id document.DocId) bool {
 
 func (ssi *StorageIndexImpl) Iterator(fieldName string) datastruct.Iterator {
 	if v, ok := ssi.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipListIterator); ok {
+		if sl, ok := v.(*datastruct.SkipList); ok {
 			return sl.Iterator()
 		}
 	}

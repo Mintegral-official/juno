@@ -2,7 +2,6 @@ package query
 
 import (
 	"container/heap"
-	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 )
@@ -74,7 +73,6 @@ func (o *OrQuery) Current() (document.DocId, error) {
 		return 0, helpers.NoMoreData
 	}
 	q := top.(Query)
-	fmt.Printf("Current [%T][%v]", q, q)
 	return q.Current()
 }
 
