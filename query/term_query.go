@@ -11,6 +11,9 @@ type TermQuery struct {
 }
 
 func NewTermQuery(iter datastruct.Iterator) *TermQuery {
+	if iter == nil {
+		return nil
+	}
 	return &TermQuery{
 		iterator: iter,
 	}
@@ -26,8 +29,6 @@ func (t *TermQuery) Next() (document.DocId, error) {
 		if v == nil {
 			return 0, helpers.ElementNotfound
 		}
-		//v = datastruct.ElementCopy(v)
-		//t.iterator.Next()
 		if v, ok := v.Key().(document.DocId); ok {
 			return v, nil
 		} else {
@@ -40,14 +41,14 @@ func (t *TermQuery) Next() (document.DocId, error) {
 func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	v := t.iterator.GetGE(id)
 	if v != nil {
-		k, ok := v.(*datastruct.Element)
+		v, ok := v.(*datastruct.Element)
 		if !ok {
 			return 0, helpers.ElementNotfound
 		}
-		if k == nil {
+		if v == nil {
 			return 0, helpers.ElementNotfound
 		}
-		if v, ok := k.Key().(document.DocId); ok {
+		if v, ok := v.Key().(document.DocId); ok {
 			return v, nil
 		}
 		return 0, helpers.DocIdNotFound

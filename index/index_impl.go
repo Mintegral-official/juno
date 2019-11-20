@@ -30,6 +30,9 @@ func (i *IndexImpl) Add(doc *document.DocInfo) error {
 			err = i.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value)
 		} else if doc.Fields[j].IndexType == document.BothIndexType {
 			err = i.invertedIndex.Add(doc.Fields[j].Name, doc.Id)
+			if err != nil {
+				return err
+			}
 			err = i.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value)
 		}
 
@@ -52,6 +55,9 @@ func (i *IndexImpl) Del(doc *document.DocInfo) error {
 			flag = i.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		} else if doc.Fields[j].IndexType == document.BothIndexType {
 			flag = i.invertedIndex.Del(doc.Fields[j].Name, doc.Id)
+			if !flag {
+				return helpers.DelFailed
+			}
 			flag = i.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		}
 		if !flag {

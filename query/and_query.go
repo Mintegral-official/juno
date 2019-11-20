@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/helpers"
 	"github.com/pkg/errors"
 )
 
@@ -26,12 +27,14 @@ func (a *AndQuery) Next() (document.DocId, error) {
 	lastIdx := a.curIdx
 	curIdx := a.curIdx
 	target, err := a.querys[curIdx].Next()
+
 	if err != nil {
 		return 0, errors.Wrap(err, "no more data")
 	}
 	if curIdx == len(a.querys) - 1 {
 		return target, nil
 	}
+
 	for {
 		curIdx = (curIdx + 1) % len(a.querys)
 		cur, err := a.querys[curIdx].GetGE(target)
@@ -59,7 +62,7 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	curIdx := a.curIdx
 	lastIdx := a.curIdx
 	res, err := a.querys[a.curIdx].GetGE(id)
-	// fmt.Println(err)
+
 	if err != nil {
 		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(res), curIdx))
 	}
@@ -85,7 +88,6 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			}
 		}
 	}
-	//return res, nil
 }
 
 func (a *AndQuery) Current() (document.DocId, error) {
@@ -93,13 +95,14 @@ func (a *AndQuery) Current() (document.DocId, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	for i := 1; i < len(a.querys); i++ {
 		tar, err := a.querys[i].Current()
 		if err != nil {
 			return 0, err
 		}
 		if tar != res {
-			tar, err = a.querys[i].Next()
+			return 0, helpers.ElementNotfound
 		}
 	}
 	return res, nil

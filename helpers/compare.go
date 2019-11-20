@@ -5,12 +5,6 @@ import (
 	"strings"
 )
 
-/**
- * @author: tangye
- * @Date: 2019/10/30 14:19
- * @Description:
- */
-
 type Comparable interface {
 	Compare(a, b interface{}) int
 }

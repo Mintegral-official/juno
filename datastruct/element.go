@@ -1,7 +1,6 @@
 package datastruct
 
 import (
-	"sync/atomic"
 	"unsafe"
 )
 
@@ -10,32 +9,40 @@ type Element struct {
 	next       []unsafe.Pointer
 }
 
-func newNode(key, value interface{}, level int32) *Element {
-	return &Element{key, value, make([]unsafe.Pointer, level)}
-}
-
-func (element *Element) getNext(n int) *Element {
-	if element == nil {
-		return nil
+func newNode(key, value interface{}, level int) *Element {
+	if level <= 0 || level > DefaultMaxLevel {
+		level = DefaultMaxLevel
 	}
-	return (*Element)(atomic.LoadPointer(&element.next[n]))
+	return &Element{
+		key, value,
+		make([]unsafe.Pointer, level),
+	}
 }
 
 func (element *Element) setNext(n int, x *Element) {
 	if element == nil {
 		return
 	}
-	atomic.StorePointer(&element.next[n], unsafe.Pointer(x))
+	if n < 0 || n > len(element.next) {
+		return
+	}
+	element.next[n] = unsafe.Pointer(x)
 }
 
 func (element *Element) Next(n int) *Element {
 	if element == nil {
 		return nil
 	}
+	if n < 0 || n > len(element.next) {
+		return nil
+	}
 	return (*Element)(element.next[n])
 }
 
 func (element *Element) Key() interface{} {
+	if element == nil {
+		return nil
+	}
 	return element.key
 }
 
@@ -43,7 +50,7 @@ func ElementCopy(element *Element) *Element {
 	if element == nil {
 		return nil
 	}
-	var e = newNode(nil, nil, int32(len(element.next)))
+	var e = newNode(nil, nil, len(element.next))
 	e.key = element.key
 	e.value = element.value
 	for i, v := range element.next {
@@ -51,3 +58,4 @@ func ElementCopy(element *Element) *Element {
 	}
 	return e
 }
+

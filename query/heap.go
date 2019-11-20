@@ -32,12 +32,9 @@ func (h Heap) Less(i, j int) bool {
 	iDocId, iErr := (h[i]).Current()
 	jDocId, jErr := (h[j]).Current()
 
-	// fmt.Println("!!!!!!!!!!!!!!: ", i, j, iDocId, iErr, jDocId, jErr)
-
 	if iErr != nil && jErr != nil {
 		return true
 	}
-
 	if iErr != nil {
 		return false
 	}

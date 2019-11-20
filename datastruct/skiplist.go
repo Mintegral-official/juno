@@ -3,7 +3,6 @@ package datastruct
 import (
 	"github.com/Mintegral-official/juno/helpers"
 	"math/rand"
-	"sync/atomic"
 	"time"
 )
 
@@ -16,12 +15,12 @@ type SkipList struct {
 	cmp               helpers.Comparable
 	randSource        rand.Source
 	header            *Element
-	level             int32
-	length            int64
+	level             int
+	length            int
 	previousNodeCache [DefaultMaxLevel]*Element
 }
 
-func NewSkipList(level int32, cmp helpers.Comparable) (*SkipList, error) {
+func NewSkipList(level int, cmp helpers.Comparable) (*SkipList, error) {
 	if cmp == nil {
 		return nil, helpers.ComparableError
 	}
@@ -37,13 +36,17 @@ func NewSkipList(level int32, cmp helpers.Comparable) (*SkipList, error) {
 	}, nil
 }
 
+func (sl *SkipList) Cmp() helpers.Comparable {
+	return sl.cmp
+}
+
 func (sl *SkipList) Add(key, value interface{}) {
 	prev := sl.previousNodeCache
 	if m, ok := sl.findGE(key, true, prev); ok && sl.cmp.Compare(m.key, key) == 0 {
-		h := int32(len(m.next))
+		h := len(m.next)
 		x := newNode(key, value, h)
 		for i, n := range sl.previousNodeCache[:h] {
-			x.setNext(i, m.getNext(i))
+			x.setNext(i, m.Next(i))
 			n.setNext(i, x)
 		}
 		return
@@ -53,7 +56,7 @@ func (sl *SkipList) Add(key, value interface{}) {
 
 	x := newNode(key, value, h)
 	for i, n := range sl.previousNodeCache[:h] {
-		x.setNext(i, n.getNext(i))
+		x.setNext(i, n.Next(i))
 		n.setNext(i, x)
 	}
 	sl.length++
@@ -61,18 +64,15 @@ func (sl *SkipList) Add(key, value interface{}) {
 
 func (sl *SkipList) Del(key interface{}) {
 	prev := sl.previousNodeCache
-	x, ok := sl.findGE(key, true, prev)
-	if !ok {
-		return
-	}
-
-	h := len(x.next)
-	for i, n := range sl.previousNodeCache[:h] {
-		if n.Next(i) != nil {
-			n.setNext(i, n.Next(i).Next(i))
+	if x, ok := sl.findGE(key, true, prev); ok {
+		h := len(x.next)
+		for i, n := range sl.previousNodeCache[:h] {
+			if n.Next(i) != nil {
+				n.setNext(i, n.Next(i).Next(i))
+			}
 		}
 	}
-	atomic.AddInt64(&sl.length, -1)
+	sl.length--
 }
 
 func (sl *SkipList) Contains(key interface{}) bool {
@@ -89,18 +89,18 @@ func (sl *SkipList) Get(key interface{}) (*Element, error) {
 	return nil, helpers.ElementNotfound
 }
 
-func (sl *SkipList) Len() int64 {
+func (sl *SkipList) Len() int {
 	return sl.length
 }
 
 func (sl *SkipList) findGE(key interface{}, flag bool, element [DefaultMaxLevel]*Element) (*Element, bool) {
 	x := sl.header
-	h := int(sl.level) - 1
+	h := sl.level - 1
 	for h >= 0 {
 		if x == nil {
 			return nil, false
 		}
-		next := x.getNext(h)
+		next := x.Next(h)
 		cmp := 1
 		if next != nil {
 			cmp = sl.cmp.Compare(next.key, key)
@@ -127,7 +127,7 @@ func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
 	x := sl.header
 	h := int(sl.level) - 1
 	for h >= 0 {
-		next := x.getNext(h)
+		next := x.Next(h)
 		if next == nil || sl.cmp.Compare(next.key, key) >= 0 {
 			if h == 0 {
 				if x == sl.header {
@@ -143,12 +143,12 @@ func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
 	return nil, false
 }
 
-func (sl *SkipList) randLevel() int32 {
-	var l int32 = 1
+func (sl *SkipList) randLevel() int {
+	var l = 1
 	for ((sl.randSource.Int63() >> 32) & 0xFFFF) < DefaultProbability {
 		l++
 	}
-	if l > DefaultMaxLevel || l < 0 {
+	if l > DefaultMaxLevel || l <= 0 {
 		l = DefaultMaxLevel
 	}
 	return l

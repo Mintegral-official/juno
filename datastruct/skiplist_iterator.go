@@ -38,7 +38,7 @@ func (slIterator *SkipListIterator) Next() interface{} {
 
 func (slIterator *SkipListIterator) GetLE(key interface{}) interface{} {
 	for i := len(slIterator.Element.next) - 1; i >= 0; {
-		next := slIterator.Element.getNext(i)
+		next := slIterator.Element.Next(i)
 		if next == nil {
 			i--
 			continue
@@ -65,7 +65,6 @@ func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
 		return nil
 	}
 	c := slIterator.cmp.Compare(key, e.key)
-	// fmt.Println(e.key, key, c)
 	if c > 0 {
 		slIterator.Next()
 	}

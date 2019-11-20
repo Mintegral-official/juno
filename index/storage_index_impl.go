@@ -15,8 +15,8 @@ func NewStorageIndexImpl() *StorageIndexImpl {
 	return &StorageIndexImpl{data: sync.Map{}}
 }
 
-func (ssi *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{} {
-	if v, ok := ssi.data.Load(fieldName); ok {
+func (siImpl *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{} {
+	if v, ok := siImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			if res, err := sl.Get(id); err == nil {
 				return res
@@ -29,8 +29,8 @@ func (ssi *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{
 	return nil
 }
 
-func (ssi *StorageIndexImpl) Add(fieldName string, id document.DocId, value interface{}) error {
-	if v, ok := ssi.data.Load(fieldName); ok {
+func (siImpl *StorageIndexImpl) Add(fieldName string, id document.DocId, value interface{}) error {
+	if v, ok := siImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Add(id, value)
 		} else {
@@ -42,24 +42,24 @@ func (ssi *StorageIndexImpl) Add(fieldName string, id document.DocId, value inte
 			return err
 		}
 		sl.Add(id, value)
-		ssi.data.Store(fieldName, sl)
+		siImpl.data.Store(fieldName, sl)
 	}
 	return nil
 }
 
-func (ssi *StorageIndexImpl) Del(fieldName string, id document.DocId) bool {
-	if v, ok := ssi.data.Load(fieldName); ok {
+func (siImpl *StorageIndexImpl) Del(fieldName string, id document.DocId) bool {
+	if v, ok := siImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Del(id)
-			ssi.data.Store(fieldName, sl)
+			siImpl.data.Store(fieldName, sl)
 			return true
 		}
 	}
 	return false
 }
 
-func (ssi *StorageIndexImpl) Iterator(fieldName string) datastruct.Iterator {
-	if v, ok := ssi.data.Load(fieldName); ok {
+func (siImpl *StorageIndexImpl) Iterator(fieldName string) datastruct.Iterator {
+	if v, ok := siImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			return sl.Iterator()
 		}

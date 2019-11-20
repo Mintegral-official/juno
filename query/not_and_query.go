@@ -19,9 +19,6 @@ func NewNotAndQuery(querys []Query, checks []Checker) *NotAndQuery {
 
 func (n NotAndQuery) Next() (document.DocId, error) {
 	//	panic("implement me")
-	andRes, err := n.AndQuery.Next()
-
-
 	return 0, nil
 }
 
@@ -31,7 +28,7 @@ func (n NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (n NotAndQuery) Current() (document.DocId, error) {
-
+  return 0, nil
 }
 
 func (n NotAndQuery) String() string {

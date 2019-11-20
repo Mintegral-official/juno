@@ -1,7 +1,6 @@
 package index
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -39,7 +38,7 @@ func TestStorageIndexImpl(t *testing.T) {
 		a := s.Iterator("fieldName1")
 		c := 0
 		for a.HasNext() {
-			fmt.Println(a.Next())
+			a.Next()
 			c++
 		}
 		So(c, ShouldEqual, 4)

@@ -15,8 +15,8 @@ func NewInvertedIndexImpl() *InvertedIndexImpl {
 	return &InvertedIndexImpl{data: sync.Map{}}
 }
 
-func (sii *InvertedIndexImpl) Add(fieldName string, id document.DocId) error {
-	if v, ok := sii.data.Load(fieldName); ok {
+func (iiImpl *InvertedIndexImpl) Add(fieldName string, id document.DocId) error {
+	if v, ok := iiImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Add(id, nil)
 		} else {
@@ -28,25 +28,25 @@ func (sii *InvertedIndexImpl) Add(fieldName string, id document.DocId) error {
 			return err
 		}
 		sl.Add(id, nil)
-		sii.data.Store(fieldName, sl)
+		iiImpl.data.Store(fieldName, sl)
 	}
 	return nil
 }
 
-func (sii *InvertedIndexImpl) Del(fieldName string, id document.DocId) bool {
+func (iiImpl *InvertedIndexImpl) Del(fieldName string, id document.DocId) bool {
 
-	if v, ok := sii.data.Load(fieldName); ok {
+	if v, ok := iiImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Del(id)
-			sii.data.Store(fieldName, sl)
+			iiImpl.data.Store(fieldName, sl)
 			return true
 		}
 	}
 	return false
 }
 
-func (slii *InvertedIndexImpl) Iterator(fieldName string) datastruct.Iterator {
-	if v, ok := slii.data.Load(fieldName); ok {
+func (iiImpl *InvertedIndexImpl) Iterator(fieldName string) datastruct.Iterator {
+	if v, ok := iiImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			return sl.Iterator()
 		}

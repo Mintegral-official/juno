@@ -81,5 +81,13 @@ func (t *OrQuery) String() string {
 }
 
 func (o *OrQuery) check(id document.DocId) bool {
-	return true
+	if o.checkers == nil {
+		return true
+	}
+	for _, v := range o.checkers {
+		if v.Check(id) {
+			return true
+		}
+	}
+	return false
 }

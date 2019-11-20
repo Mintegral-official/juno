@@ -1,7 +1,6 @@
 package datastruct
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -99,80 +98,98 @@ func TestSkipListIterator_GetGE(t *testing.T) {
 		s.Add(i, nil)
 	}
 	a := s.Iterator()
-	fmt.Println(a.GetGE(99))
-	fmt.Println(a.GetGE(99))
-	fmt.Println(a.GetGE(99))
+
+	Convey("getGE", t, func() {
+		v := a.GetGE(99)
+		So(v.(*Element).key, ShouldEqual, 99)
+
+		v = a.GetGE(99)
+		So(v.(*Element).key, ShouldEqual, 99)
+
+		v = a.GetGE(99)
+		So(v.(*Element).key, ShouldEqual, 99)
+	})
 }
 
-//
-//func getGE(s *SkipListIterator) {
-//	for i := 0; i < 100000; i++ {
-//		s.GetGE(arr[i])
-//	}
-//}
-//
-//func add1(s *SkipListIterator) {
-//	for i := 0; i < 200000; i++ {
-//		s.Add(arr[i], [1]byte{})
-//	}
-//}
-//
-//func TestSkipListIterator_First(t *testing.T) {
-//	a := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
-//	for i := 0; i < 1000; i++ {
-//		a.Add(i, nil)
-//	}
-//	fmt.Println(a.GetGE(10))
-//	fmt.Println(a.GetGE(324))
-//	a.Del(10)
-//	a.Del(324)
-//	fmt.Println(a.GetGE(10))
-//	fmt.Println(a.GetGE(324))
-//}
-//
-//func BenchmarkSkipListIterator_GetGE(b *testing.B) {
-//	a := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
-//	add1(a)
-//	b.ResetTimer()
-//	b.ReportAllocs()
-//	for i := 0; i < b.N; i++ {
-//		getGE(a)
-//	}
-//}
-//
-//func BenchmarkSkipListIterator_GetGE_RunParallel(b *testing.B) {
-//	a := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
-//	add1(a)
-//	b.ResetTimer()
-//	b.ReportAllocs()
-//	b.RunParallel(func(pb *testing.PB) {
-//		for pb.Next() {
-//			getGE(a)
-//		}
-//	})
-//}
-//
-//func BenchmarkNewSkipListIterator_Next(b *testing.B) {
-//	a := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
-//	add1(a)
-//	b.ResetTimer()
-//	b.ReportAllocs()
-//	for i := 0; i < b.N; i++ {
-//		for a.HasNext() {
-//			a.Next()
-//		}
-//	}
-//}
-//
+func getGE(s *SkipListIterator) {
+	for i := 0; i < 100000; i++ {
+		s.GetGE(arr[i])
+	}
+}
+
+func add1(s *SkipList) {
+	for i := 0; i < 200000; i++ {
+		s.Add(arr[i], [1]byte{})
+	}
+}
+
+func TestSkipListIterator_First(t *testing.T) {
+	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	for i := 0; i < 1000; i++ {
+		a.Add(i, nil)
+	}
+	s := a.Iterator()
+	Convey("del", t, func() {
+		v := s.GetGE(10)
+		So(v.(*Element).key, ShouldEqual, 10)
+		v = s.GetGE(324)
+		So(v.(*Element).key, ShouldEqual, 324)
+		a.Del(10)
+		a.Del(324)
+		So(a.Len(), ShouldEqual, 998)
+		v = s.GetGE(10)
+		So(v.(*Element).key, ShouldEqual, 324)
+		v = s.GetGE(324)
+		So(v.(*Element).key, ShouldEqual, 324)
+	})
+
+}
+
+func BenchmarkSkipListIterator_GetGE(b *testing.B) {
+	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	add1(a)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		getGE(a.Iterator())
+	}
+}
+
+func BenchmarkSkipListIterator_GetGE_RunParallel(b *testing.B) {
+	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	add1(a)
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			getGE(a.Iterator())
+		}
+	})
+}
+
+func BenchmarkNewSkipListIterator_Next(b *testing.B) {
+	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	add1(a)
+	s := a.Iterator()
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		for s.HasNext() {
+			s.Next()
+		}
+	}
+}
+
 //func BenchmarkNewSkipListIterator_Next_RunParallel(b *testing.B) {
-//	a := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
+//	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
 //	add1(a)
+//	s := a.Iterator()
 //	b.ResetTimer()
 //	b.ReportAllocs()
 //	b.RunParallel(func(pb *testing.PB) {
 //		for pb.Next() {
-//			for a.HasNext() {
-//				a.Next()
+//			for s.HasNext() {
+//				s.Next()
 //			}
 //		}
 //	})

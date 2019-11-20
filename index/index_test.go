@@ -1,7 +1,6 @@
 package index
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
@@ -126,7 +125,7 @@ func TestInterface(t *testing.T) {
 	b = &i
 
 	if b == a {
-		fmt.Println("xxxxxxxxxxxxxxx")
+		// fmt.Println("xxxxxxxxxxxxxxx")
 	}
 
 }
