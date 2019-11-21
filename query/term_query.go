@@ -20,13 +20,20 @@ func NewTermQuery(iter datastruct.Iterator) *TermQuery {
 }
 
 func (t *TermQuery) Next() (document.DocId, error) {
-	element := t.iterator.Next()
-	if element != nil {
+
+	if t.iterator == nil {
+		return 0, helpers.DocumentError
+	}
+
+	if element := t.iterator.Next(); element != nil {
 		v, ok := element.(*datastruct.Element)
 		if !ok {
 			return 0, helpers.ElementNotfound
 		}
 		if v == nil {
+			return 0, helpers.ElementNotfound
+		}
+		if v.Key() == nil {
 			return 0, helpers.ElementNotfound
 		}
 		if v, ok := v.Key().(document.DocId); ok {
@@ -39,13 +46,20 @@ func (t *TermQuery) Next() (document.DocId, error) {
 }
 
 func (t *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
-	v := t.iterator.GetGE(id)
-	if v != nil {
+
+	if t.iterator == nil {
+		return 0, helpers.DocumentError
+	}
+
+	if v := t.iterator.GetGE(id); v != nil {
 		v, ok := v.(*datastruct.Element)
 		if !ok {
 			return 0, helpers.ElementNotfound
 		}
 		if v == nil {
+			return 0, helpers.ElementNotfound
+		}
+		if v.Key() == nil {
 			return 0, helpers.ElementNotfound
 		}
 		if v, ok := v.Key().(document.DocId); ok {
