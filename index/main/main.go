@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/Mintegral-official/juno/conf"
+	"github.com/Mintegral-official/juno/model"
+)
 
 //
 ///**
@@ -155,19 +159,29 @@ import "fmt"
 //
 //}
 
-type x struct {
-	a int
-}
-
 func main() {
-	x := &x{a:1}
-	y := *x
-	z := &y
 
-	fmt.Println(x, y, z)
+	cfg := &conf.MongoCfg{
+		URI:            "mongodb://localhost:27017",
+		DB:             "new_adn",
+		Collection:     "campaign",
+		ConnectTimeout: 10000,
+		ReadTimeout:    20000,
+	}
 
-	z.a = 100
+	mon, err := model.NewMongo(cfg)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(mon)
+	r, e := mon.Find()
+	if err == nil {
+		fmt.Println(r)
+	}
+	fmt.Println(e)
 
-	fmt.Println(x, y, z)
+	for i := 0; i < len(r); i++ {
+		fmt.Println(r[i].CampaignId)
+	}
 
 }
