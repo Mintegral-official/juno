@@ -64,6 +64,12 @@ type CampaignInfo struct {
 	ApkVersion         *string                      `bson:"apkVersion,omitempty" json:"apkVersion,omitempty"`
 	ApkMd5             *string                      `bson:"apkMd5,omitempty" json:"apkMd5,omitempty"`
 	ApkUrl             *string                      `bson:"apkUrl,omitempty" json:"apkUrl,omitempty"`
+	Platform           *int32                       `bson:"platform,omitempty" json:"platform,omitempty"`
+	OsVersionMinV2     *int                         `bson:"oVersionMinV2,omitempty" json:"osVersionMinV2,omitempty"`
+	OsVersionMaxV2     *int                         `bson:"osVersionMaxV2,omitempty" json:"osVersionMaxV2,omitempty"`
+	StartTime          *int                         `bson:"startTime,omitempty" json:"startTime,omitempty"`
+	EndTime            *int                         `bson:"endTime,omitempty" json:"endTime,omitempty"`
+	NetWorkType        []int32                      `bson:"netWorkType,omitempty" json:"netWorkType,omitempty"`
 	// Creative 相关的字段
 	BasicCrList           *BasicCrList                        `bson:"basicCrList,omitempty" json:"basicCrList,omitempty"`
 	ReadCreative          *int                                `bson:"readCreative,omitempty" json:"readCreative,omitempty"`

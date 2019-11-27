@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"github.com/Mintegral-official/juno/conf"
-	"github.com/Mintegral-official/juno/model"
+	"strconv"
+	"unsafe"
 )
 
 //
@@ -161,27 +160,59 @@ import (
 
 func main() {
 
-	cfg := &conf.MongoCfg{
-		URI:            "mongodb://localhost:27017",
-		DB:             "new_adn",
-		Collection:     "campaign",
-		ConnectTimeout: 10000,
-		ReadTimeout:    20000,
+	//cfg := &conf.MongoCfg{
+	//	URI:            "mongodb://192.168.1.198:27017",
+	//	DB:             "new_adn",
+	//	Collection:     "campaign",
+	//	ConnectTimeout: 10000,
+	//	ReadTimeout:    20000,
+	//}
+	//
+	//mon, err := model.NewMongo(cfg)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//fmt.Println(mon)
+	//r, e := mon.Find()
+	//if err == nil {
+	//	fmt.Println(r)
+	//}
+	//fmt.Println(e)
+	//
+	//for i := 0; i < len(r); i++ {
+	//	fmt.Println(r[i].CampaignId)
+	//}
+
+}
+
+func nextGreaterElement(n int) int {
+    m := strconv.Itoa(n)
+    s := make([]int, len(m))
+    for n > 0 {
+		s = append(s, n % 10)
+		n /= 10
+	}
+	i := len(m) - 1
+	for i >= 1 && s[i] <= s[i - 1] {
+		i--
+	}
+	if i == 0 {
+		return -1
+	}
+	j := len(m) - 1
+	for j >= 0 && s[j] <= s[i] {
+		j--
 	}
 
-	mon, err := model.NewMongo(cfg)
-	if err != nil {
-		fmt.Println(err)
+	s[j], s[i] = s[i], s[j]
+	j = len(m) - 1
+	for s[i] < s[j] {
+		s[j], s[i] = s[i], s[j]
+		i++
+		j--
 	}
-	fmt.Println(mon)
-	r, e := mon.Find()
-	if err == nil {
-		fmt.Println(r)
-	}
-	fmt.Println(e)
-
-	for i := 0; i < len(r); i++ {
-		fmt.Println(r[i].CampaignId)
-	}
-
+	tmp := unsafe.Pointer(&s)
+	m = *(*string)(tmp)
+	res, _ := strconv.Atoi(m)
+	return res
 }

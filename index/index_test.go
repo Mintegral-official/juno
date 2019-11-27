@@ -1,8 +1,10 @@
 package index
 
 import (
+	"github.com/Mintegral-official/juno/conf"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/model"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
@@ -127,5 +129,67 @@ func TestInterface(t *testing.T) {
 	if b == a {
 		// fmt.Println("xxxxxxxxxxxxxxx")
 	}
+
+}
+
+func TestNewIndex2(t *testing.T) {
+	cfg := &conf.MongoCfg{
+		URI:            "mongodb://localhost:27017",
+		DB:             "new_adn",
+		Collection:     "campaign",
+		ConnectTimeout: 10000,
+		ReadTimeout:    20000,
+	}
+
+	Convey("mongoIndex", t, func() {
+		mon, err := model.NewMongo(cfg)
+		pkgNames := make([]string, 10)
+		osVersionCodeV2 := ""
+		timestamp := -1
+		category := -1
+		networkId := -1
+		directMarket := -1
+		networkType := -1
+		So(err, ShouldNotBeNil)
+		// fmt.Println(mon)
+		r, e := mon.Find()
+		So(e, ShouldNotBeNil)
+		//fmt.Println(e)
+		for i := 0; i < len(r); i++ {
+			if !helpers.In(r[i].PackageName, pkgNames) {
+				continue
+			}
+			if !r[i].IsSSPlatform() {
+				continue
+			}
+			if int(*r[i].AdvertiserId) == 919 || int(*r[i].AdvertiserId) == 976 {
+				continue
+			}
+			if !helpers.In(osVersionCodeV2, r[i].OsVersionMinV2, r[i].OsVersionMaxV2) {
+				continue
+			}
+			if !helpers.In(timestamp, r[i].StartTime, r[i].EndTime) {
+				continue
+			}
+			if !helpers.Equal(category, "UNKNOWN") || !helpers.Equal(category, int(*r[i].Category)) {
+				continue
+			}
+			if !helpers.Equal(networkId, r[i].Network) {
+				continue
+			}
+			if !helpers.Equal(directMarket, "UNKNOWN") || !helpers.Equal(directMarket, "NO_LIMIT") ||
+				!(helpers.Equal(directMarket, "NO_APK") && (helpers.Equal(r[i].CampaignType, "GooglePlay") ||
+					helpers.Equal(r[i].CampaignType, "OTHER"))) || !(helpers.Equal(directMarket, "ONLY_APK") &&
+				helpers.Equal(r[i].CampaignType, "APK")) || !(helpers.Equal(directMarket, "ONLY_GP") &&
+				helpers.Equal(r[i].CampaignType, "GooglePlay")) {
+				continue
+			}
+			if !helpers.In("UNKNOWN", r[i].NetWorkType) || !helpers.In(networkType, r[i].NetWorkType) ||
+				!(helpers.In("RECALL_IF_UNKNOWN", r[i].NetWorkType) && helpers.Equal(networkType, "UNKNOWN")) {
+				continue
+			}
+
+		}
+	})
 
 }

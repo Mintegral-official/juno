@@ -3,6 +3,7 @@ package index
 import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/query"
 )
 
 type IndexImpl struct {
@@ -16,6 +17,20 @@ func NewIndex(name string) *IndexImpl {
 		storageIndex:  NewStorageIndexImpl(),
 	}
 
+}
+
+func (i *IndexImpl) GetInvertedIndex() InvertedIndex {
+	if i == nil || i.invertedIndex == nil {
+		return nil
+	}
+	return i.invertedIndex
+}
+
+func (i *IndexImpl) GetStorageIndex() StorageIndex {
+	if i == nil || i.storageIndex == nil {
+		return nil
+	}
+	return i.storageIndex
 }
 
 func (i *IndexImpl) Add(doc *document.DocInfo) error {
@@ -82,4 +97,22 @@ func (i *IndexImpl) Dump(filename string) error {
 
 func (i *IndexImpl) Load(filename string) error {
 	return nil
+}
+
+func (i *IndexImpl) Search(query query.Query) *SearchResult {
+	if query == nil {
+		return nil
+	}
+	s := &SearchResult{Docs: []document.DocId{}}
+	id, err := query.Current()
+	if err != nil {
+		return s
+	}
+	s.Docs = append(s.Docs, id)
+	id, err = query.Next()
+	for err == nil {
+		s.Docs = append(s.Docs, id)
+		id, err = query.Next()
+	}
+    return s
 }
