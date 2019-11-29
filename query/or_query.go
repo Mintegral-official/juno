@@ -9,7 +9,6 @@ import (
 type OrQuery struct {
 	checkers []Checker
 	h        Heap
-	curIdx   int
 }
 
 func NewOrQuery(querys []Query, checkers []Checker) *OrQuery {
