@@ -99,6 +99,10 @@ func (i *IndexImpl) Load(filename string) error {
 	return nil
 }
 
+func (i *IndexImpl) GetDataType(fieldName string) document.FieldType {
+    return 0
+}
+
 func (i *IndexImpl) Search(query query.Query) *SearchResult {
 	if query == nil {
 		return nil

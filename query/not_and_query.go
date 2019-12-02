@@ -53,15 +53,17 @@ func (n *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			return 0, helpers.NoMoreData
 		}
 		if len(n.querys) == 1 {
-			if n.check(target) {
-				return target, nil
-			} else {
-				_, _ = n.querys[0].Next()
+			for !n.check(target) {
+				target, err = n.querys[0].Next()
 			}
+			return target, nil
 		}
 		for i := 1; i < len(n.querys); i++ {
-            if _, err := n.querys[i].Current(); err != nil {
-            	return target, nil
+			if _, err := n.querys[i].Current(); err != nil {
+				for !n.check(target) {
+					target, err = n.querys[0].Next()
+				}
+				return target, nil
 			}
 			cur, err := n.querys[i].GetGE(target)
 			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(n.querys)-1 {
