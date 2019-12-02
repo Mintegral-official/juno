@@ -8,6 +8,7 @@ import (
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/model"
 	"github.com/Mintegral-official/juno/query"
+	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
 	"time"
 )
@@ -112,15 +113,15 @@ func (ib *IndexBuilderImpl) build() *index.IndexImpl {
 				Value:     c[i].OsVersionMinV2,
 			},
 		}
-		n := operation.NewOperationImpl(*c[i].Price)
-		v := []float64{1.05, 2.4, 0.57, 1.24, 1.05, 4.29}
-		inf := make([]interface{}, len(v))
-		for i, v := range v {
-			inf[i] = v
-		}
-		if !n.In(inf) {
-			continue
-		}
+		//n := operation.NewOperationImpl(*c[i].Price)
+		//v := []float64{1.05, 2.4, 0.57, 1.24, 1.05, 4.29}
+		//inf := make([]interface{}, len(v))
+		//for i, v := range v {
+		//	inf[i] = v
+		//}
+		//if !n.In(inf) {
+		//	continue
+		//}
 		_ = idx.Add(info)
 	}
 	return idx
@@ -145,6 +146,8 @@ func main() {
 		if2 := ii.GetInvertedIndex().Iterator("Platform").(*datastruct.SkipListIterator)
 		if3 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
+		if33 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+
 		t := time.Now()
 		q := query.NewOrQuery([]query.Query{
 			query.NewTermQuery(if3),
@@ -154,7 +157,9 @@ func main() {
 				query.NewTermQuery(if3),
 			}, nil),
 		},
-			nil,
+			[]check.Checker{
+					check.NewCheckerImpl(if33, []float64{1.05, 2.4, 0.57, 1.24, 1.05, 4.29}, operation.IN),
+			},
 		)
 		fmt.Println(time.Since(t))
 
@@ -162,6 +167,5 @@ func main() {
 		res := ii.Search(q)
 		fmt.Println(time.Since(t))
 		fmt.Println(len(res.Docs))
-		fmt.Println(res.Time)
 	}
 }

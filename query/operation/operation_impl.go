@@ -29,7 +29,7 @@ func (ee *OperationImpl) Less(value interface{}) bool {
 	return helpers.Compare(ee.FieldValue, value) == -1
 }
 
-func (ee *OperationImpl) In(value ...interface{}) bool {
+func (ee *OperationImpl) In(value []interface{}) bool {
 	if value == nil {
 		return false
 	}
