@@ -46,6 +46,13 @@ func (element *Element) Key() interface{} {
 	return element.key
 }
 
+func (element *Element) Value() interface{} {
+	if element == nil {
+		return nil
+	}
+	return element.value
+}
+
 func ElementCopy(element *Element) *Element {
 	if element == nil {
 		return nil
@@ -58,4 +65,3 @@ func ElementCopy(element *Element) *Element {
 	}
 	return e
 }
-

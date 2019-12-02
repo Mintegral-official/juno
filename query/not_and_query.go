@@ -3,15 +3,16 @@ package query
 import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/query/check"
 )
 
 type NotAndQuery struct {
 	querys   []Query
-	checkers []Checker
+	checkers []check.Checker
 	curIdx   int
 }
 
-func NewNotAndQuery(querys []Query, checkers []Checker) *NotAndQuery {
+func NewNotAndQuery(querys []Query, checkers []check.Checker) *NotAndQuery {
 	if querys == nil {
 		return nil
 	}
@@ -99,5 +100,13 @@ func (n *NotAndQuery) String() string {
 }
 
 func (n *NotAndQuery) check(id document.DocId) bool {
+	if n.checkers == nil {
+		return true
+	}
+	for i := 1; i < len(n.checkers); i++ {
+		if n.checkers[i].Check(id) {
+			return false
+		}
+	}
 	return true
 }

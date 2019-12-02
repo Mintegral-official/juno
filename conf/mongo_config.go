@@ -1,6 +1,8 @@
 package conf
 
-import "go.mongodb.org/mongo-driver/mongo/options"
+import (
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
 
 type MongoCfg struct {
 	URI            string
@@ -9,4 +11,8 @@ type MongoCfg struct {
 	ConnectTimeout int
 	ReadTimeout    int
 	FindOpt        *options.FindOptions
+}
+
+func NewMongoCfg() *MongoCfg {
+	return nil
 }

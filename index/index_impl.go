@@ -100,7 +100,7 @@ func (i *IndexImpl) Load(filename string) error {
 }
 
 func (i *IndexImpl) GetDataType(fieldName string) document.FieldType {
-    return 0
+	return 0
 }
 
 func (i *IndexImpl) Search(query query.Query) *SearchResult {
@@ -118,5 +118,5 @@ func (i *IndexImpl) Search(query query.Query) *SearchResult {
 		s.Docs = append(s.Docs, id)
 		id, err = query.Next()
 	}
-    return s
+	return s
 }

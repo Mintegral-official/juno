@@ -1,4 +1,4 @@
-package query
+package operation
 
 type OP int64
 

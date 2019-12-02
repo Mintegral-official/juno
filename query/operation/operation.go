@@ -1,4 +1,4 @@
-package query
+package operation
 
 type Operation interface {
 	Equal(value interface{}) bool

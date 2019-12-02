@@ -1,0 +1,10 @@
+# uri
+URI = "mongodb://localhost:27017"
+# db
+DB = "new_adn"
+# collection
+Collection = "campaign"
+# connectTimeout
+ConnectTimeout = 10000
+# readTimeout
+ReadTimeout = 20000

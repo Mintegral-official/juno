@@ -20,7 +20,7 @@ type Mongo struct {
 	collection *mongo.Collection
 	cursor     *mongo.Cursor
 	findOpt    *options.FindOptions
-	results     []*CampaignInfo
+	results    []*CampaignInfo
 }
 
 func NewMongo(mongoCfg *conf.MongoCfg) (*Mongo, error) {
@@ -34,16 +34,20 @@ func NewMongo(mongoCfg *conf.MongoCfg) (*Mongo, error) {
 	ctx, _ := context.WithTimeout(context.TODO(), time.Duration(mongoCfg.ConnectTimeout)*time.Microsecond)
 	opt := options.Client().ApplyURI(mongoCfg.URI)
 	opt.SetReadPreference(readpref.SecondaryPreferred())
+
 	direct := true
 	opt.Direct = &direct
 	client, err := mongo.Connect(ctx, opt)
+
 	if err != nil {
 		return nil, err
 	}
+
 	m.client = client
 	m.findOpt = options.MergeFindOptions(mongoCfg.FindOpt)
 	d := time.Duration(mongoCfg.ReadTimeout) * time.Microsecond
 	m.findOpt.MaxTime = &d
+
 	if err = client.Ping(ctx, readpref.Primary()); err != nil {
 		return nil, err
 	}
@@ -71,9 +75,6 @@ func (m *Mongo) Find() ([]*CampaignInfo, error) {
 			continue
 		}
 		m.results = append(m.results, &ele)
-		//if len(m.results) % 10000 == 0 {
-		//	fmt.Println(len(m.results))
-		//}
 	}
 	if err := cur.Err(); err != nil {
 		return nil, helpers.CursorError

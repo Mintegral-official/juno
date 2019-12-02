@@ -4,14 +4,15 @@ import (
 	"container/heap"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/query/check"
 )
 
 type OrQuery struct {
-	checkers []Checker
+	checkers []check.Checker
 	h        Heap
 }
 
-func NewOrQuery(querys []Query, checkers []Checker) *OrQuery {
+func NewOrQuery(querys []Query, checkers []check.Checker) *OrQuery {
 	if querys == nil {
 		return nil
 	}

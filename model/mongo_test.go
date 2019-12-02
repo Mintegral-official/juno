@@ -24,7 +24,5 @@ func TestNewMongo(t *testing.T) {
 		//f, e := m.Find()
 		//So(f, ShouldBeNil)
 		//So(e, ShouldBeNil)
-
 	})
-
 }

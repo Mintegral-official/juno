@@ -197,6 +197,15 @@ func TestNewIndex2(t *testing.T) {
 
 }
 
+func TestIndexImpl_Del(t *testing.T) {
+	var a interface{} = 100
+	var b interface{} = 100
+	fmt.Println(uintptr(unsafe.Pointer(&a)) == uintptr(unsafe.Pointer(&b)))
+	fmt.Println(unsafe.Pointer(&a))
+	fmt.Println(unsafe.Pointer(&b))
+
+}
+
 func TestNewStorageIndexImpl2(t *testing.T) {
 	var s = make([]int, 10, 100)
 	var Len = *(*int)(unsafe.Pointer(uintptr(unsafe.Pointer(&s)) + uintptr(8)))
