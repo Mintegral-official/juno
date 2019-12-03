@@ -109,10 +109,11 @@ func (i *IndexImpl) Search(query query.Query) *SearchResult {
 	}
 	s := &SearchResult{Docs: []document.DocId{}}
 	id, err := query.Current()
-	if err != nil {
+	if err == nil {
+		s.Docs = append(s.Docs, id)
+	} else {
 		return s
 	}
-	s.Docs = append(s.Docs, id)
 	id, err = query.Next()
 	for err == nil {
 		s.Docs = append(s.Docs, id)

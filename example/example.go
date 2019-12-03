@@ -127,7 +127,6 @@ func (ib *IndexBuilderImpl) build() *index.IndexImpl {
 	return idx
 }
 
-
 func main() {
 	cfg := &conf.MongoCfg{
 		URI:            "mongodb://localhost:27017",
@@ -146,7 +145,12 @@ func main() {
 		if2 := ii.GetInvertedIndex().Iterator("Platform").(*datastruct.SkipListIterator)
 		if3 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
-		if33 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if331 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if332 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if333 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if334 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if335 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if336 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
 		t := time.Now()
 		q := query.NewOrQuery([]query.Query{
@@ -158,7 +162,14 @@ func main() {
 			}, nil),
 		},
 			[]check.Checker{
-					check.NewCheckerImpl(if33, []float64{1.05, 2.4, 0.57, 1.24, 1.05, 4.29}, operation.IN),
+				check.NewInCheckerImpl([]check.Checker{
+					check.NewCheckerImpl(if331, 1.05, operation.EQ),
+					check.NewCheckerImpl(if332, 2.4, operation.EQ),
+					check.NewCheckerImpl(if333, 0.57, operation.EQ),
+					check.NewCheckerImpl(if334, 1.24, operation.EQ),
+					check.NewCheckerImpl(if335, 1.05, operation.EQ),
+					check.NewCheckerImpl(if336, 4.29, operation.EQ),
+				}),
 			},
 		)
 		fmt.Println(time.Since(t))
@@ -167,5 +178,8 @@ func main() {
 		res := ii.Search(q)
 		fmt.Println(time.Since(t))
 		fmt.Println(len(res.Docs))
+		for _, v := range res.Docs {
+			fmt.Println(v)
+		}
 	}
 }
