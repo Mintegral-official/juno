@@ -4,6 +4,7 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query"
+	"time"
 )
 
 type IndexImpl struct {
@@ -108,6 +109,7 @@ func (i *IndexImpl) Search(query query.Query) *SearchResult {
 		return nil
 	}
 	s := &SearchResult{Docs: []document.DocId{}}
+	now := time.Now()
 	if _, err := query.Current(); err != nil {
 		return s
 	}
@@ -116,5 +118,7 @@ func (i *IndexImpl) Search(query query.Query) *SearchResult {
 		s.Docs = append(s.Docs, id)
 		id, err = query.Next()
 	}
+	end := time.Since(now)
+	s.Time = end
 	return s
 }

@@ -80,7 +80,7 @@ func (ib *IndexBuilderImpl) build() *index.IndexImpl {
 			{
 				Name:      "Price",
 				IndexType: 2,
-				Value:     c[i].Price,
+				Value:     *c[i].Price,
 			},
 			{
 				Name:      "StartTime",
@@ -168,12 +168,11 @@ func main() {
 		)
 		fmt.Println(time.Since(t))
 
-		t = time.Now()
 		res := ii.Search(q)
-		fmt.Println(time.Since(t))
 		fmt.Println(len(res.Docs))
-		for _, v := range res.Docs {
-			fmt.Println(v)
-		}
+		fmt.Println(res.Time)
+		//for _, v := range res.Docs {
+		//	fmt.Println(v)
+		//}
 	}
 }
