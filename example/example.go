@@ -129,7 +129,7 @@ func (ib *IndexBuilderImpl) build() *index.IndexImpl {
 
 func main() {
 	cfg := &conf.MongoCfg{
-		URI:            "mongodb://localhost:27017",
+		URI:            "mongodb://192.168.1.198:27017",
 		DB:             "new_adn",
 		Collection:     "campaign",
 		ConnectTimeout: 10000,
@@ -141,16 +141,14 @@ func main() {
 		fmt.Println("*********")
 	} else {
 		ii := ib.build()
-		if1 := ii.GetInvertedIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
-		if2 := ii.GetInvertedIndex().Iterator("Platform").(*datastruct.SkipListIterator)
-		if3 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if1 := ii.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
+		if2 := ii.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
+		if3 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
-		if331 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
-		if332 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
-		if333 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
-		if334 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
-		if335 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
-		if336 := ii.GetInvertedIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if331 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if332 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if333 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+		if334 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
 		t := time.Now()
 		q := query.NewOrQuery([]query.Query{
@@ -162,14 +160,10 @@ func main() {
 			}, nil),
 		},
 			[]check.Checker{
-				check.NewInCheckerImpl([]check.Checker{
-					check.NewCheckerImpl(if331, 1.05, operation.EQ),
-					check.NewCheckerImpl(if332, 2.4, operation.EQ),
-					check.NewCheckerImpl(if333, 0.57, operation.EQ),
-					check.NewCheckerImpl(if334, 1.24, operation.EQ),
-					check.NewCheckerImpl(if335, 1.05, operation.EQ),
-					check.NewCheckerImpl(if336, 4.29, operation.EQ),
-				}),
+				check.NewCheckerImpl(if331, 20.0, operation.LT),
+				check.NewCheckerImpl(if332, 16.4, operation.LE),
+				check.NewCheckerImpl(if333, 0.5, operation.EQ),
+				check.NewCheckerImpl(if334, 1.24, operation.EQ),
 			},
 		)
 		fmt.Println(time.Since(t))

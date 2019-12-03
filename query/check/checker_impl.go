@@ -30,21 +30,36 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	if v == nil {
 		return false
 	}
-	for !UtilCheck(v, c.op, c.value) {
-		iter.Next()
-		v = iter.Current().(*datastruct.Element).Value()
-		if v == nil{
-			return false
-		}
+
+	element := iter.GetGE(id)
+	if element == nil {
+		return false
 	}
-	for iter.HasNext() {
-		element := iter.Current()
-		if helpers.Compare(id, element.(*datastruct.Element).Key()) == 0 {
-			return true
-		} else if helpers.Compare(id, element.(*datastruct.Element).Key()) > 0 {
-			return false
-		}
-		iter.Next()
+	key := element.(*datastruct.Element).Key()
+	if key == nil {
+		return false
 	}
-	return false
+
+	if k := key.(document.DocId); helpers.Compare(k, id) != 0 {
+		return false
+	}
+	v = iter.Current().(*datastruct.Element).Value()
+	return UtilCheck(v, c.op, c.value)
+	//for !UtilCheck(v, c.op, c.value) {
+	//	iter.Next()
+	//	v = iter.Current().(*datastruct.Element).Value()
+	//	if v == nil{
+	//		return false
+	//	}
+	//}
+	//for iter.HasNext() {
+	//	element := iter.Current()
+	//	if helpers.Compare(id, element.(*datastruct.Element).Key()) == 0 {
+	//		return true
+	//	} else if helpers.Compare(id, element.(*datastruct.Element).Key()) > 0 {
+	//		return false
+	//	}
+	//	iter.Next()
+	//}
+	//return false
 }
