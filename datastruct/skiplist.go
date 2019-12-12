@@ -53,7 +53,6 @@ func (sl *SkipList) Add(key, value interface{}) {
 	}
 
 	h := sl.randLevel()
-
 	x := newNode(key, value, h)
 	for i, n := range sl.previousNodeCache[:h] {
 		x.setNext(i, n.Next(i))
@@ -125,7 +124,7 @@ func (sl *SkipList) findGE(key interface{}, flag bool, element [DefaultMaxLevel]
 
 func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
 	x := sl.header
-	h := int(sl.level) - 1
+	h := sl.level - 1
 	for h >= 0 {
 		next := x.Next(h)
 		if next == nil || sl.cmp.Compare(next.key, key) >= 0 {

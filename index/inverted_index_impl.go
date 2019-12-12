@@ -15,6 +15,18 @@ func NewInvertedIndexImpl() *InvertedIndexImpl {
 	return &InvertedIndexImpl{data: sync.Map{}}
 }
 
+func (iiImpl *InvertedIndexImpl) Count() int {
+	var count = 0
+	iiImpl.data.Range(func(key, value interface{}) bool {
+		if key != nil {
+			count++
+			return true
+		}
+		return false
+	})
+	return count
+}
+
 func (iiImpl *InvertedIndexImpl) Add(fieldName string, id document.DocId) error {
 	if v, ok := iiImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
@@ -51,5 +63,6 @@ func (iiImpl *InvertedIndexImpl) Iterator(fieldName string) datastruct.Iterator 
 			return sl.Iterator()
 		}
 	}
-	return nil
+	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	return sl.Iterator()
 }

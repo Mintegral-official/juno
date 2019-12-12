@@ -3,171 +3,147 @@ package main
 import "fmt"
 
 //
-///**
-// * @author: tangye
-// * @Date: 2019/11/4 19:31
-// * @Description:
-// */
-//
-/////*
-////#include <stdio.h>
-////int t() {
-////    return rand() % (1000000000 - 0 + 1) + 0;
-////}
-////*/
-////import "C"
-//import "C"
 //import (
+//	"bufio"
 //	"fmt"
-//	"github.com/Mintegral-official/juno/helpers"
-//	"github.com/Mintegral-official/juno/index"
+//	"io"
+//	"os"
+//	"strconv"
+//	"strings"
 //	"time"
-//	"unsafe"
 //)
 //
-//var s = index.NewSkipListIterator(index.DEFAULT_MAX_LEVEL, helpers.IntCompare)
-//// var s = New(helpers.IntCompare)
-//var arr1 [200001]int
-//var s1 = make([]int, 500001)
-//
-//func init() {
-//	for i := 0; i < 200001; i++ {
-//		arr1[i] = int(C.t())
-//	}
-//
-//	for i := 0; i < 200001; i++ {
-//		s.Add(arr1[i], nil)
-//	}
-//
-//	var sl index.SkipList
-//	var el index.Element
-//	fmt.Printf("Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
-//}
-//
-////func t2() {
-////	for i := 0; i <= 20000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****2**** %d ", v)
-////	}
-////}
-////func t3() {
-////	for i := 20001; i <= 40000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****3**** %d ", v)
-////	}
-////}
-////func t4() {
-////	for i := 40001; i <= 60000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****4**** %d ", v)
-////	}
-////}
-////func t5() {
-////	for i := 60001; i <= 80000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****5**** %d ", v)
-////	}
-////}
-////func t6() {
-////	for i := 80001; i <= 100000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****6**** %d ", v)
-////	}
-////}
-////func t7() {
-////	for i := 100001; i <= 120000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****7**** %d ", v)
-////	}
-////}
-////func t8() {
-////	for i := 120001; i <= 140000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****8**** %d ", v)
-////	}
-////}
-////func t9() {
-////	for i := 140001; i <= 160000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****9**** %d ", v)
-////	}
-////}
-////func t10() {
-////	for i := 160001; i <= 180000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****10**** %d ", v)
-////	}
-////}
-////func t11() {
-////	for i := 180001; i <= 200000; i++ {
-////		v, _ := s.Get(arr1[i])
-////		fmt.Println("****11**** %d ", v)
-////	}
-////}
-////func t12() {
-////	for i := 0; i < 200001; i++ {
-////		s.Add(arr1[i], nil)
-////	}
-////}
-////func t1() {
-////	go func() {
-////        for i := 0; i < 200000; i++ {
-////        	time.Sleep(250 * time.Microsecond)
-////        	//s.Get(arr1[i], nil)
-////        	fmt.Printf("111    %d  ", s.Len())
-////		}
-////	}()
-////    time.Sleep(10000)
-////
-////    go func() {
-////		for i := 0; i < 200000; i++ {
-////			time.Sleep(3000 * time.Microsecond)
-////			v, _ := s.Get(arr1[i])
-////			fmt.Printf("222    %d  ", v)
-////		}
-////	}()
-////
-////}
-//
 //func main() {
-//	//go t12()
-//	//go t2()
-//	//go t3()
-//	//go t4()
-//	//go t5()
-//	//go t6()
-//	//go t7()
-//	//go t8()
-//	//go t9()
-//	//go t10()
-//	//go t11()
-//	time.Sleep(15 * time.Second)
-//	fmt.Println("\n*****************\n")
-//	//fmt.Println(s.Len())
-//	c := 0
-//	for s.HasNext() {
-//		s.Next()
-//		c++
+//
+//	fi, err := os.Open("/Users/tangye/go/src/juno/count/main/message.txt")
+//	if err != nil {
+//		fmt.Printf("Error: %s\n", err)
+//		return
 //	}
-//	fmt.Println("\n*********\n")
-//	fmt.Println(s.Len())
-//	fmt.Println(c)
+//	defer fi.Close()
+//
+//	var bst intBinarySearchTree
+//	br := bufio.NewReader(fi)
+//
+//	t := time.Now()
+//	for {
+//		a, _, c := br.ReadLine()
+//		if c == io.EOF {
+//			break
+//		}
+//		a1 := strings.Split(string(a), ":")
+//		res, _ := strconv.Atoi(strings.Trim(a1[len(a1)-1], " "))
+//		bst.Insert(res, res)
+//	}
+//	fmt.Println(time.Since(t))
+//
+//	t = time.Now()
+//	var result []int
+//	bst.InOrderTraverse(func(i int) {
+//		result = append(result, i)
+//	})
+//
+//	fmt.Println(time.Since(t))
+//
+//	fmt.Println(len(result))
+//	fmt.Println(result[len(result)/2])
+//	fmt.Println(result[len(result)*3/4])
+//	fmt.Println(result[len(result)*9/10])
+//	fmt.Println(result[len(result)*95/100])
+//	fmt.Println(result[len(result)*99/100])
 //
 //}
+//
+//// 节点
+//type Node struct {
+//	Key   int
+//	Value int
+//	left  *Node
+//	right *Node
+//}
+//
+//type intBinarySearchTree struct {
+//	Root *Node
+//}
+//
+//func (bst *intBinarySearchTree) Insert(key int, value int) {
+//	n := &Node{key, value, nil, nil}
+//
+//	if bst.Root == nil {
+//		bst.Root = n
+//	} else {
+//		insertNode(bst.Root, n)
+//	}
+//}
+//
+//func insertNode(node, newNode *Node) {
+//	if newNode.Key < node.Key {
+//		if node.left == nil {
+//			node.left = newNode
+//		} else {
+//			insertNode(node.left, newNode)
+//		}
+//	} else {
+//		if node.right == nil {
+//			node.right = newNode
+//		} else {
+//			insertNode(node.right, newNode)
+//		}
+//	}
+//}
+//
+//func (bst *intBinarySearchTree) InOrderTraverse(f func(int int)) {
+//	inOrderTraver(bst.Root, f)
+//}
+//
+//func inOrderTraver(n *Node, f func(int int)) {
+//	if n != nil {
+//		inOrderTraver(n.left, f)
+//		f(n.Value)
+//		inOrderTraver(n.right, f)
+//	}
+//}
+type ListNode struct {
+	Val  int
+	Next *ListNode
+}
 
-type x struct {
-	a int
+func reverseBetween(head *ListNode, m int, n int) *ListNode {
+	var prev, tmp *ListNode
+	e, cur, count := head, head, 0
+	for count < n {
+		count++
+		if count > n {
+			break
+		}
+		if count == m {
+			e = cur
+		}
+		if m <= count {
+			cur, cur.Next, prev = cur.Next, prev, cur
+			continue
+		}
+		tmp = cur
+		cur = cur.Next
+	}
+	if tmp != nil {
+		tmp.Next, prev = prev, head
+	}
+
+	if e != nil {
+		e.Next = cur
+	}
+	return prev
 }
 
 func main() {
-	x := &x{a:1}
-	y := *x
-	z := &y
-
-	fmt.Println(x, y, z)
-
-	z.a = 100
-
-	fmt.Println(x, y, z)
-
+	l := &ListNode{
+		Val: 0,
+		Next: &ListNode{
+			Val:  1,
+			Next: nil,
+		},
+	}
+	fmt.Println(reverseBetween(l, 1, 2))
 }
+

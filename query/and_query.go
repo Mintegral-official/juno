@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/query/check"
 	"github.com/pkg/errors"
 )
 
 type AndQuery struct {
 	querys   []Query
-	checkers []Checker
+	checkers []check.Checker
 	curIdx   int
 }
 
-func NewAndQuery(querys []Query, checkers []Checker) *AndQuery {
+func NewAndQuery(querys []Query, checkers []check.Checker) *AndQuery {
 	if querys == nil {
 		return nil
 	}

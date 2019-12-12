@@ -82,10 +82,8 @@ func TestAndQuery_Next(t *testing.T) {
 		v, e = a.GetGE(document.DocId(3))
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
-        fmt.Println("******************")
 
 		v, e = a.GetGE(document.DocId(3))
-		fmt.Println(v, e)
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
 

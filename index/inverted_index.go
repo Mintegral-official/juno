@@ -9,4 +9,5 @@ type InvertedIndex interface {
 	Add(fieldName string, id document.DocId) error
 	Del(fieldName string, id document.DocId) bool
 	Iterator(fieldName string) datastruct.Iterator
+	Count() int
 }

@@ -15,6 +15,18 @@ func NewStorageIndexImpl() *StorageIndexImpl {
 	return &StorageIndexImpl{data: sync.Map{}}
 }
 
+func (siImpl *StorageIndexImpl) Count() int {
+	var count = 0
+	siImpl.data.Range(func(key, value interface{}) bool {
+		if key != nil {
+			count++
+			return true
+		}
+		return false
+	})
+	return count
+}
+
 func (siImpl *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{} {
 	if v, ok := siImpl.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
@@ -64,5 +76,6 @@ func (siImpl *StorageIndexImpl) Iterator(fieldName string) datastruct.Iterator {
 			return sl.Iterator()
 		}
 	}
-	return nil
+	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	return sl.Iterator()
 }
