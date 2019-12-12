@@ -15,7 +15,7 @@ import (
 )
 
 type Mongo struct {
-	cfg        *builder.MongoCfg
+	cfg        *builder.MongoIndexManagerOps
 	client     *mongo.Client
 	collection *mongo.Collection
 	cursor     *mongo.Cursor
@@ -23,7 +23,7 @@ type Mongo struct {
 	results    []*CampaignInfo
 }
 
-func NewMongo(mongoCfg *builder.MongoCfg) (*Mongo, error) {
+func NewMongo(mongoCfg *builder.MongoIndexManagerOps) (*Mongo, error) {
 	if mongoCfg == nil {
 		return nil, helpers.MongoCfgError
 	}

@@ -136,6 +136,9 @@ func (ii *IndexImpl) Search(query query.Query) *SearchResult {
 	}
 	id, err := query.Next()
 	for err == nil {
+		if !ii.GetBitMap().IsExist(int(ii.GetCampaignMap()[id])) {
+			continue
+		}
 		s.Docs = append(s.Docs, id)
 		id, err = query.Next()
 	}

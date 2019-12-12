@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/datastruct"
@@ -11,91 +12,120 @@ import (
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
+	"os"
+	"os/signal"
 )
 
-type IndexBuilderImpl struct {
-	Campaign []*model.CampaignInfo
+type CampaignParser struct {
 }
 
 var (
-	ib, ibInc *IndexBuilderImpl
-	tIndex    *index.IndexImpl
-	cfg       = &builder.MongoCfg{
+	ib     *builder.IndexBuilder
+	tIndex *index.IndexImpl
+	user   *model.CampaignInfo
+	cfg    = &builder.MongoIndexManagerOps{
 		URI:            "mongodb://13.250.108.190:27017",
+		IncInterval:    5,
+		BaseInterval:   120,
+		IncParser:      &CampaignParser{},
+		BaseParser:     &CampaignParser{},
 		DB:             "new_adn",
 		Collection:     "campaign",
+		UserData:       &model.CampaignInfo{},
 		ConnectTimeout: 10000,
 		ReadTimeout:    20000,
 	}
 )
 
-func NewIndexBuilder(cfg *builder.MongoCfg, m bson.M) *IndexBuilderImpl {
-	if cfg == nil {
-		return nil
-	}
-	mon, err := model.NewMongo(cfg)
-	if err != nil {
-		return nil
-	}
-	c, err := mon.Find(m)
-
-	if err != nil {
-		return nil
-	}
-	return &IndexBuilderImpl{
-		Campaign: c,
-	}
+func buildIndex() {
+	ib = builder.NewIndexBuilder(cfg)
+	tIndex = ib.Build()
 }
 
-func (ib *IndexBuilderImpl) CampaignFilter() []*model.CampaignInfo {
-	if ib == nil {
+func MakeInfo(info *model.CampaignInfo) *document.DocInfo {
+	if info == nil {
 		return nil
 	}
-	r := ib.Campaign
-	c := make([]*model.CampaignInfo, len(r))
-	for i := 0; i < len(r); i++ {
-		if !r[i].IsSSPlatform() {
-			continue
-		}
-		if int(*r[i].AdvertiserId) == 919 || int(*r[i].AdvertiserId) == 976 {
-			continue
-		}
-		c = append(c, r[i])
-	}
-	return c
-}
-
-func (ib *IndexBuilderImpl) build() *index.IndexImpl {
-	if ib == nil {
-		return nil
-	}
-	c := ib.Campaign
-	if c == nil || len(c) == 0 {
-		return index.NewIndex("empty")
-	}
-	idx := index.NewIndex("")
-	info := &document.DocInfo{
+	docInfo := &document.DocInfo{
 		Fields: []*document.Field{},
 	}
-	t := time.Now()
-	for i := 0; i < len(c); i++ {
-		if info = index.MakeInfo(c[i]); info != nil {
-			_ = idx.Add(info)
-		}
+	docInfo.Id = document.DocId(info.CampaignId)
+	docInfo.Fields = []*document.Field{
+		{
+			Name:      "AdvertiserId",
+			IndexType: 1,
+			Value:     info.AdvertiserId,
+		},
+		{
+			Name:      "Platform",
+			IndexType: 2,
+			Value:     info.Platform,
+		},
+		{
+			Name:      "Price",
+			IndexType: 1,
+			Value:     *info.Price,
+		},
+		{
+			Name:      "StartTime",
+			IndexType: 1,
+			Value:     info.StartTime,
+		},
+		{
+			Name:      "EndTime",
+			IndexType: 1,
+			Value:     info.EndTime,
+		},
+		{
+			Name:      "PackageName",
+			IndexType: 1,
+			Value:     info.PackageName,
+		},
+		{
+			Name:      "CampaignType",
+			IndexType: 2,
+			Value:     info.CampaignType,
+		},
+		{
+			Name:      "OsVersionMaxV2",
+			IndexType: 1,
+			Value:     info.OsVersionMaxV2,
+		},
+		{
+			Name:      "OsVersionMinV2",
+			IndexType: 1,
+			Value:     info.OsVersionMinV2,
+		},
 	}
-	fmt.Println("index build:", time.Since(t))
-	//fmt.Println(idx.GetBitMap().Count())
-	return idx
+	return docInfo
 }
 
-func buildIndex() {
-	ib = NewIndexBuilder(cfg, bson.M{"status": 1})
-	tIndex = ib.build()
-
-	go func() {
-
-	}()
+func (c *CampaignParser) Parse(bytes []byte, flag bool) (*builder.ParserResult, error) {
+	campaign := &model.CampaignInfo{}
+	if err := bson.Unmarshal(bytes, &campaign); err != nil {
+		fmt.Println("bson.Unmarsnal error:" + err.Error())
+	}
+	var info = MakeInfo(campaign)
+	var mode builder.DataMod
+	if flag {
+		return &builder.ParserResult{
+			DataMod: 0,
+			Value:   info,
+		}, nil
+	}
+	if campaign.Status == 1 {
+		if tIndex.GetBitMap().IsExist(int(tIndex.GetCampaignMap()[document.DocId(campaign.CampaignId)])) {
+			mode = 1
+		} else {
+			mode = 0
+		}
+	} else {
+		mode = 2
+	}
+	return &builder.ParserResult{
+		DataMod: mode,
+		Value:   info,
+	}, nil
 }
 
 func main() {
@@ -111,6 +141,8 @@ func main() {
 	if332 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 	if333 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 	if334 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+
+	fmt.Println(tIndex.GetBitMap().Count(), tIndex.GetStorageIndex().Count(), tIndex.GetInvertedIndex().Count())
 
 	q := query.NewOrQuery([]query.Query{
 		query.NewTermQuery(if3),
@@ -130,39 +162,13 @@ func main() {
 	res := tIndex.Search(q)
 
 	fmt.Println("res: ", len(res.Docs), res.Time)
-	for {
-		inc := time.After(5 * time.Second)
-		base := time.After(120 * time.Second)
-		now := time.Now().Unix()
-		select {
-		case <-inc:
-			fmt.Println("now & now: ", now, time.Now().Unix())
-			ibInc = NewIndexBuilder(cfg, bson.M{"updated": bson.M{"$gt": now}})
-			if ibInc == nil {
-				fmt.Println("ibInc is nil")
-				return
-			}
-		case <-base:
-			ib = NewIndexBuilder(cfg, bson.M{"status": 1})
-			tIndex = ib.build()
-		}
-		fmt.Println(len(ibInc.Campaign))
-		if ibInc != nil && ibInc.Campaign != nil && len(ibInc.Campaign) != 0 {
-			a := time.Now()
-			tIndex.IncBuild(ibInc.Campaign)
-			fmt.Println("index inc time: ", time.Since(a))
-			var docs = make([]document.DocId, len(res.Docs))
-			t := time.Now()
-			for i := 0; i < len(res.Docs); i++ {
-				if !tIndex.GetBitMap().IsExist(int(tIndex.GetCampaignMap()[res.Docs[i]])) {
-					continue
-				}
-				docs[i] = res.Docs[i]
-			}
-			fmt.Println(time.Since(t))
-			ibInc = nil
-		}
-		fmt.Println("res & resInc: ", len(res.Docs), res.Time)
-	}
-
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	c := make(chan os.Signal)
+	signal.Notify(c)
+	_ = ib.MongoIndexManager.Update(ctx)
+	res1 := tIndex.Search(q)
+	fmt.Println("res1: ", len(res1.Docs), res1.Time)
+	s := <-c
+	fmt.Println("退出信号", s)
 }

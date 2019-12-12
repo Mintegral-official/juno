@@ -2,9 +2,7 @@ package index
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/example/model"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -134,16 +132,10 @@ func TestInterface(t *testing.T) {
 }
 
 func TestNewIndex2(t *testing.T) {
-	cfg := &builder.MongoCfg{
-		URI:            "mongodb://localhost:27017",
-		DB:             "new_adn",
-		Collection:     "campaign",
-		ConnectTimeout: 10000,
-		ReadTimeout:    20000,
-	}
 
-	Convey("mongoIndex", t, func() {
-		mon, err := model.NewMongo(cfg)
+
+	//Convey("mongoIndex", t, func() {
+	//	mon, err := model.NewMongo(cfg)
 		//pkgNames := make([]string, 10)
 		//osVersionCodeV2 := ""
 		//timestamp := -1
@@ -151,8 +143,8 @@ func TestNewIndex2(t *testing.T) {
 		//networkId := -1
 		//directMarket := -1
 		//networkType := -1
-		So(mon, ShouldBeNil)
-		So(err, ShouldNotBeNil)
+		//So(mon, ShouldBeNil)
+		//So(err, ShouldNotBeNil)
 		// fmt.Println(mon)
 		//r, e := mon.Find()
 		//So(e, ShouldNotBeNil)
@@ -192,7 +184,7 @@ func TestNewIndex2(t *testing.T) {
 		//	}
 		//
 		//}
-	})
+	//})
 
 }
 

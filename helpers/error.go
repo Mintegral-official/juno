@@ -11,6 +11,7 @@ var (
 	NoMoreData         = errors.New("no more data")
 	ComparableError    = errors.New("Comparable not nil")
 	MongoCfgError      = errors.New("mongo config should not nil")
+	ConnectError       = errors.New("database connect failed")
 	CollectionNotFound = errors.New("collection not found")
 	CursorError        = errors.New("cursor wrong")
 )

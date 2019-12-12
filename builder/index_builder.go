@@ -1,62 +1,42 @@
 package builder
 
 import (
-	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/example/model"
+	"fmt"
 	"github.com/Mintegral-official/juno/index"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type IndexBuilder struct {
-	Builder
-	Campaign []*model.CampaignInfo
+	*MongoIndexManager
 }
 
-func NewIndexBuilder(cfg *MongoCfg, m bson.M) *IndexBuilder {
-	if cfg == nil {
+func NewIndexBuilder(ops *MongoIndexManagerOps) *IndexBuilder {
+	if ops == nil {
 		return nil
 	}
-	mon, err := model.NewMongo(cfg)
-
-	if err != nil {
-		return nil
-	}
-	c, err := mon.Find(m)
-
-	if err != nil {
-		return nil
-	}
+	mongoIndexManager := NewMongoIndexManager(ops)
 	return &IndexBuilder{
-		Campaign: c,
+		mongoIndexManager,
 	}
 }
 
-func (ib *IndexBuilder) CampaignFilter() []*model.CampaignInfo {
+func (ib *IndexBuilder) filter() []*ParserResult {
 	if ib == nil {
 		return nil
 	}
-	r := ib.Campaign
-	// TODO
-	return r
+	c := ib.result // TODO
+	return c
 }
 
-func (ib *IndexBuilder) build() *index.IndexImpl {
-
-	if ib == nil || ib.Campaign == nil || len(ib.Campaign) == 0 {
+func (ib *IndexBuilder) Build() *index.IndexImpl {
+	_ = ib.Find()
+	fmt.Println(len(ib.result))
+	if ib == nil || ib.result == nil || len(ib.result) == 0 {
 		return index.NewIndex("empty")
 	}
-
-	c := ib.CampaignFilter() // 过滤 TODO
-	idx := index.NewIndex("IndexBuilder")
-	info := &document.DocInfo{
-		Fields: []*document.Field{},
-	}
+	ib.innerIndex = index.NewIndex("index")
+	c := ib.result
 	for i := 0; i < len(c); i++ {
-		info = index.MakeInfo(c[i])
-		if info == nil {
-			continue
-		}
-		_ = idx.Add(info)
+		_ = ib.innerIndex.Add(c[i].Value)
 	}
-	return idx
+	return ib.innerIndex
 }

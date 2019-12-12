@@ -5,8 +5,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const (
+	DataModAdd = iota
+	DataModUpdate
+	DateModDel
+)
+
+type DataMod int
+
+type ParserResult struct {
+	DataMod DataMod
+	Value   *document.DocInfo
+}
+
 type MongoParser interface {
-	Parse([]byte, interface{}) (*document.DocInfo, error)
+	Parse([]byte, bool) (*ParserResult, error)
 }
 
 type MongoIndexManagerOps struct {
