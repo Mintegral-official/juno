@@ -58,10 +58,10 @@ func NewMongo(mongoCfg *conf.MongoCfg) (*Mongo, error) {
 	return m, nil
 }
 
-func (m *Mongo) Find() ([]*CampaignInfo, error) {
+func (m *Mongo) Find(m2 bson.M) ([]*CampaignInfo, error) {
 
 	findOptions := options.Find()
-	cur, err := m.collection.Find(context.TODO(), bson.M{"status": 1}, findOptions)
+	cur, err := m.collection.Find(context.TODO(), m2, findOptions)
 	if err != nil {
 		return nil, helpers.CollectionNotFound
 	}
@@ -69,12 +69,12 @@ func (m *Mongo) Find() ([]*CampaignInfo, error) {
 	defer cur.Close(context.TODO())
 
 	for cur.Next(context.TODO()) {
-		var ele CampaignInfo
-		if err := cur.Decode(&ele); err != nil {
+		var campaign CampaignInfo
+		if err := cur.Decode(&campaign); err != nil {
 			log.Println(err)
 			continue
 		}
-		m.results = append(m.results, &ele)
+		m.results = append(m.results, &campaign)
 	}
 	if err := cur.Err(); err != nil {
 		return nil, helpers.CursorError

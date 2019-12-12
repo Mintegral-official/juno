@@ -23,8 +23,8 @@ func (n *NotCheckerImpl) Check(id document.DocId) bool {
 	}
 	for _, cValue := range n.c {
 		if !cValue.Check(id) {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }

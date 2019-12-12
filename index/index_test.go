@@ -17,17 +17,17 @@ var doc1 = &document.DocInfo{
 		{
 			Name:      "field1",
 			IndexType: 1,
-			Value:     nil,
+			Value:     1,
 		},
 		{
 			Name:      "field2",
 			IndexType: 0,
-			Value:     nil,
+			Value:     2,
 		},
 		{
 			Name:      "field1",
 			IndexType: 2,
-			Value:     nil,
+			Value:     1,
 		},
 	},
 }
@@ -38,17 +38,17 @@ var doc2 = &document.DocInfo{
 		{
 			Name:      "field1",
 			IndexType: 0,
-			Value:     nil,
+			Value:     1,
 		},
 		{
 			Name:      "field2",
 			IndexType: 1,
-			Value:     nil,
+			Value:     2,
 		},
 		{
 			Name:      "field1",
 			IndexType: 0,
-			Value:     nil,
+			Value:     1,
 		},
 	},
 }
@@ -59,17 +59,17 @@ var doc3 = &document.DocInfo{
 		{
 			Name:      "field1",
 			IndexType: 0,
-			Value:     nil,
+			Value:     1,
 		},
 		{
 			Name:      "field2",
 			IndexType: 0,
-			Value:     nil,
+			Value:     2,
 		},
 		{
 			Name:      "field1",
 			IndexType: 1,
-			Value:     nil,
+			Value:     1,
 		},
 	},
 }
@@ -85,7 +85,7 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc1), ShouldBeNil)
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
-		if1 := index.invertedIndex.Iterator("field1")
+		if1 := index.GetInvertedIndex().Iterator("field1_1")
 		c := 0
 		for if1.HasNext() {
 			if if1.Next() != nil {
@@ -94,7 +94,7 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 3)
 
-		if2 := index.invertedIndex.Iterator("field2")
+		if2 := index.invertedIndex.Iterator("field2_2")
 		c = 0
 		for if2.HasNext() {
 			if if2.Next() != nil {
@@ -118,7 +118,6 @@ func TestNewIndex(t *testing.T) {
 			}
 		}
 		So(c, ShouldEqual, 1)
-		So(index.Del(doc1), ShouldBeNil)
 	})
 }
 

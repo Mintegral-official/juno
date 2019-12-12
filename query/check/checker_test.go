@@ -72,9 +72,9 @@ func TestCheckerImpl_Check(t *testing.T) {
 		o := NewNotCheckerImpl([]Checker{
 			c, d,
 		})
-		So(o.Check(3), ShouldBeFalse)
-		So(o.Check(6), ShouldBeTrue)
-		So(o.Check(10), ShouldBeFalse)
+		So(o.Check(3), ShouldBeTrue)
 		So(o.Check(6), ShouldBeFalse)
+		So(o.Check(10), ShouldBeTrue)
+		So(o.Check(6), ShouldBeTrue)
 	})
 }

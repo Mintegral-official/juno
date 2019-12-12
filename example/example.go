@@ -10,6 +10,7 @@ import (
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
+	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
 
@@ -17,7 +18,24 @@ type IndexBuilderImpl struct {
 	Campaign []*model.CampaignInfo
 }
 
-func NewIndexBuilder(cfg *conf.MongoCfg) *IndexBuilderImpl {
+var (
+	ib, ibInc *IndexBuilderImpl
+	ii        *index.IndexImpl
+	cfg       = &conf.MongoCfg{
+		URI:            "mongodb://13.250.108.190:27017",
+		DB:             "new_adn",
+		Collection:     "campaign",
+		ConnectTimeout: 10000,
+		ReadTimeout:    20000,
+	}
+)
+
+func init() {
+	ib = NewIndexBuilder(cfg, bson.M{"status": 1})
+	ii = ib.build()
+}
+
+func NewIndexBuilder(cfg *conf.MongoCfg, m bson.M) *IndexBuilderImpl {
 	if cfg == nil {
 		return nil
 	}
@@ -25,7 +43,8 @@ func NewIndexBuilder(cfg *conf.MongoCfg) *IndexBuilderImpl {
 	if err != nil {
 		return nil
 	}
-	c, err := mon.Find()
+	c, err := mon.Find(m)
+
 	if err != nil {
 		return nil
 	}
@@ -64,115 +83,123 @@ func (ib *IndexBuilderImpl) build() *index.IndexImpl {
 	info := &document.DocInfo{
 		Fields: []*document.Field{},
 	}
+	t := time.Now()
 	for i := 0; i < len(c); i++ {
-		info.Id = document.DocId(c[i].CampaignId)
-		info.Fields = []*document.Field{
-			{
-				Name:      "AdvertiserId",
-				IndexType: 2,
-				Value:     c[i].AdvertiserId,
-			},
-			{
-				Name:      "Platform",
-				IndexType: 2,
-				Value:     c[i].Platform,
-			},
-			{
-				Name:      "Price",
-				IndexType: 2,
-				Value:     *c[i].Price,
-			},
-			{
-				Name:      "StartTime",
-				IndexType: 0,
-				Value:     c[i].StartTime,
-			},
-			{
-				Name:      "EndTime",
-				IndexType: 0,
-				Value:     c[i].EndTime,
-			},
-			{
-				Name:      "PackageName",
-				IndexType: 0,
-				Value:     c[i].PackageName,
-			},
-			{
-				Name:      "CampaignType",
-				IndexType: 0,
-				Value:     c[i].CampaignType,
-			},
-			{
-				Name:      "OsVersionMaxV2",
-				IndexType: 2,
-				Value:     c[i].OsVersionMaxV2,
-			},
-			{
-				Name:      "OsVersionMinV2",
-				IndexType: 2,
-				Value:     c[i].OsVersionMinV2,
-			},
+		if info = index.MakeInfo(c[i]); info != nil {
+			_ = idx.Add(info)
 		}
-		//n := operation.NewOperationImpl(*c[i].Price)
-		//v := []float64{1.05, 2.4, 0.57, 1.24, 1.05, 4.29}
-		//inf := make([]interface{}, len(v))
-		//for i, v := range v {
-		//	inf[i] = v
-		//}
-		//if !n.In(inf) {
-		//	continue
-		//}
-		_ = idx.Add(info)
 	}
+	fmt.Println("index build:", time.Since(t))
+	//fmt.Println(idx.GetBitMap().Count())
 	return idx
 }
 
 func main() {
-	cfg := &conf.MongoCfg{
-		URI:            "mongodb://192.168.1.198:27017",
-		DB:             "new_adn",
-		Collection:     "campaign",
-		ConnectTimeout: 10000,
-		ReadTimeout:    20000,
-	}
 
-	ib := NewIndexBuilder(cfg)
-	if ib == nil {
-		fmt.Println("*********")
-	} else {
-		ii := ib.build()
-		if1 := ii.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
-		if2 := ii.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
-		if3 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	if1 := ii.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
+	if2 := ii.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
+	if3 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	//if4 := ii.GetInvertedIndex().Iterator("Price_1.5").(*datastruct.SkipListIterator)
+	if331 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	if332 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	if333 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	if334 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
-		if331 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-		if332 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-		if333 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-		if334 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-
-		t := time.Now()
-		q := query.NewOrQuery([]query.Query{
+	q := query.NewOrQuery([]query.Query{
+		query.NewTermQuery(if3),
+		query.NewAndQuery([]query.Query{
+			query.NewTermQuery(if1),
+			query.NewTermQuery(if2),
 			query.NewTermQuery(if3),
-			query.NewAndQuery([]query.Query{
-				query.NewTermQuery(if1),
-				query.NewTermQuery(if2),
-				query.NewTermQuery(if3),
-			}, nil),
+		}, nil),
+	},
+		[]check.Checker{
+			check.NewCheckerImpl(if331, 20.0, operation.LT),
+			check.NewCheckerImpl(if332, 16.4, operation.LE),
+			check.NewCheckerImpl(if333, 0.5, operation.EQ),
+			check.NewCheckerImpl(if334, 1.24, operation.EQ),
 		},
-			[]check.Checker{
-				check.NewCheckerImpl(if331, 20.0, operation.LT),
-				check.NewCheckerImpl(if332, 16.4, operation.LE),
-				check.NewCheckerImpl(if333, 0.5, operation.EQ),
-				check.NewCheckerImpl(if334, 1.24, operation.EQ),
-			},
-		)
-		fmt.Println(time.Since(t))
-
-		res := ii.Search(q)
-		fmt.Println(len(res.Docs))
-		fmt.Println(res.Time)
-		//for _, v := range res.Docs {
-		//	fmt.Println(v)
-		//}
+	)
+	//now := time.Now().Unix()
+	//time.Sleep(5 * time.Second)
+	//ibInc = NewIndexBuilder(cfg, bson.M{"updated": bson.M{"$gt": now}})
+	//if ibInc == nil {
+	//	fmt.Println("ibInc is nil")
+	//	return
+	//}
+	//// iiInc := ibInc.build()
+	//fmt.Println("inc change: ", len(ibInc.Campaign))
+	res := ii.Search(q)
+	fmt.Println("res: ", len(res.Docs), res.Time)
+	for {
+		inc := time.After(5 * time.Second)
+		base := time.After(120 * time.Second)
+		now := time.Now().Unix()
+		select {
+		case <-inc:
+			fmt.Println("now & now: ", now, time.Now().Unix())
+			ibInc = NewIndexBuilder(cfg, bson.M{"updated": bson.M{"$gt": now}})
+			if ibInc == nil {
+				fmt.Println("ibInc is nil")
+				return
+			}
+		case <-base:
+			ib = NewIndexBuilder(cfg, bson.M{"status": 1})
+			ii = ib.build()
+		}
+		fmt.Println(len(ibInc.Campaign))
+		if ibInc != nil && ibInc.Campaign != nil && len(ibInc.Campaign) != 0 {
+			a := time.Now()
+			ii.IncBuild(ibInc.Campaign)
+			fmt.Println("index inc time: ", time.Since(a))
+			var docs = make([]document.DocId, len(res.Docs))
+			t := time.Now()
+			for i := 0; i < len(res.Docs); i++ {
+				if !ii.GetBitMap().IsExist(int(ii.GetCampaignMap()[res.Docs[i]])) {
+					continue
+				}
+				docs[i] = res.Docs[i]
+			}
+			fmt.Println(time.Since(t))
+			ibInc = nil
+		}
+		fmt.Println("res & resInc: ", len(res.Docs), res.Time)
 	}
+
+	//if11 := iiInc.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
+	//if22 := iiInc.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
+	//if33 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	////if44 := ii.GetInvertedIndex().Iterator("Price_1.5").(*datastruct.SkipListIterator)
+	//
+	//if3311 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	//if3322 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	//if3333 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	//if3344 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	//
+	//q = query.NewOrQuery([]query.Query{
+	//	query.NewTermQuery(if33),
+	//	query.NewAndQuery([]query.Query{
+	//		query.NewTermQuery(if11),
+	//		query.NewTermQuery(if22),
+	//		query.NewTermQuery(if33),
+	//	}, nil),
+	//},
+	//	[]check.Checker{
+	//		check.NewCheckerImpl(if3311, 20.0, operation.LT),
+	//		check.NewCheckerImpl(if3322, 16.4, operation.LE),
+	//		check.NewCheckerImpl(if3333, 0.5, operation.EQ),
+	//		check.NewCheckerImpl(if3344, 1.24, operation.EQ),
+	//	},
+	//)
+	//resInc := iiInc.Search(q)
+	//if resInc == nil {
+	//	res.Docs = docs
+	//} else {
+	//	fmt.Println(len(docs))
+	//	docs = helpers.Merge(docs, resInc.Docs)
+	//	res.Docs = docs
+	//	res.Time = res.Time + resInc.Time
+	//	fmt.Println("resInc: ", len(resInc.Docs), resInc.Time, len(docs))
+	//}
+
 }
