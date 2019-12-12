@@ -1,10 +1,9 @@
 package builder
 
 import (
-	"github.com/Mintegral-official/juno/conf"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/example/model"
 	"github.com/Mintegral-official/juno/index"
-	"github.com/Mintegral-official/juno/model"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -13,7 +12,7 @@ type IndexBuilder struct {
 	Campaign []*model.CampaignInfo
 }
 
-func NewIndexBuilder(cfg *conf.MongoCfg, m bson.M) *IndexBuilder {
+func NewIndexBuilder(cfg *MongoCfg, m bson.M) *IndexBuilder {
 	if cfg == nil {
 		return nil
 	}

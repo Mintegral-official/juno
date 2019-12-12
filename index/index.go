@@ -2,7 +2,6 @@ package index
 
 import (
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/model"
 )
 
 type Index interface {
@@ -11,5 +10,4 @@ type Index interface {
 	GetDataType(fieldName string) document.FieldType
 	Dump(filename string) error
 	Load(filename string) error
-	IncBuild(campaignInfos []*model.CampaignInfo)
 }

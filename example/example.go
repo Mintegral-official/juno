@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/conf"
+	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/example/model"
 	"github.com/Mintegral-official/juno/index"
-	"github.com/Mintegral-official/juno/model"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
@@ -20,8 +20,8 @@ type IndexBuilderImpl struct {
 
 var (
 	ib, ibInc *IndexBuilderImpl
-	ii        *index.IndexImpl
-	cfg       = &conf.MongoCfg{
+	tIndex    *index.IndexImpl
+	cfg       = &builder.MongoCfg{
 		URI:            "mongodb://13.250.108.190:27017",
 		DB:             "new_adn",
 		Collection:     "campaign",
@@ -30,12 +30,7 @@ var (
 	}
 )
 
-func init() {
-	ib = NewIndexBuilder(cfg, bson.M{"status": 1})
-	ii = ib.build()
-}
-
-func NewIndexBuilder(cfg *conf.MongoCfg, m bson.M) *IndexBuilderImpl {
+func NewIndexBuilder(cfg *builder.MongoCfg, m bson.M) *IndexBuilderImpl {
 	if cfg == nil {
 		return nil
 	}
@@ -94,16 +89,28 @@ func (ib *IndexBuilderImpl) build() *index.IndexImpl {
 	return idx
 }
 
+func buildIndex() {
+	ib = NewIndexBuilder(cfg, bson.M{"status": 1})
+	tIndex = ib.build()
+
+	go func() {
+
+	}()
+}
+
 func main() {
 
-	if1 := ii.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
-	if2 := ii.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
-	if3 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	//if4 := ii.GetInvertedIndex().Iterator("Price_1.5").(*datastruct.SkipListIterator)
-	if331 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	if332 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	if333 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	if334 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	// build index
+	buildIndex()
+
+	// search
+	if1 := tIndex.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
+	if2 := tIndex.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
+	if3 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	if331 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	if332 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	if333 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+	if334 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
 	q := query.NewOrQuery([]query.Query{
 		query.NewTermQuery(if3),
@@ -120,16 +127,8 @@ func main() {
 			check.NewCheckerImpl(if334, 1.24, operation.EQ),
 		},
 	)
-	//now := time.Now().Unix()
-	//time.Sleep(5 * time.Second)
-	//ibInc = NewIndexBuilder(cfg, bson.M{"updated": bson.M{"$gt": now}})
-	//if ibInc == nil {
-	//	fmt.Println("ibInc is nil")
-	//	return
-	//}
-	//// iiInc := ibInc.build()
-	//fmt.Println("inc change: ", len(ibInc.Campaign))
-	res := ii.Search(q)
+	res := tIndex.Search(q)
+
 	fmt.Println("res: ", len(res.Docs), res.Time)
 	for {
 		inc := time.After(5 * time.Second)
@@ -145,17 +144,17 @@ func main() {
 			}
 		case <-base:
 			ib = NewIndexBuilder(cfg, bson.M{"status": 1})
-			ii = ib.build()
+			tIndex = ib.build()
 		}
 		fmt.Println(len(ibInc.Campaign))
 		if ibInc != nil && ibInc.Campaign != nil && len(ibInc.Campaign) != 0 {
 			a := time.Now()
-			ii.IncBuild(ibInc.Campaign)
+			tIndex.IncBuild(ibInc.Campaign)
 			fmt.Println("index inc time: ", time.Since(a))
 			var docs = make([]document.DocId, len(res.Docs))
 			t := time.Now()
 			for i := 0; i < len(res.Docs); i++ {
-				if !ii.GetBitMap().IsExist(int(ii.GetCampaignMap()[res.Docs[i]])) {
+				if !tIndex.GetBitMap().IsExist(int(tIndex.GetCampaignMap()[res.Docs[i]])) {
 					continue
 				}
 				docs[i] = res.Docs[i]
@@ -165,41 +164,5 @@ func main() {
 		}
 		fmt.Println("res & resInc: ", len(res.Docs), res.Time)
 	}
-
-	//if11 := iiInc.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
-	//if22 := iiInc.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
-	//if33 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	////if44 := ii.GetInvertedIndex().Iterator("Price_1.5").(*datastruct.SkipListIterator)
-	//
-	//if3311 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	//if3322 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	//if3333 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	//if3344 := iiInc.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	//
-	//q = query.NewOrQuery([]query.Query{
-	//	query.NewTermQuery(if33),
-	//	query.NewAndQuery([]query.Query{
-	//		query.NewTermQuery(if11),
-	//		query.NewTermQuery(if22),
-	//		query.NewTermQuery(if33),
-	//	}, nil),
-	//},
-	//	[]check.Checker{
-	//		check.NewCheckerImpl(if3311, 20.0, operation.LT),
-	//		check.NewCheckerImpl(if3322, 16.4, operation.LE),
-	//		check.NewCheckerImpl(if3333, 0.5, operation.EQ),
-	//		check.NewCheckerImpl(if3344, 1.24, operation.EQ),
-	//	},
-	//)
-	//resInc := iiInc.Search(q)
-	//if resInc == nil {
-	//	res.Docs = docs
-	//} else {
-	//	fmt.Println(len(docs))
-	//	docs = helpers.Merge(docs, resInc.Docs)
-	//	res.Docs = docs
-	//	res.Time = res.Time + resInc.Time
-	//	fmt.Println("resInc: ", len(resInc.Docs), resInc.Time, len(docs))
-	//}
 
 }

@@ -1,13 +1,13 @@
 package model
 
 import (
-	"github.com/Mintegral-official/juno/conf"
+	"github.com/Mintegral-official/juno/builder"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
 func TestNewMongo(t *testing.T) {
-	cfg := &conf.MongoCfg{
+	cfg := &builder.MongoCfg{
 		URI:            "mongodb://localhost:27017",
 		DB:             "new_adn",
 		Collection:     "campaign",

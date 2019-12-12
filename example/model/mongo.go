@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Mintegral-official/juno/conf"
+	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/helpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +15,7 @@ import (
 )
 
 type Mongo struct {
-	cfg        *conf.MongoCfg
+	cfg        *builder.MongoCfg
 	client     *mongo.Client
 	collection *mongo.Collection
 	cursor     *mongo.Cursor
@@ -23,7 +23,7 @@ type Mongo struct {
 	results    []*CampaignInfo
 }
 
-func NewMongo(mongoCfg *conf.MongoCfg) (*Mongo, error) {
+func NewMongo(mongoCfg *builder.MongoCfg) (*Mongo, error) {
 	if mongoCfg == nil {
 		return nil, helpers.MongoCfgError
 	}

@@ -2,10 +2,10 @@ package index
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/conf"
+	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/example/model"
 	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/model"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"unsafe"
@@ -134,7 +134,7 @@ func TestInterface(t *testing.T) {
 }
 
 func TestNewIndex2(t *testing.T) {
-	cfg := &conf.MongoCfg{
+	cfg := &builder.MongoCfg{
 		URI:            "mongodb://localhost:27017",
 		DB:             "new_adn",
 		Collection:     "campaign",

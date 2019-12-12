@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/conf"
+	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
@@ -14,7 +14,7 @@ import (
 )
 
 func BenchmarkIndexBuilderImpl_CampaignFilter(b *testing.B) {
-	cfg := &conf.MongoCfg{
+	cfg := &builder.MongoCfg{
 		URI:            "mongodb://192.168.1.198:27017",
 		DB:             "new_adn",
 		Collection:     "campaign",

@@ -6,7 +6,6 @@ import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/model"
 	"github.com/Mintegral-official/juno/query"
 	"time"
 )
@@ -142,74 +141,4 @@ func (ii *IndexImpl) Search(query query.Query) *SearchResult {
 	}
 	s.Time = time.Since(now)
 	return s
-}
-
-func (ii *IndexImpl) IncBuild(campaignInfos []*model.CampaignInfo) {
-	for _, campaignInfo := range campaignInfos {
-		if campaignInfo.Status == 1 {
-			info := MakeInfo(campaignInfo)
-			ii.Del(info)
-			_ = ii.Add(info)
-		} else if ii.GetBitMap().IsExist(int(ii.GetCampaignMap()[document.DocId(campaignInfo.CampaignId)])) {
-			ii.bitmap.Del(int(ii.campaignMapping[document.DocId(campaignInfo.CampaignId)]))
-		}
-	}
-}
-
-func MakeInfo(info *model.CampaignInfo) *document.DocInfo {
-	if info == nil {
-		return nil
-	}
-	docInfo := &document.DocInfo{
-		Fields: []*document.Field{},
-	}
-	docInfo.Id = document.DocId(info.CampaignId)
-	docInfo.Fields = []*document.Field{
-		{
-			Name:      "AdvertiserId",
-			IndexType: 1,
-			Value:     info.AdvertiserId,
-		},
-		{
-			Name:      "Platform",
-			IndexType: 2,
-			Value:     info.Platform,
-		},
-		{
-			Name:      "Price",
-			IndexType: 1,
-			Value:     *info.Price,
-		},
-		{
-			Name:      "StartTime",
-			IndexType: 1,
-			Value:     info.StartTime,
-		},
-		{
-			Name:      "EndTime",
-			IndexType: 1,
-			Value:     info.EndTime,
-		},
-		{
-			Name:      "PackageName",
-			IndexType: 1,
-			Value:     info.PackageName,
-		},
-		{
-			Name:      "CampaignType",
-			IndexType: 2,
-			Value:     info.CampaignType,
-		},
-		{
-			Name:      "OsVersionMaxV2",
-			IndexType: 1,
-			Value:     info.OsVersionMaxV2,
-		},
-		{
-			Name:      "OsVersionMinV2",
-			IndexType: 1,
-			Value:     info.OsVersionMinV2,
-		},
-	}
-	return docInfo
 }
