@@ -50,7 +50,7 @@ func (a *AndQuery) Next() (document.DocId, error) {
 			if a.check(target) {
 				return target, nil
 			}
-			curIdx++
+			curIdx = (curIdx + 1) % len(a.querys)
 			target, err = a.querys[curIdx].Next()
 			if err != nil {
 				return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(target), curIdx))

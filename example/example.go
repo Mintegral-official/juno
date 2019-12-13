@@ -27,72 +27,87 @@ func MakeInfo(info *model.CampaignInfo) *document.DocInfo {
 		Fields: []*document.Field{},
 	}
 	docInfo.Id = document.DocId(info.CampaignId)
-	docInfo.Fields = []*document.Field{
-		{
-			Name:      "AdvertiserId",
-			IndexType: 1,
+	docInfo.Fields = append(docInfo.Fields,
+		&document.Field{
+			Name:
+			"AdvertiserId",
+			IndexType: 2,
 			Value:     info.AdvertiserId,
-		},
-		{
+		})
+	docInfo.Fields = append(docInfo.Fields,
+		&document.Field{
 			Name:      "Platform",
 			IndexType: 2,
 			Value:     info.Platform,
-		},
-		{
-			Name:      "Price",
-			IndexType: 1,
-			Value:     *info.Price,
-		},
-		{
+		})
+	if info.Price != nil {
+		docInfo.Fields = append(docInfo.Fields,
+			&document.Field{
+				Name:      "Price",
+				IndexType: 1,
+				Value:     *info.Price,
+			})
+	}
+
+	docInfo.Fields = append(docInfo.Fields,
+		&document.Field{
 			Name:      "StartTime",
 			IndexType: 1,
 			Value:     info.StartTime,
-		},
-		{
+		})
+
+	docInfo.Fields = append(docInfo.Fields,
+		&document.Field{
 			Name:      "EndTime",
 			IndexType: 1,
 			Value:     info.EndTime,
-		},
-		{
+		})
+
+	docInfo.Fields = append(docInfo.Fields,
+		&document.Field{
 			Name:      "PackageName",
-			IndexType: 1,
-			Value:     info.PackageName,
-		},
-		{
-			Name:      "CampaignType",
 			IndexType: 2,
+			Value:     info.PackageName,
+		})
+
+	docInfo.Fields = append(docInfo.Fields,
+		&document.Field{
+			Name:      "CampaignType",
+			IndexType: 1,
 			Value:     info.CampaignType,
-		},
-		{
+		})
+
+	docInfo.Fields = append(docInfo.Fields,
+		&document.Field{
 			Name:      "OsVersionMaxV2",
 			IndexType: 1,
 			Value:     info.OsVersionMaxV2,
-		},
-		{
+		})
+
+	docInfo.Fields = append(docInfo.Fields,
+		&document.Field{
 			Name:      "OsVersionMinV2",
 			IndexType: 1,
 			Value:     info.OsVersionMinV2,
-		},
-	}
+		})
 	return docInfo
 }
 
 func (c *CampaignParser) Parse(bytes []byte, flag bool) (*builder.ParserResult, error) {
 	campaign := &model.CampaignInfo{}
 	if err := bson.Unmarshal(bytes, &campaign); err != nil {
-		fmt.Println("bson.Unmarsnal error:" + err.Error())
+		return nil, err
 	}
 	var info = MakeInfo(campaign)
 	var mode builder.DataMod
 	if flag {
 		return &builder.ParserResult{
-			DataMod: 0,
+			DataMod: 1,
 			Value:   info,
 		}, nil
 	}
 	if campaign.Status == 1 {
 		mode = 1
-
 	} else {
 		mode = 2
 	}
@@ -129,30 +144,26 @@ func main() {
 	}
 	tIndex := b.GetIndex()
 
-	// search: advertiserId=123 or (advertiserId=456 and platform=ios and (price <= 20.0 or price <= 16.4 or price = 0.5 or price = 1.24))
+	// search: advertiserId=457 or  platform=android or (price < 20.0 And price >= 16.4) or advertiserId=646
 	// invert list
-	if1 := tIndex.GetStorageIndex().Iterator("AdvertiserId=123").(*datastruct.SkipListIterator)
-	if2 := tIndex.GetStorageIndex().Iterator("Platform=ios").(*datastruct.SkipListIterator)
+	invertIdx := tIndex.GetInvertedIndex()
 
 	// storage
 	storageIdx := tIndex.GetStorageIndex()
-	if3 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
 	q := query.NewOrQuery([]query.Query{
-		query.NewTermQuery(if3),
+		query.NewTermQuery(invertIdx.Iterator("AdvertiserId_457").(*datastruct.SkipListIterator)),
+		query.NewTermQuery(invertIdx.Iterator("Platform_1").(*datastruct.SkipListIterator)),
 		query.NewAndQuery([]query.Query{
-			query.NewTermQuery(if1),
-			query.NewTermQuery(if2),
-			query.NewTermQuery(if3),
-		}, nil),
-	},
-		[]check.Checker{
-			check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
-			check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 16.4, operation.LE),
-			check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 0.5, operation.EQ),
-			check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 1.24, operation.EQ),
+			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)),
+			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)),
 		},
-	)
+			[]check.Checker{
+				check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
+				check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 16.4, operation.GE),
+			}),
+		query.NewTermQuery(invertIdx.Iterator("AdvertiserId_646").(*datastruct.SkipListIterator)),
+	}, nil)
 	res := tIndex.Search(q)
 	fmt.Println("res: ", len(res.Docs), res.Time)
 

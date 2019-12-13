@@ -18,7 +18,6 @@ type MongoBuilder struct {
 	errorNum   int64
 	client     *mongo.Client
 	collection *mongo.Collection
-	cursor     *mongo.Cursor
 	findOpt    *options.FindOptions
 }
 
@@ -75,7 +74,6 @@ func (mim *MongoBuilder) update(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case <-inc:
-				fmt.Println(111)
 				if err := mim.inc(ctx); err != nil {
 					log.Println(err)
 				}
@@ -95,14 +93,15 @@ func (mim *MongoBuilder) base(ctx context.Context) error {
 	if mim.ops.OnBeforeBase != nil {
 		mim.ops.BaseQuery = mim.ops.OnBeforeBase(mim.ops.UserData)
 	}
-	context.WithTimeout(ctx, time.Duration(mim.ops.ReadTimeout)*time.Microsecond)
+	c, cancel := context.WithTimeout(ctx, time.Duration(mim.ops.ReadTimeout)*time.Microsecond)
+	defer cancel()
 	cur, err := mim.collection.Find(nil, mim.ops.BaseQuery, mim.ops.FindOpt)
 	if err != nil {
 		return err
 	}
-	defer cur.Close(context.TODO())
-	var baseResult []*ParserResult
-	for cur.Next(context.TODO()) {
+	defer cur.Close(c)
+	var baseIndex = index.NewIndex("base")
+	for cur.Next(c) {
 		if cur.Err() != nil {
 			mim.errorNum++
 			continue
@@ -113,13 +112,8 @@ func (mim *MongoBuilder) base(ctx context.Context) error {
 			log.Println(err)
 			continue
 		}
-		baseResult = append(baseResult, r)
-	}
-
-	var baseIndex = index.NewIndex("base")
-	for i := 0; i < len(baseResult); i++ {
 		mim.totalNum++
-		_ = baseIndex.Add(baseResult[i].Value)
+		_ = baseIndex.Add(r.Value)
 	}
 	mim.innerIndex = baseIndex
 	return err
@@ -129,15 +123,16 @@ func (mim *MongoBuilder) inc(ctx context.Context) error {
 	if mim.ops.OnBeforeInc != nil {
 		mim.ops.IncQuery = mim.ops.OnBeforeInc(mim.ops.UserData)
 	}
-	c, cancal := context.WithTimeout(ctx, time.Duration(mim.ops.ReadTimeout)*time.Microsecond)
-	defer cancal()
+	c, cancel := context.WithTimeout(ctx, time.Duration(mim.ops.ReadTimeout)*time.Microsecond)
+	defer cancel()
 	cur, err := mim.collection.Find(c, mim.ops.IncQuery, mim.ops.FindOpt)
+
 	if err != nil {
 		return err
 	}
-	defer cur.Close(context.TODO())
+	defer cur.Close(c)
 
-	for cur.Next(context.TODO()) {
+	for cur.Next(c) {
 		if cur.Err() != nil {
 			continue
 		}
@@ -146,17 +141,14 @@ func (mim *MongoBuilder) inc(ctx context.Context) error {
 			log.Println(err)
 			continue
 		}
-		if r.DataMod == 0 {
-
-			_ = mim.innerIndex.Add(r.Value)
-		} else if r.DataMod == 1 {
+		if r.DataMod == 1 {
 			mim.innerIndex.Del(r.Value)
 			_ = mim.innerIndex.Add(r.Value)
 		} else {
 			mim.innerIndex.Del(r.Value)
 		}
 	}
-	fmt.Println(mim.innerIndex.GetBitMap().Count())
+	fmt.Println(mim.innerIndex.GetInvertedIndex().Count(), mim.innerIndex.GetStorageIndex().Count())
 	return nil
 }
 
