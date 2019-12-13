@@ -1,7 +1,9 @@
 package builder
 
-import "github.com/Mintegral-official/juno/index"
+import (
+	"context"
+)
 
 type Builder interface {
-	Build() *index.IndexImpl
+	Build(ctx context.Context) error
 }

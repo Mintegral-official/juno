@@ -7,7 +7,6 @@ import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/example/model"
-	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
@@ -19,24 +18,6 @@ import (
 
 type CampaignParser struct {
 }
-
-var (
-	ib     *builder.IndexBuilder
-	tIndex *index.IndexImpl
-	cfg    = &builder.MongoIndexManagerOps{
-		URI:            "mongodb://13.250.108.190:27017",
-		IncInterval:    5,
-		BaseInterval:   120,
-		IncParser:      &CampaignParser{},
-		BaseParser:     &CampaignParser{},
-		BaseQuery:      bson.M{"status": 1},
-		IncQuery:       bson.M{"updated": bson.M{"$gt": time.Now().Unix() - int64(5*time.Second)}},
-		DB:             "new_adn",
-		Collection:     "campaign",
-		ConnectTimeout: 10000,
-		ReadTimeout:    20000,
-	}
-)
 
 func MakeInfo(info *model.CampaignInfo) *document.DocInfo {
 	if info == nil {
@@ -110,11 +91,8 @@ func (c *CampaignParser) Parse(bytes []byte, flag bool) (*builder.ParserResult, 
 		}, nil
 	}
 	if campaign.Status == 1 {
-		if tIndex.GetBitMap().IsExist(int(tIndex.GetCampaignMap()[document.DocId(campaign.CampaignId)])) {
-			mode = 1
-		} else {
-			mode = 0
-		}
+		mode = 1
+
 	} else {
 		mode = 2
 	}
@@ -124,25 +102,41 @@ func (c *CampaignParser) Parse(bytes []byte, flag bool) (*builder.ParserResult, 
 	}, nil
 }
 
-func buildIndex() {
-	ib = builder.NewIndexBuilder(cfg)
-	tIndex = ib.Build()
-}
-
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// build index
-	buildIndex()
+	b := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
+		URI:            "mongodb://13.250.108.190:27017",
+		IncInterval:    5,
+		BaseInterval:   120,
+		IncParser:      &CampaignParser{},
+		BaseParser:     &CampaignParser{},
+		BaseQuery:      bson.M{"status": 1},
+		IncQuery:       bson.M{"updated": bson.M{"$gt": time.Now().Unix() - int64(5*time.Second)}},
+		DB:             "new_adn",
+		Collection:     "campaign",
+		ConnectTimeout: 10000,
+		ReadTimeout:    20000,
+	})
+	if b == nil {
+		fmt.Println("build index error")
+		return
+	}
+	if e := b.Build(ctx); e != nil {
+		fmt.Println("build error", e.Error())
+	}
+	tIndex := b.GetIndex()
 
-	// search
-	//advertiserId or (advertiserId and platform and price and (price <= 20.0 or price <= 16.4 or price = 0.5 or price = 1.24))
-	if1 := tIndex.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
-	if2 := tIndex.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
+	// search: advertiserId=123 or (advertiserId=456 and platform=ios and (price <= 20.0 or price <= 16.4 or price = 0.5 or price = 1.24))
+	// invert list
+	if1 := tIndex.GetStorageIndex().Iterator("AdvertiserId=123").(*datastruct.SkipListIterator)
+	if2 := tIndex.GetStorageIndex().Iterator("Platform=ios").(*datastruct.SkipListIterator)
+
+	// storage
+	storageIdx := tIndex.GetStorageIndex()
 	if3 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	if331 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	if332 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	if333 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-	if334 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
 	q := query.NewOrQuery([]query.Query{
 		query.NewTermQuery(if3),
@@ -153,22 +147,17 @@ func main() {
 		}, nil),
 	},
 		[]check.Checker{
-			check.NewCheckerImpl(if331, 20.0, operation.LT),
-			check.NewCheckerImpl(if332, 16.4, operation.LE),
-			check.NewCheckerImpl(if333, 0.5, operation.EQ),
-			check.NewCheckerImpl(if334, 1.24, operation.EQ),
+			check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
+			check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 16.4, operation.LE),
+			check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 0.5, operation.EQ),
+			check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 1.24, operation.EQ),
 		},
 	)
 	res := tIndex.Search(q)
-
 	fmt.Println("res: ", len(res.Docs), res.Time)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+
 	c := make(chan os.Signal)
 	signal.Notify(c)
-	_ = ib.MongoIndexManager.Update(ctx)
-	res1 := tIndex.Search(q)
-	fmt.Println("res1: ", len(res1.Docs), res1.Time)
 	s := <-c
 	fmt.Println("退出信号", s)
 }
