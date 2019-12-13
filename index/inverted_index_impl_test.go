@@ -25,7 +25,7 @@ func TestInvertedIndexImpl_Del(t *testing.T) {
 func TestInvertedIndexImpl_Iterator(t *testing.T) {
 	s := NewInvertedIndexImpl()
 	Convey("Iterator", t, func() {
-		So(s.Iterator("filename"), ShouldBeNil)
+		So(s.Iterator("filename"), ShouldNotBeNil)
 	})
 }
 
@@ -53,6 +53,7 @@ func TestInvertedIndexImpl(t *testing.T) {
 			c++
 		}
 		So(c, ShouldEqual, 3)
+		So(s.Count(), ShouldEqual, 3)
 	})
 
 	Convey("Add", t, func() {

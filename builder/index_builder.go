@@ -1,8 +1,8 @@
 package builder
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/index"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type IndexBuilder struct {
@@ -28,8 +28,7 @@ func (ib *IndexBuilder) filter() []*ParserResult {
 }
 
 func (ib *IndexBuilder) Build() *index.IndexImpl {
-	_ = ib.Find()
-	fmt.Println(len(ib.result))
+	_ = ib.find(bson.M{"status": 1})
 	if ib == nil || ib.result == nil || len(ib.result) == 0 {
 		return index.NewIndex("empty")
 	}

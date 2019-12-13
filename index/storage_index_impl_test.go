@@ -13,7 +13,7 @@ func TestNewStorageIndexImpl(t *testing.T) {
 		s := NewStorageIndexImpl()
 		So(s.Get("fieldName", 1), ShouldBeNil)
 		So(s.Del("fieldName", 1), ShouldBeFalse)
-		So(s.Iterator("fieldName"), ShouldBeNil)
+		So(s.Iterator("fieldName"), ShouldNotBeNil)
 		So(s.Add("fieldName", 1, 1), ShouldBeNil)
 		So(s.Del("fieldName", 1), ShouldBeTrue)
 		So(s.Iterator("fieldName"), ShouldNotBeNil)
@@ -58,5 +58,6 @@ func TestStorageIndexImpl(t *testing.T) {
 		//	fmt.Println("*******")
 		//	fmt.Println(s.Get("fieldName1", document.DocId(2)))
 		So(s.Get("fieldName2", document.DocId(2)), ShouldEqual, helpers.ParseError)
+		So(s.Count(), ShouldEqual, 4)
 	})
 }

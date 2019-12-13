@@ -42,7 +42,7 @@ func String2Strings(str string) []string {
 		s = append(s, t.String())
 	}
 	if n != 0 {
-		panic("the expression '(' is not equal to ')' ")
+		panic("the expression is wrong ")
 	}
 	return s
 }

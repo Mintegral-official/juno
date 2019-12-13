@@ -198,8 +198,8 @@ func BenchmarkSkipList_GetRunParallel(b *testing.B) {
 	})
 }
 
-func TestNewBitMap2(t *testing.T) {
-	var a = make(map[int]int)
-	a[1] = 1
-	fmt.Println(len(a))
-}
+//func TestNewBitMap2(t *testing.T) {
+//	var a = make(map[int]int)
+//	a[1] = 1
+//	fmt.Println(len(a))
+//}

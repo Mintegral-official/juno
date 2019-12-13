@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"os"
 	"os/signal"
+	"time"
 )
 
 type CampaignParser struct {
@@ -22,25 +23,20 @@ type CampaignParser struct {
 var (
 	ib     *builder.IndexBuilder
 	tIndex *index.IndexImpl
-	user   *model.CampaignInfo
 	cfg    = &builder.MongoIndexManagerOps{
 		URI:            "mongodb://13.250.108.190:27017",
 		IncInterval:    5,
 		BaseInterval:   120,
 		IncParser:      &CampaignParser{},
 		BaseParser:     &CampaignParser{},
+		BaseQuery:      bson.M{"status": 1},
+		IncQuery:       bson.M{"updated": bson.M{"$gt": time.Now().Unix() - int64(5*time.Second)}},
 		DB:             "new_adn",
 		Collection:     "campaign",
-		UserData:       &model.CampaignInfo{},
 		ConnectTimeout: 10000,
 		ReadTimeout:    20000,
 	}
 )
-
-func buildIndex() {
-	ib = builder.NewIndexBuilder(cfg)
-	tIndex = ib.Build()
-}
 
 func MakeInfo(info *model.CampaignInfo) *document.DocInfo {
 	if info == nil {
@@ -128,12 +124,18 @@ func (c *CampaignParser) Parse(bytes []byte, flag bool) (*builder.ParserResult, 
 	}, nil
 }
 
+func buildIndex() {
+	ib = builder.NewIndexBuilder(cfg)
+	tIndex = ib.Build()
+}
+
 func main() {
 
 	// build index
 	buildIndex()
 
 	// search
+	//advertiserId or (advertiserId and platform and price and (price <= 20.0 or price <= 16.4 or price = 0.5 or price = 1.24))
 	if1 := tIndex.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
 	if2 := tIndex.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
 	if3 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
@@ -141,8 +143,6 @@ func main() {
 	if332 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 	if333 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 	if334 := tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-
-	fmt.Println(tIndex.GetBitMap().Count(), tIndex.GetStorageIndex().Count(), tIndex.GetInvertedIndex().Count())
 
 	q := query.NewOrQuery([]query.Query{
 		query.NewTermQuery(if3),

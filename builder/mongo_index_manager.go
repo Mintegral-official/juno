@@ -2,6 +2,7 @@ package builder
 
 import (
 	"context"
+	"fmt"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"go.mongodb.org/mongo-driver/bson"
@@ -66,26 +67,28 @@ func (mim *MongoIndexManager) GetIndex() *index.IndexImpl {
 }
 
 func (mim *MongoIndexManager) Update(ctx context.Context) error {
-	if e := mim.base(ctx); e != nil {
-		return e
-	}
-	for {
-		inc := time.After(time.Duration(mim.ops.IncInterval) * time.Second)
-		base := time.After(time.Duration(mim.ops.BaseInterval) * time.Second)
-		now := time.Now().Unix()
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-inc:
-			if err := mim.inc(ctx, now); err != nil {
-				return err
-			}
-		case <-base:
-			if e := mim.base(ctx); e != nil {
-				return e
+	go func() {
+		for {
+			inc := time.After(time.Duration(mim.ops.IncInterval) * time.Second)
+			base := time.After(time.Duration(mim.ops.BaseInterval) * time.Second)
+			select {
+			case <-ctx.Done():
+				return
+			case <-inc:
+				fmt.Println(111)
+				if err := mim.inc(ctx); err != nil {
+					log.Println(err)
+					return
+				}
+			case <-base:
+				if err := mim.base(ctx); err != nil {
+					log.Println(err)
+					return
+				}
 			}
 		}
-	}
+	}()
+	return nil
 }
 
 func (mim *MongoIndexManager) base(ctx context.Context) error {
@@ -99,10 +102,12 @@ func (mim *MongoIndexManager) base(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer cur.Close(context.TODO())
+	var baseResult []*ParserResult
 	for cur.Next(context.TODO()) {
 		if cur.Err() != nil {
 			mim.errorNum++
-			return cur.Err()
+			continue
 		}
 		r, err := mim.ops.BaseParser.Parse(cur.Current, true)
 		if err != nil {
@@ -110,59 +115,60 @@ func (mim *MongoIndexManager) base(ctx context.Context) error {
 			log.Println(err)
 			continue
 		}
-		mim.result = append(mim.result, r)
+		baseResult = append(baseResult, r)
 	}
 
 	var baseIndex = index.NewIndex("base")
-	for i := 0; i < len(mim.result); i++ {
+	for i := 0; i < len(baseResult); i++ {
 		mim.totalNum++
-		_ = baseIndex.Add(mim.result[i].Value)
+		_ = baseIndex.Add(baseResult[i].Value)
 	}
+	mim.result = baseResult
 	mim.innerIndex = baseIndex
 	return err
 }
 
-func (mim *MongoIndexManager) inc(ctx context.Context, now int64) error {
+func (mim *MongoIndexManager) inc(ctx context.Context) error {
 	if mim.ops.OnBeforeInc != nil {
 		mim.ops.IncQuery = mim.ops.OnBeforeInc(mim.ops.UserData)
 	}
 	context.WithTimeout(ctx, time.Duration(mim.ops.ReadTimeout)*time.Microsecond)
-	cur, err := mim.collection.Find(nil, bson.M{"updated": bson.M{"$gt": now}}, mim.ops.FindOpt)
+	cur, err := mim.collection.Find(nil, mim.ops.IncQuery, mim.ops.FindOpt)
 	if err != nil {
 		return err
 	}
 	defer cur.Close(context.TODO())
+	var tmpResults []*ParserResult
 
 	for cur.Next(context.TODO()) {
 		if cur.Err() != nil {
-			mim.errorNum++
-			return cur.Err()
+			continue
 		}
 		r, err := mim.ops.IncParser.Parse(cur.Current, false)
 		if err != nil {
-			mim.errorNum++
 			log.Println(err)
 			continue
 		}
-		mim.result = append(mim.result, r)
+		tmpResults = append(tmpResults, r)
 	}
-	for i := 0; i < len(mim.result); i++ {
+	for i := 0; i < len(tmpResults); i++ {
 		if mim.result[i].DataMod == 0 {
-			_ = mim.innerIndex.Add(mim.result[i].Value)
+			_ = mim.innerIndex.Add(tmpResults[i].Value)
 		} else if mim.result[i].DataMod == 1 {
-			mim.innerIndex.Del(mim.result[i].Value)
-			_ = mim.innerIndex.Add(mim.result[i].Value)
+			mim.innerIndex.Del(tmpResults[i].Value)
+			_ = mim.innerIndex.Add(tmpResults[i].Value)
 		} else {
-			mim.innerIndex.Del(mim.result[i].Value)
+			mim.innerIndex.Del(tmpResults[i].Value)
 		}
 	}
+	fmt.Println(mim.innerIndex.GetBitMap().Count())
 	return nil
 }
 
-func (mim *MongoIndexManager) Find() error {
+func (mim *MongoIndexManager) find(m bson.M) error {
 
 	findOptions := options.Find()
-	cur, err := mim.collection.Find(context.TODO(), bson.M{"status": 1}, findOptions)
+	cur, err := mim.collection.Find(context.TODO(), m, findOptions)
 	if err != nil {
 		return helpers.CollectionNotFound
 	}
@@ -185,4 +191,17 @@ func (mim *MongoIndexManager) Find() error {
 		return helpers.CursorError
 	}
 	return nil
+}
+
+func (mim *MongoIndexManager) Build() *index.IndexImpl {
+	_ = mim.find(mim.ops.BaseQuery.(bson.M))
+	if mim == nil || mim.result == nil || len(mim.result) == 0 {
+		return index.NewIndex("empty")
+	}
+	mim.innerIndex = index.NewIndex("index")
+	c := mim.result
+	for i := 0; i < len(c); i++ {
+		_ = mim.innerIndex.Add(c[i].Value)
+	}
+	return mim.innerIndex
 }
