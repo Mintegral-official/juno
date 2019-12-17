@@ -93,14 +93,12 @@ func (sl *SkipList) Len() int {
 }
 
 func (sl *SkipList) findGE(key interface{}, flag bool, element [DefaultMaxLevel]*Element) (*Element, bool) {
-	x := sl.header
-	h := sl.level - 1
+	x, h := sl.header, sl.level-1
 	for h >= 0 {
 		if x == nil {
 			return nil, false
 		}
-		next := x.Next(h)
-		cmp := 1
+		next, cmp := x.Next(h), 1
 		if next != nil {
 			cmp = sl.cmp.Compare(next.key, key)
 		}
@@ -123,8 +121,7 @@ func (sl *SkipList) findGE(key interface{}, flag bool, element [DefaultMaxLevel]
 }
 
 func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
-	x := sl.header
-	h := sl.level - 1
+	x, h := sl.header, sl.level-1
 	for h >= 0 {
 		next := x.Next(h)
 		if next == nil || sl.cmp.Compare(next.key, key) >= 0 {
@@ -143,7 +140,7 @@ func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
 }
 
 func (sl *SkipList) randLevel() int {
-	var l = 1
+	l := 1
 	for ((sl.randSource.Int63() >> 32) & 0xFFFF) < DefaultProbability {
 		l++
 	}

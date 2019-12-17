@@ -1,81 +1,52 @@
 package datastruct
 
-import (
-	"fmt"
+type BitSet []uint64
+
+const (
+	AddressBitsPerWord uint8  = 6
+	WordsPerSize       uint64 = 64
 )
 
-const bitSize = 8
-
-var bitInit = []byte{1, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7}
-
-type BitMap struct {
-	bits     []byte
-	bitCount int
-	capacity int
+func NewBitMap() *BitSet {
+	wordsLen := (2<<20 - 1) >> AddressBitsPerWord
+	temp := BitSet(make([]uint64, wordsLen+1, wordsLen+1))
+	return &temp
 }
 
-func NewBitMap(maxNum int) *BitMap {
-	return &BitMap{
-		bits:     make([]byte, (maxNum+7)/bitSize),
-		bitCount: 0,
-		capacity: maxNum,
+func (bs *BitSet) Set(bitIndex uint64) {
+	wIndex := bs.wordIndex(bitIndex)
+	bs.expandTo(wIndex)
+	(*bs)[wIndex] |= uint64(0x01) << (bitIndex % WordsPerSize)
+}
+
+func (bs *BitSet) Del(bitIndex uint64) {
+	wIndex := bs.wordIndex(bitIndex)
+	if wIndex < len(*bs) {
+		(*bs)[wIndex] &^= uint64(0x01) << (bitIndex % WordsPerSize)
 	}
 }
 
-func (bm *BitMap) Set(num int) {
-	byteIndex, bitPos := bm.offset(num)
-	bm.bits[byteIndex] |= bitInit[bitPos]
-	bm.bitCount++
+func (bs *BitSet) IsExist(bitIndex uint64) bool {
+	wIndex := bs.wordIndex(bitIndex)
+	return (wIndex < len(*bs)) && ((*bs)[wIndex]&(uint64(0x01)<<(bitIndex%WordsPerSize)) != 0)
 }
 
-func (bm *BitMap) Del(num int) {
-	byteIndex, bitPos := bm.offset(num)
-	bm.bits[byteIndex] &= ^bitInit[bitPos]
-	bm.bitCount--
+func (bs *BitSet) IsFully() bool {
+	return len(*bs) == cap(*bs)
 }
 
-func (bm *BitMap) IsExist(num int) bool {
-	byteIndex := num / bitSize
-	if byteIndex >= len(bm.bits) {
-		return false
-	}
-	bitPos := num % bitSize
-	return bm.bits[byteIndex]&bitInit[bitPos] != 0
+func (bs BitSet) wordIndex(bitIndex uint64) int {
+	return int(bitIndex >> AddressBitsPerWord)
 }
 
-func (bm *BitMap) offset(num int) (byteIndex int, bitPos byte) {
-	byteIndex = num / bitSize
-	if byteIndex >= len(bm.bits) {
-		panic(fmt.Sprintf(" error: index value %d is out of range ", byteIndex))
-		return
-	}
-	bitPos = byte(num % bitSize)
-	return byteIndex, bitPos
-}
-
-func (bm *BitMap) Size() int {
-	return len(bm.bits) * bitSize
-}
-
-func (bm *BitMap) IsEmpty() bool {
-	return bm.bitCount == 0
-}
-
-func (bm *BitMap) IsFully() bool {
-	return bm.bitCount == bm.capacity
-}
-
-func (bm *BitMap) Count() int {
-	return bm.bitCount
-}
-
-func (bm *BitMap) Get() []int {
-	var data []int
-	count := bm.Size()
-	for index := 0; index < count; index++ {
-		if bm.IsExist(index) {
-			data = append(data, index)
+func (bs *BitSet) expandTo(wordIndex int) {
+	wordsRequired := wordIndex + 1
+	if len(*bs) < wordsRequired {
+		if wordsRequired < 2*len(*bs) {
+			wordsRequired = 2 * len(*bs)
 		}
+		newCap := make([]uint64, wordsRequired, wordsRequired)
+		copy(newCap, *bs)
+		*bs = newCap
 	}
-	return data
 }

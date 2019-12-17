@@ -7,9 +7,9 @@ import (
 )
 
 type NotAndQuery struct {
-	querys   []Query
-	checkers []check.Checker
-	curIdx   int
+	querySlice []Query
+	checkers   []check.Checker
+	curIdx     int
 }
 
 func NewNotAndQuery(querys []Query, checkers []check.Checker) *NotAndQuery {
@@ -17,73 +17,73 @@ func NewNotAndQuery(querys []Query, checkers []check.Checker) *NotAndQuery {
 		return nil
 	}
 	return &NotAndQuery{
-		checkers: checkers,
-		querys:   querys,
+		checkers:   checkers,
+		querySlice: querys,
 	}
 }
 
-func (n *NotAndQuery) Next() (document.DocId, error) {
+func (naq *NotAndQuery) Next() (document.DocId, error) {
 	for {
-		target, err := n.querys[0].Current()
+		target, err := naq.querySlice[0].Current()
 		if err != nil {
 			return 0, helpers.NoMoreData
 		}
-		if len(n.querys) == 1 {
-			_, _ = n.querys[0].Next()
-			if n.check(target) {
+		if len(naq.querySlice) == 1 {
+			_, _ = naq.querySlice[0].Next()
+			if naq.check(target) {
 				return target, nil
 			}
 		}
-		for i := 1; i < len(n.querys); i++ {
-			cur, err := n.querys[i].GetGE(target)
-			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(n.querys)-1 {
-				_, _ = n.querys[0].Next()
-				if n.check(target) {
+		for i := 1; i < len(naq.querySlice); i++ {
+			cur, err := naq.querySlice[i].GetGE(target)
+			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(naq.querySlice)-1 {
+				_, _ = naq.querySlice[0].Next()
+				if naq.check(target) {
 					return target, nil
 				}
 			}
 		}
-		target, err = n.querys[0].Next()
+		target, err = naq.querySlice[0].Next()
 	}
 }
 
-func (n *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
+func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	for {
-		target, err := n.querys[0].GetGE(id)
+		target, err := naq.querySlice[0].GetGE(id)
 		if err != nil {
 			return 0, helpers.NoMoreData
 		}
-		if len(n.querys) == 1 {
-			for !n.check(target) {
-				target, err = n.querys[0].Next()
+		if len(naq.querySlice) == 1 {
+			for !naq.check(target) {
+				target, err = naq.querySlice[0].Next()
 			}
 			return target, nil
 		}
-		for i := 1; i < len(n.querys); i++ {
-			if _, err := n.querys[i].Current(); err != nil {
-				for !n.check(target) {
-					target, err = n.querys[0].Next()
+		for i := 1; i < len(naq.querySlice); i++ {
+			if _, err := naq.querySlice[i].Current(); err != nil {
+				for !naq.check(target) {
+					target, err = naq.querySlice[0].Next()
 				}
 				return target, nil
 			}
-			cur, err := n.querys[i].GetGE(target)
-			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(n.querys)-1 {
-				if n.check(target) {
+			cur, err := naq.querySlice[i].GetGE(target)
+			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(naq.querySlice)-1 {
+				if naq.check(target) {
 					return target, nil
 				}
 			}
 		}
-		_, _ = n.querys[0].Next()
+		_, _ = naq.querySlice[0].Next()
 	}
 }
 
-func (n *NotAndQuery) Current() (document.DocId, error) {
-	res, err := n.querys[0].Current()
+func (naq *NotAndQuery) Current() (document.DocId, error) {
+	res, err := naq.querySlice[0].Current()
 	if err != nil {
 		return 0, err
 	}
-	for i := 1; i < len(n.querys); i++ {
-		tar, err := n.querys[i].Current()
+	for i := 1; i < len(naq.querySlice); i++ {
+		tar, err := naq.querySlice[i].Current()
 		if err != nil {
 			return 0, err
 		}
@@ -94,17 +94,17 @@ func (n *NotAndQuery) Current() (document.DocId, error) {
 	return res, err
 }
 
-func (n *NotAndQuery) String() string {
+func (naq *NotAndQuery) String() string {
 	//panic("implement me")
 	return ""
 }
 
-func (n *NotAndQuery) check(id document.DocId) bool {
-	if n.checkers == nil {
+func (naq *NotAndQuery) check(id document.DocId) bool {
+	if naq.checkers == nil {
 		return true
 	}
-	for i := 1; i < len(n.checkers); i++ {
-		if n.checkers[i].Check(id) {
+	for i := 1; i < len(naq.checkers); i++ {
+		if naq.checkers[i].Check(id) {
 			return false
 		}
 	}

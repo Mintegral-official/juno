@@ -114,7 +114,7 @@ func TestNewIndex(t *testing.T) {
 			}
 		}
 		So(c, ShouldEqual, 1)
-		So(index.GetBitMap().Count(), ShouldEqual, 6)
+		So(len(*index.GetBitMap()), ShouldEqual, 32768)
 		So(index.GetCampaignMap(), ShouldNotBeNil)
 	})
 
@@ -158,7 +158,7 @@ func TestNewIndex(t *testing.T) {
 			}
 		}
 		So(c, ShouldEqual, 1)
-		So(index.GetBitMap().Count(), ShouldEqual, 4)
+		So(len(*index.GetBitMap()), ShouldEqual, 32768)
 		So(index.GetCampaignMap(), ShouldNotBeNil)
 	})
 }

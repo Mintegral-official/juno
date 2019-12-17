@@ -45,21 +45,4 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	}
 	v = iter.Current().(*datastruct.Element).Value()
 	return UtilCheck(v, c.op, c.value)
-	//for !UtilCheck(v, c.op, c.value) {
-	//	iter.Next()
-	//	v = iter.Current().(*datastruct.Element).Value()
-	//	if v == nil{
-	//		return false
-	//	}
-	//}
-	//for iter.HasNext() {
-	//	element := iter.Current()
-	//	if helpers.Compare(id, element.(*datastruct.Element).Key()) == 0 {
-	//		return true
-	//	} else if helpers.Compare(id, element.(*datastruct.Element).Key()) > 0 {
-	//		return false
-	//	}
-	//	iter.Next()
-	//}
-	//return false
 }

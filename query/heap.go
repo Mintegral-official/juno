@@ -29,7 +29,9 @@ func (h Heap) Swap(i, j int) {
 }
 
 func (h *Heap) Push(x interface{}) {
-	*h = append(*h, x.(Query))
+	if x != nil {
+		*h = append(*h, x.(Query))
+	}
 }
 
 func (h *Heap) Pop() interface{} {

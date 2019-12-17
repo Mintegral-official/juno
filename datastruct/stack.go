@@ -1,7 +1,7 @@
-package query
+package datastruct
 
 type node struct {
-	value string
+	value interface{}
 	next  *node
 }
 
@@ -18,14 +18,14 @@ func NewStack() *Stack {
 }
 
 func (s *Stack) Empty() bool {
-	return s == nil || s.len == 0
+	return s.len == 0
 }
 
 func (s *Stack) Len() int {
 	return s.len
 }
 
-func (s *Stack) Push(value string) {
+func (s *Stack) Push(value interface{}) {
 	n := &node{
 		value: value,
 		next:  s.top,
@@ -34,9 +34,9 @@ func (s *Stack) Push(value string) {
 	s.len++
 }
 
-func (s *Stack) Pop() string {
+func (s *Stack) Pop() interface{} {
 	if s.len == 0 {
-		return ""
+		return nil
 	}
 	top := s.top
 	s.top = top.next
@@ -44,9 +44,9 @@ func (s *Stack) Pop() string {
 	return top.value
 }
 
-func (s *Stack) Peek() string {
+func (s *Stack) Peek() interface{} {
 	if s.len == 0 {
-		return ""
+		return nil
 	}
 	return s.top.value
 }

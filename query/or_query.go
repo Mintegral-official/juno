@@ -26,49 +26,49 @@ func NewOrQuery(querys []Query, checkers []check.Checker) *OrQuery {
 	}
 }
 
-func (o *OrQuery) Next() (document.DocId, error) {
-	for target, err := o.Current(); err == nil; {
-		o.next()
-		if o.check(target) {
+func (oq *OrQuery) Next() (document.DocId, error) {
+	for target, err := oq.Current(); err == nil; {
+		oq.next()
+		if oq.check(target) {
 			return target, nil
 		}
-		target, err = o.Current()
+		target, err = oq.Current()
 	}
 	return 0, helpers.NoMoreData
 }
 
-func (o *OrQuery) next() {
-	top := o.h.Top()
+func (oq *OrQuery) next() {
+	top := oq.h.Top()
 	if top != nil {
 		q := top.(Query)
 		_, _ = q.Next()
-		heap.Fix(&o.h, 0)
+		heap.Fix(&oq.h, 0)
 	}
 }
 
-func (o *OrQuery) getGE(id document.DocId) {
-	top := o.h.Top()
+func (oq *OrQuery) getGE(id document.DocId) {
+	top := oq.h.Top()
 	if top != nil {
 		q := top.(Query)
 		_, _ = q.GetGE(id)
-		heap.Fix(&o.h, 0)
+		heap.Fix(&oq.h, 0)
 	}
 }
 
-func (o *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
-	target, err := o.Current()
+func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
+	target, err := oq.Current()
 	for err == nil && target < id {
-		o.getGE(id)
-		target, err = o.Current()
+		oq.getGE(id)
+		target, err = oq.Current()
 	}
-	for err == nil && !o.check(target) {
-		target, err = o.Next()
+	for err == nil && !oq.check(target) {
+		target, err = oq.Next()
 	}
 	return target, err
 }
 
-func (o *OrQuery) Current() (document.DocId, error) {
-	top := o.h.Top()
+func (oq *OrQuery) Current() (document.DocId, error) {
+	top := oq.h.Top()
 	if top == nil {
 		return 0, helpers.NoMoreData
 	}
@@ -76,15 +76,15 @@ func (o *OrQuery) Current() (document.DocId, error) {
 	return q.Current()
 }
 
-func (t *OrQuery) String() string {
+func (oq *OrQuery) String() string {
 	return ""
 }
 
-func (o *OrQuery) check(id document.DocId) bool {
-	if o.checkers == nil {
+func (oq *OrQuery) check(id document.DocId) bool {
+	if oq.checkers == nil {
 		return true
 	}
-	for _, v := range o.checkers {
+	for _, v := range oq.checkers {
 		if v.Check(id) {
 			return true
 		}

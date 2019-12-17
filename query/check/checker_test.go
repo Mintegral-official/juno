@@ -30,7 +30,7 @@ func TestCheckerImpl_Check(t *testing.T) {
 		So(c.Check(10), ShouldBeTrue)
 	})
 
-	Convey("Andchecker", t, func() {
+	Convey("and checker", t, func() {
 		c := NewCheckerImpl(sl.Iterator(), 3, operation.GE)
 		d := NewCheckerImpl(sl1.Iterator(), 10, operation.LT)
 		a := NewAndCheckerImpl([]Checker{
@@ -42,7 +42,7 @@ func TestCheckerImpl_Check(t *testing.T) {
 		//	So(a.Check(6), ShouldBeTrue)
 	})
 
-	Convey("Orchecker", t, func() {
+	Convey("or checker", t, func() {
 		c := NewCheckerImpl(sl.Iterator(), 6, operation.EQ)
 		d := NewCheckerImpl(sl1.Iterator(), 10, operation.EQ)
 		o := NewOrCheckerImpl([]Checker{
@@ -54,7 +54,7 @@ func TestCheckerImpl_Check(t *testing.T) {
 		So(o.Check(6), ShouldBeFalse)
 	})
 
-	Convey("Inchecker", t, func() {
+	Convey("in checker", t, func() {
 		c := NewCheckerImpl(sl.Iterator(), 6, operation.EQ)
 		d := NewCheckerImpl(sl.Iterator(), 10, operation.EQ)
 		o := NewInCheckerImpl([]Checker{
@@ -66,7 +66,7 @@ func TestCheckerImpl_Check(t *testing.T) {
 		So(o.Check(6), ShouldBeFalse)
 	})
 
-	Convey("Notchecker", t, func() {
+	Convey("not checker", t, func() {
 		c := NewCheckerImpl(sl.Iterator(), 6, operation.NE)
 		d := NewCheckerImpl(sl.Iterator(), 10, operation.NE)
 		o := NewNotCheckerImpl([]Checker{

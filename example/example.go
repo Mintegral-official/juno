@@ -10,6 +10,7 @@ import (
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
+	"github.com/Mintegral-official/juno/search"
 	"go.mongodb.org/mongo-driver/bson"
 	"os"
 	"os/signal"
@@ -93,23 +94,15 @@ func MakeInfo(info *model.CampaignInfo) *document.DocInfo {
 	return docInfo
 }
 
-func (c *CampaignParser) Parse(bytes []byte, flag bool) (*builder.ParserResult, error) {
+func (c *CampaignParser) Parse(bytes []byte) (*builder.ParserResult, error) {
 	campaign := &model.CampaignInfo{}
 	if err := bson.Unmarshal(bytes, &campaign); err != nil {
 		return nil, err
 	}
 	var info = MakeInfo(campaign)
 	var mode builder.DataMod
-	if flag {
-		return &builder.ParserResult{
-			DataMod: 1,
-			Value:   info,
-		}, nil
-	}
 	if campaign.Status == 1 {
 		mode = 1
-	} else {
-		mode = 2
 	}
 	return &builder.ParserResult{
 		DataMod: mode,
@@ -122,7 +115,7 @@ func main() {
 	defer cancel()
 
 	// build index
-	b := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
+	b, e := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
 		URI:            "mongodb://13.250.108.190:27017",
 		IncInterval:    5,
 		BaseInterval:   120,
@@ -135,8 +128,8 @@ func main() {
 		ConnectTimeout: 10000,
 		ReadTimeout:    20000,
 	})
-	if b == nil {
-		fmt.Println("build index error")
+	if e != nil {
+		fmt.Println(e)
 		return
 	}
 	if e := b.Build(ctx); e != nil {
@@ -144,7 +137,7 @@ func main() {
 	}
 	tIndex := b.GetIndex()
 
-	// search: advertiserId=457 or  platform=android or (price < 20.0 And price >= 16.4) or advertiserId=646
+	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4) or advertiserId=646
 	// invert list
 	invertIdx := tIndex.GetInvertedIndex()
 
@@ -164,7 +157,8 @@ func main() {
 			}),
 		query.NewTermQuery(invertIdx.Iterator("AdvertiserId_646").(*datastruct.SkipListIterator)),
 	}, nil)
-	res := tIndex.Search(q)
+
+	res := search.Search(tIndex, q)
 	fmt.Println("res: ", len(res.Docs), res.Time)
 
 	c := make(chan os.Signal)

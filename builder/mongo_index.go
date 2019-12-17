@@ -2,7 +2,7 @@ package builder
 
 import (
 	"context"
-	"fmt"
+	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type MongoBuilder struct {
+type MongoIndexBuilder struct {
 	ops        *MongoIndexManagerOps
 	innerIndex *index.IndexImpl
 	totalNum   int64
@@ -21,12 +21,12 @@ type MongoBuilder struct {
 	findOpt    *options.FindOptions
 }
 
-func NewMongoIndexBuilder(ops *MongoIndexManagerOps) *MongoBuilder {
+func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error) {
 	if ops == nil {
-		return nil
+		return nil, helpers.MongoCfgError
 	}
 
-	mongoIndexManager := &MongoBuilder{
+	mongoIndexBuilder := &MongoIndexBuilder{
 		ops:        ops,
 		innerIndex: nil,
 	}
@@ -40,46 +40,46 @@ func NewMongoIndexBuilder(ops *MongoIndexManagerOps) *MongoBuilder {
 	client, err := mongo.Connect(ctx, opt)
 
 	if err != nil {
-		return nil
+		return nil, helpers.ConnectError
 	}
 
-	mongoIndexManager.client = client
-	mongoIndexManager.findOpt = options.MergeFindOptions(ops.FindOpt)
+	mongoIndexBuilder.client = client
+	mongoIndexBuilder.findOpt = options.MergeFindOptions(ops.FindOpt)
 	d := time.Duration(ops.ReadTimeout) * time.Microsecond
-	mongoIndexManager.findOpt.MaxTime = &d
+	mongoIndexBuilder.findOpt.MaxTime = &d
 
 	if err = client.Ping(ctx, readpref.Primary()); err != nil {
-		return nil
+		return nil, helpers.PingError
 	}
-	mongoIndexManager.collection = client.Database(ops.DB).Collection(ops.Collection)
-	if mongoIndexManager.collection == nil {
-		return nil
+	mongoIndexBuilder.collection = client.Database(ops.DB).Collection(ops.Collection)
+	if mongoIndexBuilder.collection == nil {
+		return nil, helpers.CollectionNotFound
 	}
-	return mongoIndexManager
+	return mongoIndexBuilder, nil
 }
 
-func (mim *MongoBuilder) GetIndex() *index.IndexImpl {
-	return mim.innerIndex
+func (mib *MongoIndexBuilder) GetIndex() *index.IndexImpl {
+	return mib.innerIndex
 }
 
-func (mim *MongoBuilder) update(ctx context.Context) error {
-	if err := mim.base(ctx); err != nil {
+func (mib *MongoIndexBuilder) update(ctx context.Context) error {
+	if err := mib.base(ctx); err != nil {
 		return err
 	}
 	go func() {
 		for {
-			inc := time.After(time.Duration(mim.ops.IncInterval) * time.Second)
-			base := time.After(time.Duration(mim.ops.BaseInterval) * time.Second)
+			inc := time.After(time.Duration(mib.ops.IncInterval) * time.Second)
+			base := time.After(time.Duration(mib.ops.BaseInterval) * time.Second)
 			select {
 			case <-ctx.Done():
 				return
 			case <-inc:
-				if err := mim.inc(ctx); err != nil {
-					log.Println(err)
+				if err := mib.inc(ctx); err != nil {
+					//log.Println(err) TODO log
 				}
 			case <-base:
-				if err := mim.base(ctx); err != nil {
-					log.Println(err)
+				if err := mib.base(ctx); err != nil {
+					// log.Println(err) TODO log
 				}
 			}
 		}
@@ -87,15 +87,15 @@ func (mim *MongoBuilder) update(ctx context.Context) error {
 	return nil
 }
 
-func (mim *MongoBuilder) base(ctx context.Context) error {
-	mim.totalNum = 0
-	mim.errorNum = 0
-	if mim.ops.OnBeforeBase != nil {
-		mim.ops.BaseQuery = mim.ops.OnBeforeBase(mim.ops.UserData)
+func (mib *MongoIndexBuilder) base(ctx context.Context) error {
+	mib.totalNum = 0
+	mib.errorNum = 0
+	if mib.ops.OnBeforeBase != nil {
+		mib.ops.BaseQuery = mib.ops.OnBeforeBase(mib.ops.UserData)
 	}
-	c, cancel := context.WithTimeout(ctx, time.Duration(mim.ops.ReadTimeout)*time.Microsecond)
+	c, cancel := context.WithTimeout(ctx, time.Duration(mib.ops.ReadTimeout)*time.Microsecond)
 	defer cancel()
-	cur, err := mim.collection.Find(nil, mim.ops.BaseQuery, mim.ops.FindOpt)
+	cur, err := mib.collection.Find(nil, mib.ops.BaseQuery, mib.ops.FindOpt)
 	if err != nil {
 		return err
 	}
@@ -103,29 +103,29 @@ func (mim *MongoBuilder) base(ctx context.Context) error {
 	var baseIndex = index.NewIndex("base")
 	for cur.Next(c) {
 		if cur.Err() != nil {
-			mim.errorNum++
+			mib.errorNum++
 			continue
 		}
-		r, err := mim.ops.BaseParser.Parse(cur.Current, true)
+		r, err := mib.ops.BaseParser.Parse(cur.Current)
 		if err != nil {
-			mim.errorNum++
-			log.Println(err)
+			mib.errorNum++
+			//log.Println(err) TODO add log
 			continue
 		}
-		mim.totalNum++
+		mib.totalNum++
 		_ = baseIndex.Add(r.Value)
 	}
-	mim.innerIndex = baseIndex
+	mib.innerIndex = baseIndex
 	return err
 }
 
-func (mim *MongoBuilder) inc(ctx context.Context) error {
-	if mim.ops.OnBeforeInc != nil {
-		mim.ops.IncQuery = mim.ops.OnBeforeInc(mim.ops.UserData)
+func (mib *MongoIndexBuilder) inc(ctx context.Context) error {
+	if mib.ops.OnBeforeInc != nil {
+		mib.ops.IncQuery = mib.ops.OnBeforeInc(mib.ops.UserData)
 	}
-	c, cancel := context.WithTimeout(ctx, time.Duration(mim.ops.ReadTimeout)*time.Microsecond)
+	c, cancel := context.WithTimeout(ctx, time.Duration(mib.ops.ReadTimeout)*time.Microsecond)
 	defer cancel()
-	cur, err := mim.collection.Find(c, mim.ops.IncQuery, mim.ops.FindOpt)
+	cur, err := mib.collection.Find(c, mib.ops.IncQuery, mib.ops.FindOpt)
 
 	if err != nil {
 		return err
@@ -136,22 +136,21 @@ func (mim *MongoBuilder) inc(ctx context.Context) error {
 		if cur.Err() != nil {
 			continue
 		}
-		r, err := mim.ops.IncParser.Parse(cur.Current, false)
+		r, err := mib.ops.IncParser.Parse(cur.Current)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
 		if r.DataMod == 1 {
-			mim.innerIndex.Del(r.Value)
-			_ = mim.innerIndex.Add(r.Value)
+			mib.innerIndex.Del(r.Value)
+			_ = mib.innerIndex.Add(r.Value)
 		} else {
-			mim.innerIndex.Del(r.Value)
+			mib.innerIndex.Del(r.Value)
 		}
 	}
-	fmt.Println(mim.innerIndex.GetInvertedIndex().Count(), mim.innerIndex.GetStorageIndex().Count())
 	return nil
 }
 
-func (mim *MongoBuilder) Build(ctx context.Context) error {
-	return mim.update(ctx)
+func (mib *MongoIndexBuilder) Build(ctx context.Context) error {
+	return mib.update(ctx)
 }
