@@ -102,7 +102,7 @@ func (c *CampaignParser) Parse(bytes []byte) (*builder.ParserResult, error) {
 	var info = MakeInfo(campaign)
 	var mode builder.DataMod
 	if campaign.Status == 1 {
-		mode = 1
+		mode = builder.DataAddOrUpdate
 	}
 	return &builder.ParserResult{
 		DataMod: mode,

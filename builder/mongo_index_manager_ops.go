@@ -7,6 +7,11 @@ import (
 
 type DataMod int
 
+const (
+	DataDel = iota
+	DataAddOrUpdate
+)
+
 type ParserResult struct {
 	DataMod DataMod
 	Value   *document.DocInfo

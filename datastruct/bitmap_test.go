@@ -3,6 +3,8 @@ package datastruct
 import (
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
+	"math/rand"
+	"strconv"
 	"testing"
 )
 
@@ -39,5 +41,17 @@ func BenchmarkBitMap(b *testing.B) {
 		for j := 0; j < 100000000/8; j++ {
 			bm.Set(uint64(j + 1))
 		}
+	}
+}
+
+func BenchmarkBitSet_Del(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = fmt.Sprint(rand.Int())
+	}
+}
+
+func BenchmarkBitSet_IsExist(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = strconv.Itoa(rand.Int())
 	}
 }

@@ -5,8 +5,9 @@ import (
 )
 
 type Element struct {
-	key, value interface{}
-	next       []unsafe.Pointer
+	key   interface{}
+	value interface{}
+	next  []unsafe.Pointer
 }
 
 func newNode(key, value interface{}, level int) *Element {

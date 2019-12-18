@@ -141,7 +141,7 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) error {
 			log.Println(err)
 			continue
 		}
-		if r.DataMod == 1 {
+		if r.DataMod == DataAddOrUpdate {
 			mib.innerIndex.Del(r.Value)
 			_ = mib.innerIndex.Add(r.Value)
 		} else {
