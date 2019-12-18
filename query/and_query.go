@@ -4,40 +4,46 @@ import (
 	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/query/check"
 	"github.com/pkg/errors"
 )
 
 type AndQuery struct {
-	querys   []Query
-	checkers []Checker
-	curIdx   int
+	querySlice []Query
+	checkers   []check.Checker
+	curIdx     int
 }
 
-func NewAndQuery(querys []Query, checkers []Checker) *AndQuery {
+func NewAndQuery(querys []Query, checkers []check.Checker) *AndQuery {
 	if querys == nil {
 		return nil
 	}
 	return &AndQuery{
-		querys:   querys,
-		checkers: checkers,
+		querySlice: querys,
+		checkers:   checkers,
 	}
 }
 
-func (a *AndQuery) Next() (document.DocId, error) {
-	lastIdx := a.curIdx
-	curIdx := a.curIdx
-	target, err := a.querys[curIdx].Next()
+func (aq *AndQuery) Next() (document.DocId, error) {
+	lastIdx, curIdx := aq.curIdx, aq.curIdx
+	target, err := aq.querySlice[curIdx].Next()
 
 	if err != nil {
 		return 0, errors.Wrap(err, "no more data")
 	}
-	if curIdx == len(a.querys) - 1 {
+	if curIdx == len(aq.querySlice)-1 {
+		if !aq.check(target) {
+			target, err = aq.querySlice[curIdx].Next()
+			if err != nil {
+				return 0, errors.Wrap(err, "no more data")
+			}
+		}
 		return target, nil
 	}
 
 	for {
-		curIdx = (curIdx + 1) % len(a.querys)
-		cur, err := a.querys[curIdx].GetGE(target)
+		curIdx = (curIdx + 1) % len(aq.querySlice)
+		cur, err := aq.querySlice[curIdx].GetGE(target)
 		if err != nil {
 			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(target), curIdx))
 		}
@@ -45,12 +51,12 @@ func (a *AndQuery) Next() (document.DocId, error) {
 			lastIdx = curIdx
 			target = cur
 		}
-		if (curIdx+1)%len(a.querys) == lastIdx {
-			if a.check(target) {
+		if (curIdx+1)%len(aq.querySlice) == lastIdx {
+			if aq.check(target) {
 				return target, nil
 			}
-			curIdx++
-			target, err = a.querys[curIdx].Next()
+			curIdx = (curIdx + 1) % len(aq.querySlice)
+			target, err = aq.querySlice[curIdx].Next()
 			if err != nil {
 				return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(target), curIdx))
 			}
@@ -58,18 +64,17 @@ func (a *AndQuery) Next() (document.DocId, error) {
 	}
 }
 
-func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	curIdx := a.curIdx
-	lastIdx := a.curIdx
-	res, err := a.querys[a.curIdx].GetGE(id)
+func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
+	curIdx, lastIdx := aq.curIdx, aq.curIdx
+	res, err := aq.querySlice[aq.curIdx].GetGE(id)
 
 	if err != nil {
 		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(res), curIdx))
 	}
 
 	for {
-		curIdx = (curIdx + 1) % len(a.querys)
-		cur, err := a.querys[curIdx].GetGE(res)
+		curIdx = (curIdx + 1) % len(aq.querySlice)
+		cur, err := aq.querySlice[curIdx].GetGE(res)
 		if err != nil {
 			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(res), curIdx))
 		}
@@ -77,12 +82,12 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			lastIdx = curIdx
 			res = cur
 		}
-		if (curIdx+1)%len(a.querys) == lastIdx {
-			if a.check(res) {
+		if (curIdx+1)%len(aq.querySlice) == lastIdx {
+			if aq.check(res) {
 				return res, nil
 			}
 			curIdx++
-			res, err = a.querys[curIdx].Next()
+			res, err = aq.querySlice[curIdx].Next()
 			if err != nil {
 				return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in querys[%d]", int64(res), curIdx))
 			}
@@ -90,14 +95,14 @@ func (a *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	}
 }
 
-func (a *AndQuery) Current() (document.DocId, error) {
-	res, err := a.querys[0].Current()
+func (aq *AndQuery) Current() (document.DocId, error) {
+	res, err := aq.querySlice[0].Current()
 	if err != nil {
 		return 0, err
 	}
 
-	for i := 1; i < len(a.querys); i++ {
-		tar, err := a.querys[i].Current()
+	for i := 1; i < len(aq.querySlice); i++ {
+		tar, err := aq.querySlice[i].Current()
 		if err != nil {
 			return 0, err
 		}
@@ -108,15 +113,15 @@ func (a *AndQuery) Current() (document.DocId, error) {
 	return res, nil
 }
 
-func (a *AndQuery) String() string {
+func (aq *AndQuery) String() string {
 	return ""
 }
 
-func (a *AndQuery) check(id document.DocId) bool {
-	if a.checkers == nil {
+func (aq *AndQuery) check(id document.DocId) bool {
+	if aq.checkers == nil {
 		return true
 	}
-	for _, c := range a.checkers {
+	for _, c := range aq.checkers {
 		if !c.Check(id) {
 			return false
 		}

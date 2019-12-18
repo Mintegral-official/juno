@@ -1,36 +1,112 @@
 package query
 
-import "github.com/Mintegral-official/juno/document"
+import (
+	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/query/check"
+)
 
 type NotAndQuery struct {
-	*AndQuery
-	checker []Checker
+	querySlice []Query
+	checkers   []check.Checker
+	curIdx     int
 }
 
-func NewNotAndQuery(querys []Query, checks []Checker) *NotAndQuery {
+func NewNotAndQuery(querys []Query, checkers []check.Checker) *NotAndQuery {
 	if querys == nil {
 		return nil
 	}
 	return &NotAndQuery{
-		AndQuery: NewAndQuery(querys, checks),
-		checker:  checks,
+		checkers:   checkers,
+		querySlice: querys,
 	}
 }
 
-func (n NotAndQuery) Next() (document.DocId, error) {
-	//	panic("implement me")
-	return 0, nil
+func (naq *NotAndQuery) Next() (document.DocId, error) {
+	for {
+		target, err := naq.querySlice[0].Current()
+		if err != nil {
+			return 0, helpers.NoMoreData
+		}
+		if len(naq.querySlice) == 1 {
+			_, _ = naq.querySlice[0].Next()
+			if naq.check(target) {
+				return target, nil
+			}
+		}
+		for i := 1; i < len(naq.querySlice); i++ {
+			cur, err := naq.querySlice[i].GetGE(target)
+			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(naq.querySlice)-1 {
+				_, _ = naq.querySlice[0].Next()
+				if naq.check(target) {
+					return target, nil
+				}
+			}
+		}
+		target, err = naq.querySlice[0].Next()
+	}
 }
 
-func (n NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	// panic("implement me")
-	return 0, nil
+func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
+	for {
+		target, err := naq.querySlice[0].GetGE(id)
+		if err != nil {
+			return 0, helpers.NoMoreData
+		}
+		if len(naq.querySlice) == 1 {
+			for !naq.check(target) {
+				target, err = naq.querySlice[0].Next()
+			}
+			return target, nil
+		}
+		for i := 1; i < len(naq.querySlice); i++ {
+			if _, err := naq.querySlice[i].Current(); err != nil {
+				for !naq.check(target) {
+					target, err = naq.querySlice[0].Next()
+				}
+				return target, nil
+			}
+			cur, err := naq.querySlice[i].GetGE(target)
+			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(naq.querySlice)-1 {
+				if naq.check(target) {
+					return target, nil
+				}
+			}
+		}
+		_, _ = naq.querySlice[0].Next()
+	}
 }
 
-func (n NotAndQuery) Current() (document.DocId, error) {
-  return 0, nil
+func (naq *NotAndQuery) Current() (document.DocId, error) {
+	res, err := naq.querySlice[0].Current()
+	if err != nil {
+		return 0, err
+	}
+	for i := 1; i < len(naq.querySlice); i++ {
+		tar, err := naq.querySlice[i].Current()
+		if err != nil {
+			return 0, err
+		}
+		if tar != res {
+			return res, nil
+		}
+	}
+	return res, err
 }
 
-func (n NotAndQuery) String() string {
-	panic("implement me")
+func (naq *NotAndQuery) String() string {
+	//panic("implement me")
+	return ""
+}
+
+func (naq *NotAndQuery) check(id document.DocId) bool {
+	if naq.checkers == nil {
+		return true
+	}
+	for i := 1; i < len(naq.checkers); i++ {
+		if naq.checkers[i].Check(id) {
+			return false
+		}
+	}
+	return true
 }

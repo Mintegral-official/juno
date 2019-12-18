@@ -26,18 +26,35 @@
 
 ```go
 // 建立索引
-index := Index.NewIndex("indexName")
-index.Add(docInfo)
+ib := NewIndexBuilder(cfg)
+ii := ib.build()
+
+// 正排
+if1 := ii.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
+if2 := ii.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
+if3 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+
+if331 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+if332 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+if333 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+if334 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
 
 // 查询
-query := NewQuery(NewAndExpress(
-	NewEqExpression("country", "us"),
-	NewRangeExpression("price", 1, 20)，
-  NewOrExpress(
-		NewEqExpression("country", "us"),
-    NewInExpression("packageName", "package1", "package2")
-	),
-)	
+q := query.NewOrQuery([]query.Query{
+			query.NewTermQuery(if3),
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(if1),
+				query.NewTermQuery(if2),
+				query.NewTermQuery(if3),
+			}, nil),
+		},
+			[]check.Checker{
+				check.NewCheckerImpl(if331, 20.0, operation.LT),
+				check.NewCheckerImpl(if332, 16.4, operation.LE),
+				check.NewCheckerImpl(if333, 0.5, operation.EQ),
+				check.NewCheckerImpl(if334, 1.24, operation.EQ),
+			},
+		)
 searchResult := index.Search(query)
 fmt.Println(searchResult)
 ```
@@ -62,7 +79,8 @@ fmt.Println(searchResult)
 查询语法支持三种格式  string,  json, go stuct
 
 ```shell
-country=us and (price range [1, 10]) and (platform=ios or package in ["pacakge1", "pacakge1"] )
+and : &  or : |  in : @  not : #
+country=us & (price # [1.0, 2.0, 3.04]) and (platform=ios or package @ ["pacakge1", "pacakge1"] )
 ```
 
 ```json
@@ -108,14 +126,19 @@ country=us and (price range [1, 10]) and (platform=ios or package in ["pacakge1"
 
 ```go
 // 构建查询
-q := NewQuery(NewAndExpress(
-  NewEqExpression("country", "us"),
-  NewRangeExpression("price", 1, 20)，
-  NewOrExpress(
-    NewEqExpression("country", "us"),
-    NewInExpression("packageName", "package1", "package2")
-  ),          
-))
+q := query.NewOrQuery([]query.Query{
+    query.NewTermQuery(invertIdx.Iterator("A_1").(*datastruct.SkipListIterator)),
+    query.NewTermQuery(invertIdx.Iterator("B_2").(*datastruct.SkipListIterator)),
+    query.NewAndQuery([]query.Query{
+        query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
+        query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
+    },
+        []check.Checker{
+            check.NewCheckerImpl(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 20.0, operation.LT),
+            check.NewCheckerImpl(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 16.4, operation.GE),
+        }),
+    query.NewTermQuery(invertIdx.Iterator("A_3").(*datastruct.SkipListIterator)),
+}, nil)
 
 // 遍历结果
 for q.HasNext() {
@@ -143,13 +166,11 @@ index接口：
 
 ```go
 type Index interface {
-	Add(doc *DocInfo)  // 新增文档
-	Del(doc *DocInfo)  // 删除文档
-	UpDate(doc *DocInfo)  // 更新文档
-
-	Dump(filename string)  // 将索引Dump到磁盘
-	Load()  // 从磁盘加载索引
-
+	Add(docInfo *document.DocInfo) error  // 新增文档
+	Del(docInfo *document.DocInfo) error  // 删除文档
+	GetDataType(fieldName string) document.FieldType  // 获取field类型
+	Dump(filename string) error  // 将索引Dump到磁盘
+	Load(filename string) error  // 从磁盘加载索引
 	Search(query *query.Query)  // 查询接口
 }
 ```
@@ -159,26 +180,21 @@ DocInfo:  json结构
 ```json
 {
     "Id": 12345,
-    "Index": [
+    "Fields": [
         {
-            "field": "country",
-            "value": "cn"
+           "FieldName": "Field1",
+           "value":"value",
+           "indexType":0
         },
         {
-            "field": "platform",
-            "value": "android"
-        }
-    ],
-    "Storage": [
-        {
-            "field": "package",
-            "type": "string",
-            "value": "com.juno"
+           "FieldName": "Field2",
+           "value":"value",
+           "indexType":1
         },
         {
-            "field": "price",
-            "type": "float64",
-            "value": 2.3
+           "FieldName": "Field3",
+           "value":"value",
+           "indexType":2
         }
     ]
 }
@@ -200,14 +216,10 @@ DocInfo:  json结构
 
 ```go
 // InvertList 倒排结构的接口，仅负责查询，不负责索引更新
-type InvertList interface {
-	HasNext()
-	Next() query.DocId
-	GetGE(id query.DocId) query.DocId
-}
-
 type InvertIndex interface {
-	GetInvertList(fieldName string) InvertList
+	Add(fieldName string, id document.DocId) error
+	Del(fieldName string, id document.DocId) bool
+	Iterator(fieldName string) datastruct.Iterator
 }
 ```
 
@@ -219,9 +231,10 @@ type InvertIndex interface {
 
 ```go
 // 按字段存储正排信息
-type StorageIndex interface {
-   Get(filedName string, id query.DocId) interface{}
-}
+	Get(filedName string, id document.DocId) interface{}
+	Add(fieldName string, id document.DocId, value interface{}) error
+	Del(fieldName string, id document.DocId) bool
+	Iterator(fieldName string) datastruct.Iterator
 ```
 
 
@@ -233,8 +246,52 @@ type StorageIndex interface {
 示例：
 
 ```go
-builder := IndexBuilder.NewBuilder(mongoBuilderCfg)  // 构造mongo的builder
-index := builder.build()  // 开始构建索引
+// build index
+b, e := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
+    URI:            "mongodb://127.0.0.1:27017",
+    IncInterval:    5,
+    BaseInterval:   120,
+    IncParser:      &CampaignParser{},
+    BaseParser:     &CampaignParser{},
+    BaseQuery:      bson.M{"status": 1},
+    IncQuery:       bson.M{"updated": bson.M{"$gt": time.Now().Unix() - int64(5*time.Second)}},
+    DB:             "new_adn",
+    Collection:     "campaign",
+    ConnectTimeout: 10000,
+    ReadTimeout:    20000,
+})
+if e != nil {
+    fmt.Println(e)
+    return
+}
+if e := b.Build(ctx); e != nil {
+    fmt.Println("build error", e.Error())
+}
+tIndex := b.GetIndex()
+// invert list
+invertIdx := tIndex.GetInvertedIndex()
+
+// storage
+storageIdx := tIndex.GetStorageIndex()
+
+// A=1 or B=2 or (c>=16.4 and c <20.0) or A=3
+// query
+q := query.NewOrQuery([]query.Query{
+    query.NewTermQuery(invertIdx.Iterator("A_1").(*datastruct.SkipListIterator)),
+    query.NewTermQuery(invertIdx.Iterator("B_2").(*datastruct.SkipListIterator)),
+    query.NewAndQuery([]query.Query{
+        query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
+        query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
+    },
+        []check.Checker{
+            check.NewCheckerImpl(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 20.0, operation.LT),
+            check.NewCheckerImpl(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 16.4, operation.GE),
+        }),
+    query.NewTermQuery(invertIdx.Iterator("A_3").(*datastruct.SkipListIterator)),
+}, nil)
+
+// search
+res := search.Search(tIndex, q)
 ```
 
 索引构建模块会支持多种数据源，如文件、mongo、mysql等

@@ -2,10 +2,10 @@ package query
 
 import (
 	"container/heap"
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
@@ -28,6 +28,8 @@ func TestHeap_Compare(t *testing.T) {
 	h := &Heap{}
 	heap.Push(h, Query(&TermQuery{sl.Iterator()}))
 	heap.Push(h, Query(&TermQuery{sl1.Iterator()}))
-	fmt.Println(h.Len())
-	fmt.Println(h.Pop().(Query))
+	Convey("heap", t, func() {
+		So(h.Len(), ShouldEqual, 2)
+	})
+
 }

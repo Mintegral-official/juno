@@ -55,4 +55,12 @@ var DocIdFunc Func = func(a, b interface{}) int {
 	return 0
 }
 
+var RuneFunc Func = func(a, b interface{}) int {
+	if a.(rune) > b.(rune) {
+		return 1
+	} else if a.(rune) < b.(rune) {
+		return -1
+	}
+	return 0
+}
 
