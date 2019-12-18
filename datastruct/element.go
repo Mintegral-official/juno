@@ -5,8 +5,9 @@ import (
 )
 
 type Element struct {
-	key, value interface{}
-	next       []unsafe.Pointer
+	key   interface{}
+	value interface{}
+	next  []unsafe.Pointer
 }
 
 func newNode(key, value interface{}, level int) *Element {
@@ -46,6 +47,13 @@ func (element *Element) Key() interface{} {
 	return element.key
 }
 
+func (element *Element) Value() interface{} {
+	if element == nil {
+		return nil
+	}
+	return element.value
+}
+
 func ElementCopy(element *Element) *Element {
 	if element == nil {
 		return nil
@@ -58,4 +66,3 @@ func ElementCopy(element *Element) *Element {
 	}
 	return e
 }
-
