@@ -19,7 +19,7 @@ type ParserResult struct {
 }
 
 type MongoParser interface {
-	Parse([]byte) (*ParserResult, error)
+	Parse([]byte, interface{}) *ParserResult
 }
 
 type MongoIndexManagerOps struct {
@@ -38,6 +38,6 @@ type MongoIndexManagerOps struct {
 	UserData       interface{}
 	FindOpt        *options.FindOptions
 	Logger         log.Logger
-	//OnBeforeBase   func(interface{}) interface{}
-	//OnBeforeInc    func(interface{}) interface{}
+	OnBeforeBase   func(interface{}) interface{}
+	OnBeforeInc    func(interface{}) interface{}
 }

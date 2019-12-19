@@ -126,6 +126,9 @@ func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
 
 func (mib *MongoIndexBuilder) base(name string) error {
 	mib.totalNum, mib.errorNum = 0, 0
+	if mib.ops.OnBeforeBase != nil {
+		mib.ops.BaseQuery = mib.ops.OnBeforeBase(mib.ops.UserData)
+	}
 	cur, err := mib.collection.Find(nil, mib.ops.BaseQuery, mib.ops.FindOpt)
 	if err != nil {
 		return err
@@ -140,8 +143,8 @@ func (mib *MongoIndexBuilder) base(name string) error {
 			mib.errorNum++
 			continue
 		}
-		r, err := mib.ops.BaseParser.Parse(cur.Current)
-		if err != nil {
+		r := mib.ops.BaseParser.Parse(cur.Current, mib.ops.UserData)
+		if r == nil {
 			mib.errorNum++
 			continue
 		}
@@ -153,9 +156,14 @@ func (mib *MongoIndexBuilder) base(name string) error {
 }
 
 func (mib *MongoIndexBuilder) inc(ctx context.Context) error {
-	c, _ := context.WithTimeout(ctx, time.Duration(mib.ops.ReadTimeout)*time.Microsecond)
-	cur, err := mib.collection.Find(c, mib.ops.IncQuery, mib.ops.FindOpt)
 
+	if mib.ops.OnBeforeInc != nil {
+		mib.ops.IncQuery = mib.ops.OnBeforeInc(mib.ops.UserData)
+	}
+	c, cancel := context.WithTimeout(ctx, time.Duration(mib.ops.ReadTimeout)*time.Microsecond)
+	defer cancel()
+
+	cur, err := mib.collection.Find(c, mib.ops.IncQuery, mib.ops.FindOpt)
 	if err != nil {
 		return err
 	}
@@ -163,13 +171,13 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) error {
 		_ = cur.Close(c)
 	}()
 
-	for cur.Next(c) {
+	for cur.Next(nil) {
 		if cur.Err() != nil {
 			mib.errorNum++
 			continue
 		}
-		r, err := mib.ops.IncParser.Parse(cur.Current)
-		if err != nil {
+		r := mib.ops.IncParser.Parse(cur.Current, mib.ops.UserData)
+		if r == nil {
 			mib.errorNum++
 			continue
 		}

@@ -7,18 +7,18 @@ import (
 )
 
 type NotAndQuery struct {
-	queries []Query
-	checkers   []check.Checker
-	curIdx     int
+	queries  []Query
+	checkers []check.Checker
+	curIdx   int
 }
 
 func NewNotAndQuery(queries []Query, checkers []check.Checker) *NotAndQuery {
-	if queries == nil {
+	if len(queries) == 0 {
 		return nil
 	}
 	return &NotAndQuery{
-		checkers:   checkers,
-		queries: queries,
+		checkers: checkers,
+		queries:  queries,
 	}
 }
 

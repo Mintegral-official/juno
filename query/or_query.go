@@ -13,7 +13,7 @@ type OrQuery struct {
 }
 
 func NewOrQuery(queries []Query, checkers []check.Checker) *OrQuery {
-	if queries == nil {
+	if len(queries) == 0 {
 		return nil
 	}
 	h := &Heap{}

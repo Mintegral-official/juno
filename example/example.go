@@ -29,9 +29,14 @@ type CampaignInfo struct {
 	OsVersionMaxV2 *int     `bson:"osVersionMaxV2,omitempty" json:"osVersionMaxV2,omitempty"`
 	StartTime      *int     `bson:"startTime,omitempty" json:"startTime,omitempty"`
 	EndTime        *int     `bson:"endTime,omitempty" json:"endTime,omitempty"`
+	Uptime         int64    `bson:"updated,omitempty"`
 }
 
 type CampaignParser struct {
+}
+
+type UserData struct {
+	upTime int64
 }
 
 func MakeInfo(info *CampaignInfo) *document.DocInfo {
@@ -100,10 +105,18 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 	return docInfo
 }
 
-func (c *CampaignParser) Parse(bytes []byte) (*builder.ParserResult, error) {
+func (c *CampaignParser) Parse(bytes []byte, userData interface{}) *builder.ParserResult {
+	ud, ok := userData.(*UserData)
+	fmt.Println(ud)
+	if !ok {
+		return nil
+	}
 	campaign := &CampaignInfo{}
 	if err := bson.Unmarshal(bytes, &campaign); err != nil {
-		return nil, err
+		fmt.Println("bson.Unmarshal error:" + err.Error())
+	}
+	if ud.upTime < campaign.Uptime {
+		ud.upTime = campaign.Uptime
 	}
 	var info = MakeInfo(campaign)
 	var mode builder.DataMod = builder.DataDel
@@ -113,7 +126,7 @@ func (c *CampaignParser) Parse(bytes []byte) (*builder.ParserResult, error) {
 	return &builder.ParserResult{
 		DataMod: mode,
 		Value:   info,
-	}, nil
+	}
 }
 
 func main() {
@@ -128,12 +141,21 @@ func main() {
 		IncParser:      &CampaignParser{},
 		BaseParser:     &CampaignParser{},
 		BaseQuery:      bson.M{"status": 1},
-		IncQuery:       bson.M{"updated": bson.M{"$gt": time.Now().Unix() - int64(5*time.Second)}},
+		IncQuery:       bson.M{"updated": bson.M{"$gte": time.Now().Unix() - 5, "$lte": time.Now().Unix()}},
 		DB:             "new_adn",
 		Collection:     "campaign",
 		ConnectTimeout: 10000,
 		ReadTimeout:    20000,
+		UserData:       &UserData{},
 		Logger:         logrus.New(),
+		OnBeforeInc: func(userData interface{}) interface{} {
+			ud, ok := userData.(*UserData)
+			if !ok {
+				return nil
+			}
+			incQuery := bson.M{"updated": bson.M{"$gte": ud.upTime - 5, "$lte": time.Now().Unix()}}
+			return incQuery
+		},
 	})
 	if e != nil {
 		fmt.Println(e)
@@ -145,7 +167,7 @@ func main() {
 
 	tIndex := b.GetIndex()
 
-	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4) or advertiserId=646
+	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4 and advertiserId!=646)
 	// invert list
 	invertIdx := tIndex.GetInvertedIndex()
 
@@ -161,22 +183,13 @@ func main() {
 		},
 			[]check.Checker{
 				check.NewInChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
-				check.NewInChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 16.4, operation.GE),
+				check.NewInChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 1.4, operation.GE),
 			}),
 		query.NewTermQuery(invertIdx.Iterator("AdvertiserId_646").(*datastruct.SkipListIterator)),
 	}, nil)
 
 	res := search.Search(tIndex, q)
 	fmt.Println("res: ", len(res.Docs), res.Time)
-	time.Sleep(5000)
-
-	go func() {
-		for {
-			time.Sleep(5000)
-			res := search.Search(tIndex, q)
-			fmt.Println("res: ", len(res.Docs), res.Time)
-		}
-	}()
 
 	c := make(chan os.Signal)
 	signal.Notify(c)
