@@ -12,13 +12,13 @@ type OrQuery struct {
 	h        Heap
 }
 
-func NewOrQuery(querys []Query, checkers []check.Checker) *OrQuery {
-	if querys == nil {
+func NewOrQuery(queries []Query, checkers []check.Checker) *OrQuery {
+	if queries == nil {
 		return nil
 	}
 	h := &Heap{}
-	for i := 0; i < len(querys); i++ {
-		heap.Push(h, querys[i])
+	for i := 0; i < len(queries); i++ {
+		heap.Push(h, queries[i])
 	}
 	return &OrQuery{
 		checkers: checkers,

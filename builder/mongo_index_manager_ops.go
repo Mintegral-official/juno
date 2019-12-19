@@ -2,6 +2,7 @@ package builder
 
 import (
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/log"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -36,6 +37,7 @@ type MongoIndexManagerOps struct {
 	IncQuery       interface{}
 	UserData       interface{}
 	FindOpt        *options.FindOptions
-	OnBeforeBase   func(interface{}) interface{}
-	OnBeforeInc    func(interface{}) interface{}
+	Logger         log.Logger
+	//OnBeforeBase   func(interface{}) interface{}
+	//OnBeforeInc    func(interface{}) interface{}
 }

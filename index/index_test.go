@@ -287,3 +287,8 @@ func TestNewIndex2(t *testing.T) {
 //	fmt.Println(unsafe.Alignof(&[]int{}))
 //	fmt.Println(unsafe.Alignof(true))
 //}
+type a int64
+
+func TestStorageIndexImpl_Add(t *testing.T) {
+
+}

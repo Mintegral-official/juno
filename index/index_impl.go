@@ -6,6 +6,8 @@ import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/log"
+	"github.com/sirupsen/logrus"
 )
 
 type IndexImpl struct {
@@ -14,6 +16,8 @@ type IndexImpl struct {
 	campaignMapping map[document.DocId]document.DocId
 	bitmap          *datastruct.BitSet
 	count           document.DocId
+	name            string
+	logger          log.Logger
 }
 
 func NewIndex(name string) *IndexImpl {
@@ -23,6 +27,8 @@ func NewIndex(name string) *IndexImpl {
 		campaignMapping: make(map[document.DocId]document.DocId, 2000000),
 		bitmap:          datastruct.NewBitMap(),
 		count:           1,
+		name:            name,
+		logger:          logrus.New(),
 	}
 
 }
@@ -43,6 +49,10 @@ func (ii *IndexImpl) GetBitMap() *datastruct.BitSet {
 	return ii.bitmap
 }
 
+func (ii *IndexImpl) GetName() string {
+	return ii.name
+}
+
 func (ii *IndexImpl) Add(doc *document.DocInfo) error {
 	if doc == nil {
 		return helpers.DocumentError
@@ -51,6 +61,7 @@ func (ii *IndexImpl) Add(doc *document.DocInfo) error {
 		var err error
 		if doc.Fields[j].IndexType == document.InvertedIndexType {
 			if err = ii.invertedIndex.Add(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count); err != nil {
+				ii.WarnStatus("invert index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
 			ii.campaignMapping[doc.Id] = ii.count
@@ -58,20 +69,25 @@ func (ii *IndexImpl) Add(doc *document.DocInfo) error {
 			ii.count++
 		} else if doc.Fields[j].IndexType == document.StorageIndexType {
 			if err = ii.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
+				ii.WarnStatus("storage index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
 		} else if doc.Fields[j].IndexType == document.BothIndexType {
 			if err = ii.invertedIndex.Add(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count); err != nil {
+				ii.WarnStatus("invert index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
 			ii.campaignMapping[doc.Id] = ii.count
 			ii.bitmap.Set(uint64(ii.count))
 			ii.count++
 			if err = ii.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
+				ii.WarnStatus("storage index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
 		} else {
-			return errors.New("the add doc type is nil or wrong")
+			ii.WarnStatus("index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value),
+				fmt.Sprint("index type ", doc.Fields[j].IndexType, " is wrong"))
+			return errors.New("the add doc type is wrong or nil ")
 		}
 	}
 	return nil
@@ -118,4 +134,10 @@ func (ii *IndexImpl) Load(filename string) error {
 
 func (ii *IndexImpl) GetDataType(fieldName string) document.FieldType {
 	return 0
+}
+
+func (ii *IndexImpl) WarnStatus(idxType, name, value, err string) {
+	if ii.logger != nil {
+		ii.logger.Warnf("[%s]: name:[%s] value:[%s] wrong reason:[%s]", idxType, name, value, err)
+	}
 }

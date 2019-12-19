@@ -6,21 +6,35 @@ import (
 	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/example/model"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
 	"github.com/Mintegral-official/juno/search"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"os"
 	"os/signal"
 	"time"
 )
 
+type CampaignInfo struct {
+	CampaignId     int64    `bson:"campaignId,omitempty" json:"campaignId,omitempty"`
+	AdvertiserId   *int32   `bson:"advertiserId,omitempty" json:"advertiserId,omitempty"`
+	Price          *float64 `bson:"price,omitempty" json:"price,omitempty"`
+	Status         int32    `bson:"status,omitempty" json:"status,omitempty"`
+	PackageName    string   `bson:"packageName,omitempty" json:"packageName,omitempty"`
+	CampaignType   *int32   `bson:"campaignType,omitempty" json:"campaignType,omitempty"`
+	Platform       *int32   `bson:"platform,omitempty" json:"platform,omitempty"`
+	OsVersionMinV2 *int     `bson:"oVersionMinV2,omitempty" json:"osVersionMinV2,omitempty"`
+	OsVersionMaxV2 *int     `bson:"osVersionMaxV2,omitempty" json:"osVersionMaxV2,omitempty"`
+	StartTime      *int     `bson:"startTime,omitempty" json:"startTime,omitempty"`
+	EndTime        *int     `bson:"endTime,omitempty" json:"endTime,omitempty"`
+}
+
 type CampaignParser struct {
 }
 
-func MakeInfo(info *model.CampaignInfo) *document.DocInfo {
+func MakeInfo(info *CampaignInfo) *document.DocInfo {
 	if info == nil {
 		return nil
 	}
@@ -28,79 +42,71 @@ func MakeInfo(info *model.CampaignInfo) *document.DocInfo {
 		Fields: []*document.Field{},
 	}
 	docInfo.Id = document.DocId(info.CampaignId)
-	docInfo.Fields = append(docInfo.Fields,
-		&document.Field{
-			Name:
-			"AdvertiserId",
+	if info.Price == nil {
+		return docInfo
+	}
+	docInfo.Fields = []*document.Field{
+		{
+			Name:      "AdvertiserId",
 			IndexType: 2,
 			Value:     info.AdvertiserId,
-		})
-	docInfo.Fields = append(docInfo.Fields,
-		&document.Field{
+		},
+		{
 			Name:      "Platform",
 			IndexType: 2,
 			Value:     info.Platform,
-		})
-	if info.Price != nil {
-		docInfo.Fields = append(docInfo.Fields,
-			&document.Field{
-				Name:      "Price",
-				IndexType: 1,
-				Value:     *info.Price,
-			})
-	}
-
-	docInfo.Fields = append(docInfo.Fields,
-		&document.Field{
+		},
+		{
+			Name:      "Price",
+			IndexType: 2,
+			Value:     *info.Price,
+		},
+		{
+			Name:      "Platform",
+			IndexType: 2,
+			Value:     info.Platform,
+		},
+		{
 			Name:      "StartTime",
 			IndexType: 1,
 			Value:     info.StartTime,
-		})
-
-	docInfo.Fields = append(docInfo.Fields,
-		&document.Field{
+		},
+		{
 			Name:      "EndTime",
 			IndexType: 1,
 			Value:     info.EndTime,
-		})
-
-	docInfo.Fields = append(docInfo.Fields,
-		&document.Field{
+		},
+		{
 			Name:      "PackageName",
 			IndexType: 2,
 			Value:     info.PackageName,
-		})
-
-	docInfo.Fields = append(docInfo.Fields,
-		&document.Field{
+		},
+		{
 			Name:      "CampaignType",
 			IndexType: 1,
 			Value:     info.CampaignType,
-		})
-
-	docInfo.Fields = append(docInfo.Fields,
-		&document.Field{
+		},
+		{
 			Name:      "OsVersionMaxV2",
 			IndexType: 1,
 			Value:     info.OsVersionMaxV2,
-		})
-
-	docInfo.Fields = append(docInfo.Fields,
-		&document.Field{
+		},
+		{
 			Name:      "OsVersionMinV2",
 			IndexType: 1,
 			Value:     info.OsVersionMinV2,
-		})
+		},
+	}
 	return docInfo
 }
 
 func (c *CampaignParser) Parse(bytes []byte) (*builder.ParserResult, error) {
-	campaign := &model.CampaignInfo{}
+	campaign := &CampaignInfo{}
 	if err := bson.Unmarshal(bytes, &campaign); err != nil {
 		return nil, err
 	}
 	var info = MakeInfo(campaign)
-	var mode builder.DataMod
+	var mode builder.DataMod = builder.DataDel
 	if campaign.Status == 1 {
 		mode = builder.DataAddOrUpdate
 	}
@@ -127,12 +133,13 @@ func main() {
 		Collection:     "campaign",
 		ConnectTimeout: 10000,
 		ReadTimeout:    20000,
+		Logger:         logrus.New(),
 	})
 	if e != nil {
 		fmt.Println(e)
 		return
 	}
-	if e := b.Build(ctx); e != nil {
+	if e := b.Build(ctx, "indexName"); e != nil {
 		fmt.Println("build error", e.Error())
 	}
 	tIndex := b.GetIndex()

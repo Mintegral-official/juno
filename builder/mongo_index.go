@@ -7,7 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"log"
 	"time"
 )
 
@@ -19,6 +18,8 @@ type MongoIndexBuilder struct {
 	client     *mongo.Client
 	collection *mongo.Collection
 	findOpt    *options.FindOptions
+	start      int64
+	end        int64
 }
 
 func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error) {
@@ -62,24 +63,60 @@ func (mib *MongoIndexBuilder) GetIndex() *index.IndexImpl {
 	return mib.innerIndex
 }
 
-func (mib *MongoIndexBuilder) update(ctx context.Context) error {
-	if err := mib.base(ctx); err != nil {
-		return err
+func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
+
+	mib.start = time.Now().UnixNano()
+	err := mib.base(name)
+	mib.end = time.Now().UnixNano()
+	if err != nil {
+		mib.WarnStatus("base load failed: "+err.Error(), mib.end-mib.start)
+	} else {
+		mib.InfoStatus("base load success", mib.end-mib.start)
 	}
 	go func() {
+		var (
+			base = time.After(time.Duration(mib.ops.BaseInterval) * time.Second)
+			inc  = time.After(time.Duration(mib.ops.IncInterval) * time.Second)
+		)
 		for {
-			inc := time.After(time.Duration(mib.ops.IncInterval) * time.Second)
-			base := time.After(time.Duration(mib.ops.BaseInterval) * time.Second)
 			select {
 			case <-ctx.Done():
+				mib.start = time.Now().UnixNano()
+				mib.end = time.Now().UnixNano()
+				mib.InfoStatus("finish: ", mib.end-mib.start)
 				return
-			case <-inc:
-				if err := mib.inc(ctx); err != nil {
-					//log.Println(err) TODO log
-				}
 			case <-base:
-				if err := mib.base(ctx); err != nil {
-					// log.Println(err) TODO log
+				mib.start = time.Now().UnixNano()
+				err := mib.base(name)
+				mib.end = time.Now().UnixNano()
+				base = time.After(time.Duration(mib.ops.BaseInterval) * time.Second)
+				if err != nil {
+					mib.WarnStatus("base load failed: "+err.Error(), mib.end-mib.start)
+				} else {
+					mib.InfoStatus("base load success", mib.end-mib.start)
+				}
+			case <-inc:
+				select {
+				case <-base:
+					mib.start = time.Now().UnixNano()
+					err := mib.base(name)
+					mib.end = time.Now().UnixNano()
+					base = time.After(time.Duration(mib.ops.BaseInterval) * time.Second)
+					if err != nil {
+						mib.WarnStatus("base load failed: "+err.Error(), mib.end-mib.start)
+					} else {
+						mib.InfoStatus("base load success", mib.end-mib.start)
+					}
+				default:
+					mib.start = time.Now().UnixNano()
+					err := mib.inc(ctx)
+					mib.end = time.Now().UnixNano()
+					inc = time.After(time.Duration(mib.ops.IncInterval) * time.Second)
+					if err != nil {
+						mib.WarnStatus("inc failed: "+err.Error(), mib.end-mib.start)
+					} else {
+						mib.InfoStatus("inc success", mib.end-mib.start)
+					}
 				}
 			}
 		}
@@ -87,21 +124,18 @@ func (mib *MongoIndexBuilder) update(ctx context.Context) error {
 	return nil
 }
 
-func (mib *MongoIndexBuilder) base(ctx context.Context) error {
-	mib.totalNum = 0
-	mib.errorNum = 0
-	if mib.ops.OnBeforeBase != nil {
-		mib.ops.BaseQuery = mib.ops.OnBeforeBase(mib.ops.UserData)
-	}
-	c, cancel := context.WithTimeout(ctx, time.Duration(mib.ops.ReadTimeout)*time.Microsecond)
-	defer cancel()
+func (mib *MongoIndexBuilder) base(name string) error {
+	mib.totalNum, mib.errorNum = 0, 0
 	cur, err := mib.collection.Find(nil, mib.ops.BaseQuery, mib.ops.FindOpt)
 	if err != nil {
 		return err
 	}
-	defer cur.Close(c)
-	var baseIndex = index.NewIndex("base")
-	for cur.Next(c) {
+	defer func() {
+		_ = cur.Close(nil)
+	}()
+
+	var baseIndex = index.NewIndex(name)
+	for cur.Next(nil) {
 		if cur.Err() != nil {
 			mib.errorNum++
 			continue
@@ -109,48 +143,62 @@ func (mib *MongoIndexBuilder) base(ctx context.Context) error {
 		r, err := mib.ops.BaseParser.Parse(cur.Current)
 		if err != nil {
 			mib.errorNum++
-			//log.Println(err) TODO add log
 			continue
 		}
 		mib.totalNum++
 		_ = baseIndex.Add(r.Value)
 	}
 	mib.innerIndex = baseIndex
-	return err
+	return nil
 }
 
 func (mib *MongoIndexBuilder) inc(ctx context.Context) error {
-	if mib.ops.OnBeforeInc != nil {
-		mib.ops.IncQuery = mib.ops.OnBeforeInc(mib.ops.UserData)
-	}
-	c, cancel := context.WithTimeout(ctx, time.Duration(mib.ops.ReadTimeout)*time.Microsecond)
-	defer cancel()
+	c, _ := context.WithTimeout(ctx, time.Duration(mib.ops.ReadTimeout)*time.Microsecond)
 	cur, err := mib.collection.Find(c, mib.ops.IncQuery, mib.ops.FindOpt)
 
 	if err != nil {
 		return err
 	}
-	defer cur.Close(c)
+	defer func() {
+		_ = cur.Close(c)
+	}()
 
 	for cur.Next(c) {
 		if cur.Err() != nil {
+			mib.errorNum++
 			continue
 		}
 		r, err := mib.ops.IncParser.Parse(cur.Current)
 		if err != nil {
-			log.Println(err)
+			mib.errorNum++
 			continue
 		}
 		if r.DataMod == DataAddOrUpdate {
 			mib.innerIndex.Del(r.Value)
 			_ = mib.innerIndex.Add(r.Value)
+			mib.totalNum++
 		} else {
 			mib.innerIndex.Del(r.Value)
+			mib.totalNum--
 		}
 	}
 	return nil
 }
 
-func (mib *MongoIndexBuilder) Build(ctx context.Context) error {
-	return mib.update(ctx)
+func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {
+	return mib.update(ctx, name)
+}
+
+func (mib *MongoIndexBuilder) InfoStatus(s string, t int64) {
+	if mib.ops.Logger != nil {
+		mib.ops.Logger.Infof("mongo_[%s]:[%s], totalNum:[%d], errorNum:[%d], load time:[%dms]",
+			mib.innerIndex.GetName(), s, mib.totalNum, mib.errorNum, t/1e6)
+	}
+}
+
+func (mib *MongoIndexBuilder) WarnStatus(s string, t int64) {
+	if mib.ops.Logger != nil {
+		mib.ops.Logger.Warnf("mongo_[%s]:[%s], totalNum:[%d], errorNum:[%d], load time:[%dms]",
+			mib.innerIndex.GetName(), s, mib.totalNum, mib.errorNum, t/1e6)
+	}
 }
