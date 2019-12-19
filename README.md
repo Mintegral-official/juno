@@ -49,10 +49,10 @@ q := query.NewOrQuery([]query.Query{
 			}, nil),
 		},
 			[]check.Checker{
-				check.NewCheckerImpl(if331, 20.0, operation.LT),
-				check.NewCheckerImpl(if332, 16.4, operation.LE),
-				check.NewCheckerImpl(if333, 0.5, operation.EQ),
-				check.NewCheckerImpl(if334, 1.24, operation.EQ),
+				check.NewInChecker(if331, 20.0, operation.LT),
+				check.NewInChecker(if332, 16.4, operation.LE),
+				check.NewInChecker(if333, 0.5, operation.EQ),
+				check.NewInChecker(if334, 1.24, operation.EQ),
 			},
 		)
 searchResult := index.Search(query)
@@ -134,8 +134,8 @@ q := query.NewOrQuery([]query.Query{
         query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
     },
         []check.Checker{
-            check.NewCheckerImpl(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 20.0, operation.LT),
-            check.NewCheckerImpl(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 16.4, operation.GE),
+            check.NewInChecker(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 20.0, operation.LT),
+            check.NewInChecker(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 16.4, operation.GE),
         }),
     query.NewTermQuery(invertIdx.Iterator("A_3").(*datastruct.SkipListIterator)),
 }, nil)
@@ -284,8 +284,8 @@ q := query.NewOrQuery([]query.Query{
         query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
     },
         []check.Checker{
-            check.NewCheckerImpl(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 20.0, operation.LT),
-            check.NewCheckerImpl(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 16.4, operation.GE),
+            check.NewInChecker(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 20.0, operation.LT),
+            check.NewInChecker(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 16.4, operation.GE),
         }),
     query.NewTermQuery(invertIdx.Iterator("A_3").(*datastruct.SkipListIterator)),
 }, nil)

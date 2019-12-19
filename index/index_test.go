@@ -232,7 +232,7 @@ func TestNewIndex2(t *testing.T) {
 
 }
 
-//func TestIndexImpl_Del(t *testing.T) {
+//func TestIndexer_Del(t *testing.T) {
 //	var a interface{} = 100
 //	var b interface{} = 100
 //	fmt.Println(uintptr(unsafe.Pointer(&a)) == uintptr(unsafe.Pointer(&b)))
@@ -241,7 +241,7 @@ func TestNewIndex2(t *testing.T) {
 //
 //}
 
-//func TestNewStorageIndexImpl2(t *testing.T) {
+//func TestNewStorageIndexer2(t *testing.T) {
 //	var s = make([]int, 10, 100)
 //	var Len = *(*int)(unsafe.Pointer(uintptr(unsafe.Pointer(&s)) + uintptr(8)))
 //	fmt.Println(Len, len(s))
@@ -255,7 +255,7 @@ func TestNewIndex2(t *testing.T) {
 //	fmt.Println(unsafe.Alignof([]int{}))
 //}
 
-//func TestIndexImpl_Add(t *testing.T) {
+//func TestIndexer_Add(t *testing.T) {
 //	type slice struct {
 //		array unsafe.Pointer
 //		len   int
@@ -289,6 +289,6 @@ func TestNewIndex2(t *testing.T) {
 //}
 type a int64
 
-func TestStorageIndexImpl_Add(t *testing.T) {
+func TestStorageIndexer_Add(t *testing.T) {
 
 }

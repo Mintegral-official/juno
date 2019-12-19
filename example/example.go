@@ -142,6 +142,7 @@ func main() {
 	if e := b.Build(ctx, "indexName"); e != nil {
 		fmt.Println("build error", e.Error())
 	}
+
 	tIndex := b.GetIndex()
 
 	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4) or advertiserId=646
@@ -159,14 +160,23 @@ func main() {
 			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)),
 		},
 			[]check.Checker{
-				check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
-				check.NewCheckerImpl(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 16.4, operation.GE),
+				check.NewInChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
+				check.NewInChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 16.4, operation.GE),
 			}),
 		query.NewTermQuery(invertIdx.Iterator("AdvertiserId_646").(*datastruct.SkipListIterator)),
 	}, nil)
 
 	res := search.Search(tIndex, q)
 	fmt.Println("res: ", len(res.Docs), res.Time)
+	time.Sleep(5000)
+
+	go func() {
+		for {
+			time.Sleep(5000)
+			res := search.Search(tIndex, q)
+			fmt.Println("res: ", len(res.Docs), res.Time)
+		}
+	}()
 
 	c := make(chan os.Signal)
 	signal.Notify(c)

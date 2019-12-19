@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type IndexImpl struct {
+type Indexer struct {
 	invertedIndex   InvertedIndex
 	storageIndex    StorageIndex
 	campaignMapping map[document.DocId]document.DocId
@@ -20,10 +20,10 @@ type IndexImpl struct {
 	logger          log.Logger
 }
 
-func NewIndex(name string) *IndexImpl {
-	return &IndexImpl{
-		invertedIndex:   NewInvertedIndexImpl(),
-		storageIndex:    NewStorageIndexImpl(),
+func NewIndex(name string) *Indexer {
+	return &Indexer{
+		invertedIndex:   NewInvertedIndexer(),
+		storageIndex:    NewStorageIndexer(),
 		campaignMapping: make(map[document.DocId]document.DocId, 2000000),
 		bitmap:          datastruct.NewBitMap(),
 		count:           1,
@@ -33,59 +33,59 @@ func NewIndex(name string) *IndexImpl {
 
 }
 
-func (ii *IndexImpl) GetInvertedIndex() InvertedIndex {
-	return ii.invertedIndex
+func (indexer *Indexer) GetInvertedIndex() InvertedIndex {
+	return indexer.invertedIndex
 }
 
-func (ii *IndexImpl) GetStorageIndex() StorageIndex {
-	return ii.storageIndex
+func (indexer *Indexer) GetStorageIndex() StorageIndex {
+	return indexer.storageIndex
 }
 
-func (ii *IndexImpl) GetCampaignMap() map[document.DocId]document.DocId {
-	return ii.campaignMapping
+func (indexer *Indexer) GetCampaignMap() map[document.DocId]document.DocId {
+	return indexer.campaignMapping
 }
 
-func (ii *IndexImpl) GetBitMap() *datastruct.BitSet {
-	return ii.bitmap
+func (indexer *Indexer) GetBitMap() *datastruct.BitSet {
+	return indexer.bitmap
 }
 
-func (ii *IndexImpl) GetName() string {
-	return ii.name
+func (indexer *Indexer) GetName() string {
+	return indexer.name
 }
 
-func (ii *IndexImpl) Add(doc *document.DocInfo) error {
+func (indexer *Indexer) Add(doc *document.DocInfo) error {
 	if doc == nil {
 		return helpers.DocumentError
 	}
 	for j := range doc.Fields {
 		var err error
 		if doc.Fields[j].IndexType == document.InvertedIndexType {
-			if err = ii.invertedIndex.Add(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count); err != nil {
-				ii.WarnStatus("invert index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
+			if err = indexer.invertedIndex.Add(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), indexer.count); err != nil {
+				indexer.WarnStatus("invert index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
-			ii.campaignMapping[doc.Id] = ii.count
-			ii.bitmap.Set(uint64(ii.count))
-			ii.count++
+			indexer.campaignMapping[doc.Id] = indexer.count
+			indexer.bitmap.Set(uint64(indexer.count))
+			indexer.count++
 		} else if doc.Fields[j].IndexType == document.StorageIndexType {
-			if err = ii.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
-				ii.WarnStatus("storage index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
+			if err = indexer.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
+				indexer.WarnStatus("storage index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
 		} else if doc.Fields[j].IndexType == document.BothIndexType {
-			if err = ii.invertedIndex.Add(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count); err != nil {
-				ii.WarnStatus("invert index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
+			if err = indexer.invertedIndex.Add(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), indexer.count); err != nil {
+				indexer.WarnStatus("invert index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
-			ii.campaignMapping[doc.Id] = ii.count
-			ii.bitmap.Set(uint64(ii.count))
-			ii.count++
-			if err = ii.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
-				ii.WarnStatus("storage index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
+			indexer.campaignMapping[doc.Id] = indexer.count
+			indexer.bitmap.Set(uint64(indexer.count))
+			indexer.count++
+			if err = indexer.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
+				indexer.WarnStatus("storage index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
 		} else {
-			ii.WarnStatus("index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value),
+			indexer.WarnStatus("index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value),
 				fmt.Sprint("index type ", doc.Fields[j].IndexType, " is wrong"))
 			return errors.New("the add doc type is wrong or nil ")
 		}
@@ -93,7 +93,7 @@ func (ii *IndexImpl) Add(doc *document.DocInfo) error {
 	return nil
 }
 
-func (ii *IndexImpl) Del(doc *document.DocInfo) {
+func (indexer *Indexer) Del(doc *document.DocInfo) {
 	if doc == nil {
 		return
 	}
@@ -102,42 +102,42 @@ func (ii *IndexImpl) Del(doc *document.DocInfo) {
 			continue
 		}
 		if doc.Fields[j].IndexType == document.InvertedIndexType {
-			ii.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count)
-			ii.bitmap.Del(uint64(ii.count))
+			indexer.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), indexer.count)
+			indexer.bitmap.Del(uint64(indexer.count))
 		} else if doc.Fields[j].IndexType == document.StorageIndexType {
-			ii.storageIndex.Del(doc.Fields[j].Name, doc.Id)
+			indexer.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		} else if doc.Fields[j].IndexType == document.BothIndexType {
-			ii.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count)
-			ii.bitmap.Del(uint64(ii.count))
-			ii.storageIndex.Del(doc.Fields[j].Name, doc.Id)
+			indexer.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), indexer.count)
+			indexer.bitmap.Del(uint64(indexer.count))
+			indexer.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		} else {
 			panic("the del doc type is nil or wrong")
 		}
 	}
 }
 
-func (ii *IndexImpl) Update(filename string) error {
-	if err := ii.Dump(filename); err != nil {
+func (indexer *Indexer) Update(filename string) error {
+	if err := indexer.Dump(filename); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ii *IndexImpl) Dump(filename string) error {
+func (indexer *Indexer) Dump(filename string) error {
 	// TODO
 	return nil
 }
 
-func (ii *IndexImpl) Load(filename string) error {
+func (indexer *Indexer) Load(filename string) error {
 	return nil
 }
 
-func (ii *IndexImpl) GetDataType(fieldName string) document.FieldType {
+func (indexer *Indexer) GetDataType(fieldName string) document.FieldType {
 	return 0
 }
 
-func (ii *IndexImpl) WarnStatus(idxType, name, value, err string) {
-	if ii.logger != nil {
-		ii.logger.Warnf("[%s]: name:[%s] value:[%s] wrong reason:[%s]", idxType, name, value, err)
+func (indexer *Indexer) WarnStatus(idxType, name, value, err string) {
+	if indexer.logger != nil {
+		indexer.logger.Warnf("[%s]: name:[%s] value:[%s] wrong reason:[%s]", idxType, name, value, err)
 	}
 }

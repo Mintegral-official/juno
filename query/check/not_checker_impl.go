@@ -4,20 +4,20 @@ import (
 	"github.com/Mintegral-official/juno/document"
 )
 
-type NotCheckerImpl struct {
+type NotChecker struct {
 	c []Checker
 }
 
-func NewNotCheckerImpl(c []Checker) *NotCheckerImpl {
+func NewNotChecker(c []Checker) *NotChecker {
 	if c == nil {
 		return nil
 	}
-	return &NotCheckerImpl{
+	return &NotChecker{
 		c: c,
 	}
 }
 
-func (n *NotCheckerImpl) Check(id document.DocId) bool {
+func (n *NotChecker) Check(id document.DocId) bool {
 	if n == nil {
 		return true
 	}

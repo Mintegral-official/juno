@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestCheckerImpl_Check(t *testing.T) {
+func TestInChecker_Check(t *testing.T) {
 	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
 
 	sl.Add(document.DocId(1), 1)
@@ -25,15 +25,15 @@ func TestCheckerImpl_Check(t *testing.T) {
 	sl1.Add(document.DocId(9), 1)
 
 	Convey("checker", t, func() {
-		c := NewCheckerImpl(sl.Iterator(), 10, operation.EQ)
+		c := NewInChecker(sl.Iterator(), 10, operation.EQ)
 		So(c.Check(3), ShouldBeFalse)
 		So(c.Check(10), ShouldBeTrue)
 	})
 
 	Convey("and checker", t, func() {
-		c := NewCheckerImpl(sl.Iterator(), 3, operation.GE)
-		d := NewCheckerImpl(sl1.Iterator(), 10, operation.LT)
-		a := NewAndCheckerImpl([]Checker{
+		c := NewInChecker(sl.Iterator(), 3, operation.GE)
+		d := NewInChecker(sl1.Iterator(), 10, operation.LT)
+		a := NewAndChecker([]Checker{
 			c, d,
 		})
 		So(a.Check(3), ShouldBeFalse)
@@ -43,9 +43,9 @@ func TestCheckerImpl_Check(t *testing.T) {
 	})
 
 	Convey("or checker", t, func() {
-		c := NewCheckerImpl(sl.Iterator(), 6, operation.EQ)
-		d := NewCheckerImpl(sl1.Iterator(), 10, operation.EQ)
-		o := NewOrCheckerImpl([]Checker{
+		c := NewInChecker(sl.Iterator(), 6, operation.EQ)
+		d := NewInChecker(sl1.Iterator(), 10, operation.EQ)
+		o := NewOrChecker([]Checker{
 			c, d,
 		})
 		So(o.Check(3), ShouldBeTrue)
@@ -55,9 +55,9 @@ func TestCheckerImpl_Check(t *testing.T) {
 	})
 
 	Convey("in checker", t, func() {
-		c := NewCheckerImpl(sl.Iterator(), 6, operation.EQ)
-		d := NewCheckerImpl(sl.Iterator(), 10, operation.EQ)
-		o := NewInCheckerImpl([]Checker{
+		c := NewInChecker(sl.Iterator(), 6, operation.EQ)
+		d := NewInChecker(sl.Iterator(), 10, operation.EQ)
+		o := NewInInChecker([]Checker{
 			c, d,
 		})
 		So(o.Check(3), ShouldBeTrue)
@@ -67,9 +67,9 @@ func TestCheckerImpl_Check(t *testing.T) {
 	})
 
 	Convey("not checker", t, func() {
-		c := NewCheckerImpl(sl.Iterator(), 6, operation.NE)
-		d := NewCheckerImpl(sl.Iterator(), 10, operation.NE)
-		o := NewNotCheckerImpl([]Checker{
+		c := NewInChecker(sl.Iterator(), 6, operation.NE)
+		d := NewInChecker(sl.Iterator(), 10, operation.NE)
+		o := NewNotChecker([]Checker{
 			c, d,
 		})
 		So(o.Check(3), ShouldBeTrue)

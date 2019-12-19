@@ -2,34 +2,34 @@ package operation
 
 import "github.com/Mintegral-official/juno/helpers"
 
-type OperationImpl struct {
+type Operations struct {
 	FieldValue interface{}
 }
 
-func NewOperationImpl(fieldValue interface{}) *OperationImpl {
+func NewOperations(fieldValue interface{}) *Operations {
 	if fieldValue == nil {
 		return nil
 	}
-	return &OperationImpl{
+	return &Operations{
 		FieldValue: fieldValue,
 	}
 }
 
-func (ee *OperationImpl) Equal(value interface{}) bool {
+func (ee *Operations) Equal(value interface{}) bool {
 	if value == nil {
 		return false
 	}
 	return helpers.Compare(ee.FieldValue, value) == 0
 }
 
-func (ee *OperationImpl) Less(value interface{}) bool {
+func (ee *Operations) Less(value interface{}) bool {
 	if value == nil {
 		return false
 	}
 	return helpers.Compare(ee.FieldValue, value) == -1
 }
 
-func (ee *OperationImpl) In(value []interface{}) bool {
+func (ee *Operations) In(value []interface{}) bool {
 	if value == nil {
 		return false
 	}

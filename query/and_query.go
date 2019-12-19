@@ -9,9 +9,9 @@ import (
 )
 
 type AndQuery struct {
-	queries []Query
-	checkers   []check.Checker
-	curIdx     int
+	queries  []Query
+	checkers []check.Checker
+	curIdx   int
 }
 
 func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
@@ -19,8 +19,8 @@ func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
 		return nil
 	}
 	return &AndQuery{
-		queries: queries,
-		checkers:   checkers,
+		queries:  queries,
+		checkers: checkers,
 	}
 }
 
@@ -86,7 +86,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			if aq.check(res) {
 				return res, nil
 			}
-			curIdx++
+			curIdx = (curIdx + 1) % len(aq.queries)
 			res, err = aq.queries[curIdx].Next()
 			if err != nil {
 				return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in queries[%d]", int64(res), curIdx))

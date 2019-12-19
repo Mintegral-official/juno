@@ -7,17 +7,17 @@ import (
 	"sync"
 )
 
-type InvertedIndexImpl struct {
+type InvertedIndexer struct {
 	data sync.Map
 }
 
-func NewInvertedIndexImpl() *InvertedIndexImpl {
-	return &InvertedIndexImpl{data: sync.Map{}}
+func NewInvertedIndexer() *InvertedIndexer {
+	return &InvertedIndexer{data: sync.Map{}}
 }
 
-func (iiImpl *InvertedIndexImpl) Count() int {
+func (iIndexer *InvertedIndexer) Count() int {
 	var count = 0
-	iiImpl.data.Range(func(key, value interface{}) bool {
+	iIndexer.data.Range(func(key, value interface{}) bool {
 		if key != nil {
 			count++
 			return true
@@ -27,8 +27,8 @@ func (iiImpl *InvertedIndexImpl) Count() int {
 	return count
 }
 
-func (iiImpl *InvertedIndexImpl) Add(fieldName string, id document.DocId) error {
-	if v, ok := iiImpl.data.Load(fieldName); ok {
+func (iIndexer *InvertedIndexer) Add(fieldName string, id document.DocId) error {
+	if v, ok := iIndexer.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Add(id, nil)
 		} else {
@@ -40,25 +40,25 @@ func (iiImpl *InvertedIndexImpl) Add(fieldName string, id document.DocId) error 
 			return err
 		}
 		sl.Add(id, nil)
-		iiImpl.data.Store(fieldName, sl)
+		iIndexer.data.Store(fieldName, sl)
 	}
 	return nil
 }
 
-func (iiImpl *InvertedIndexImpl) Del(fieldName string, id document.DocId) bool {
+func (iIndexer *InvertedIndexer) Del(fieldName string, id document.DocId) bool {
 
-	if v, ok := iiImpl.data.Load(fieldName); ok {
+	if v, ok := iIndexer.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Del(id)
-			iiImpl.data.Store(fieldName, sl)
+			iIndexer.data.Store(fieldName, sl)
 			return true
 		}
 	}
 	return false
 }
 
-func (iiImpl *InvertedIndexImpl) Iterator(fieldName string) datastruct.Iterator {
-	if v, ok := iiImpl.data.Load(fieldName); ok {
+func (iIndexer *InvertedIndexer) Iterator(fieldName string) datastruct.Iterator {
+	if v, ok := iIndexer.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			return sl.Iterator()
 		}

@@ -5,38 +5,38 @@ import (
 	"testing"
 )
 
-func TestNewOperationImpl(t *testing.T) {
+func TestNewOperations(t *testing.T) {
 	i := make([]interface{}, 0)
 	Convey("Equal", t, func() {
-		impl := NewOperationImpl(10)
+		impl := NewOperations(10)
 		So(impl.Equal(10), ShouldBeTrue)
 		So(impl.Equal(11), ShouldBeFalse)
 		So(impl.Equal(9), ShouldBeFalse)
 
-		impl = NewOperationImpl(10)
+		impl = NewOperations(10)
 		So(!impl.Equal(10), ShouldBeFalse)
 		So(!impl.Equal(11), ShouldBeTrue)
 		So(!impl.Equal(9), ShouldBeTrue)
 
-		impl = NewOperationImpl(10)
+		impl = NewOperations(10)
 		So(impl.Less(10) || impl.Equal(10), ShouldBeTrue)
 		So(impl.Less(11) || impl.Equal(100), ShouldBeTrue)
 
-		impl = NewOperationImpl(10)
+		impl = NewOperations(10)
 		So(!impl.Less(10), ShouldBeTrue)
 		So(!impl.Less(11), ShouldBeFalse)
 		So(!impl.Less(9), ShouldBeTrue)
 
-		impl = NewOperationImpl(10, )
+		impl = NewOperations(10, )
 		So(impl.Less(9), ShouldBeFalse)
 		So(impl.Less(10), ShouldBeFalse)
 		So(impl.Less(11), ShouldBeTrue)
 
-		impl = NewOperationImpl(10)
+		impl = NewOperations(10)
 		So(!impl.Less(10) && ! impl.Equal(10), ShouldBeFalse)
 		So(!impl.Less(10) && ! impl.Equal(9), ShouldBeTrue)
 
-		impl = NewOperationImpl(10)
+		impl = NewOperations(10)
 		So(impl.Less(11) && impl.Equal(10), ShouldBeTrue)
 		So(impl.Less(10) && impl.Equal(10), ShouldBeFalse)
 		So(impl.Less(11) && impl.Less(100), ShouldBeTrue)
@@ -48,7 +48,7 @@ func TestNewOperationImpl(t *testing.T) {
 		So(impl.Less(11) && impl.In(i), ShouldBeTrue)
 		So(impl.Equal(10) && impl.In(i), ShouldBeTrue)
 
-		impl = NewOperationImpl(10)
+		impl = NewOperations(10)
 		So(impl.Less(11) || impl.Equal(10), ShouldBeTrue)
 		So(impl.Less(10) || impl.Equal(10), ShouldBeTrue)
 		i = make([]interface{}, 0)
@@ -58,7 +58,7 @@ func TestNewOperationImpl(t *testing.T) {
 		i = append(i, 16)
 		So(impl.In(i), ShouldBeTrue)
 
-		impl = NewOperationImpl(10)
+		impl = NewOperations(10)
 		i = make([]interface{}, 0)
 		i = append(i, 1)
 		i = append(i, 2)
@@ -66,7 +66,7 @@ func TestNewOperationImpl(t *testing.T) {
 		So(!impl.In(i), ShouldBeTrue)
 		So(!impl.Less(9) && ! impl.Equal(1), ShouldBeTrue)
 
-		impl = NewOperationImpl(10)
+		impl = NewOperations(10)
 		i = make([]interface{}, 0)
 		i = append(i, 1)
 		i = append(i, 10)

@@ -12,7 +12,7 @@ import (
 
 type MongoIndexBuilder struct {
 	ops        *MongoIndexManagerOps
-	innerIndex *index.IndexImpl
+	innerIndex *index.Indexer
 	totalNum   int64
 	errorNum   int64
 	client     *mongo.Client
@@ -59,7 +59,7 @@ func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error)
 	return mongoIndexBuilder, nil
 }
 
-func (mib *MongoIndexBuilder) GetIndex() *index.IndexImpl {
+func (mib *MongoIndexBuilder) GetIndex() *index.Indexer {
 	return mib.innerIndex
 }
 

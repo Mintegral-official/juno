@@ -4,20 +4,20 @@ import (
 	"github.com/Mintegral-official/juno/document"
 )
 
-type AndCheckerImpl struct {
+type AndChecker struct {
 	c []Checker
 }
 
-func NewAndCheckerImpl(c []Checker) *AndCheckerImpl {
+func NewAndChecker(c []Checker) *AndChecker {
 	if c == nil {
 		return nil
 	}
-	return &AndCheckerImpl{
+	return &AndChecker{
 		c: c,
 	}
 }
 
-func (a *AndCheckerImpl) Check(id document.DocId) bool {
+func (a *AndChecker) Check(id document.DocId) bool {
 	if a == nil {
 		return true
 	}

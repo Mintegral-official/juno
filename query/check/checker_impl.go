@@ -7,21 +7,21 @@ import (
 	"github.com/Mintegral-official/juno/query/operation"
 )
 
-type CheckerImpl struct {
+type InChecker struct {
 	si    *datastruct.SkipListIterator
 	value interface{}
 	op    operation.OP
 }
 
-func NewCheckerImpl(si *datastruct.SkipListIterator, value interface{}, op operation.OP) *CheckerImpl {
-	return &CheckerImpl{
+func NewInChecker(si *datastruct.SkipListIterator, value interface{}, op operation.OP) *InChecker {
+	return &InChecker{
 		si:    si,
 		value: value,
 		op:    op,
 	}
 }
 
-func (c *CheckerImpl) Check(id document.DocId) bool {
+func (c *InChecker) Check(id document.DocId) bool {
 	if c == nil {
 		return true
 	}

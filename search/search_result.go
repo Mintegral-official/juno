@@ -12,7 +12,7 @@ type Result struct {
 	Time time.Duration
 }
 
-func Search(ii *index.IndexImpl, query query.Query) *Result {
+func Search(iIndexer *index.Indexer, query query.Query) *Result {
 	if query == nil {
 		return nil
 	}
@@ -22,7 +22,7 @@ func Search(ii *index.IndexImpl, query query.Query) *Result {
 	}
 	id, err := query.Next()
 	for err == nil {
-		if !ii.GetBitMap().IsExist(uint64(ii.GetCampaignMap()[id])) {
+		if !iIndexer.GetBitMap().IsExist(uint64(iIndexer.GetCampaignMap()[id])) {
 			continue
 		}
 		s.Docs = append(s.Docs, id)

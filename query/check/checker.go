@@ -10,7 +10,7 @@ type Checker interface {
 }
 
 func UtilCheck(cValue interface{}, op operation.OP, value interface{}) bool {
-	o := operation.OperationImpl{FieldValue: cValue}
+	o := operation.Operations{FieldValue: cValue}
 	switch op {
 	case operation.EQ:
 		return o.Equal(value)

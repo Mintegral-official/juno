@@ -8,29 +8,29 @@ import (
 	"testing"
 )
 
-func TestInvertedIndexImpl_Add(t *testing.T) {
-	s := NewInvertedIndexImpl()
+func TestInvertedIndexer_Add(t *testing.T) {
+	s := NewInvertedIndexer()
 	Convey("Add", t, func() {
 		So(s.Add("fileName", 1), ShouldBeNil)
 	})
 }
 
-func TestInvertedIndexImpl_Del(t *testing.T) {
-	s := NewInvertedIndexImpl()
+func TestInvertedIndexer_Del(t *testing.T) {
+	s := NewInvertedIndexer()
 	Convey("Del", t, func() {
 		So(s.Del("filename", 1), ShouldBeFalse)
 	})
 }
 
-func TestInvertedIndexImpl_Iterator(t *testing.T) {
-	s := NewInvertedIndexImpl()
+func TestInvertedIndexer_Iterator(t *testing.T) {
+	s := NewInvertedIndexer()
 	Convey("Iterator", t, func() {
 		So(s.Iterator("filename"), ShouldNotBeNil)
 	})
 }
 
-func TestInvertedIndexImpl(t *testing.T) {
-	s := NewInvertedIndexImpl()
+func TestInvertedIndexer(t *testing.T) {
+	s := NewInvertedIndexer()
 	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
 	s.data.Store("fieldName1", sl1)
 	s.data.Store("fieldName2", nil)

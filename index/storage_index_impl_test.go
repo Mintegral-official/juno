@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-func TestNewStorageIndexImpl(t *testing.T) {
+func TestNewStorageIndexer(t *testing.T) {
 	Convey("Get", t, func() {
-		s := NewStorageIndexImpl()
+		s := NewStorageIndexer()
 		So(s.Get("fieldName", 1), ShouldBeNil)
 		So(s.Del("fieldName", 1), ShouldBeFalse)
 		So(s.Iterator("fieldName"), ShouldNotBeNil)
@@ -20,8 +20,8 @@ func TestNewStorageIndexImpl(t *testing.T) {
 	})
 }
 
-func TestStorageIndexImpl(t *testing.T) {
-	s := NewStorageIndexImpl()
+func TestStorageIndexer(t *testing.T) {
+	s := NewStorageIndexer()
 	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
 	s.data.Store("fieldName1", sl1)
 	s.data.Store("fieldName2", nil)

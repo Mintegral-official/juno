@@ -43,7 +43,7 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 
 
 
-//func (sq *SqlQuery) LRD(impl *index.IndexImpl) Query {
+//func (sq *SqlQuery) LRD(impl *index.Indexer) Query {
 //	node, tmp := sq.exp2Tree(), 0
 //	for !sq.Stack.Empty() || node != nil {
 //		if node != nil {
@@ -83,7 +83,7 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 //	return sq.Stack.Pop().(Query)
 //}
 //
-//func parseIn(str string, impl *index.IndexImpl) Query {
+//func parseIn(str string, impl *index.Indexer) Query {
 //	strSlice, invert := strings.Split(str, "@"), impl.GetInvertedIndex()
 //	values := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
 //	var querys []Query
@@ -93,7 +93,7 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 //	return NewOrQuery(querys, nil)
 //}
 //
-//func parseNotIn(str string, impl *index.IndexImpl) Query {
+//func parseNotIn(str string, impl *index.Indexer) Query {
 //	strSlice, invert := strings.Split(str, "#"), impl.GetInvertedIndex()
 //	values := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
 //	var querys []Query
@@ -103,52 +103,52 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 //	return NewOrQuery(querys, nil)
 //}
 //
-//func parseEq(str string, impl *index.IndexImpl) Query {
+//func parseEq(str string, impl *index.Indexer) Query {
 //	strSlice, invert := strings.Split(str, "="), impl.GetInvertedIndex()
 //	return NewTermQuery(invert.Iterator(strSlice[0] + "_" + strSlice[1]).(*datastruct.SkipListIterator))
 //}
 //
-//func parseNE(str string, impl *index.IndexImpl) Query {
+//func parseNE(str string, impl *index.Indexer) Query {
 //	strSlice, storageIdx := strings.Split(str, "!="), impl.GetStorageIndex()
 //	return NewAndQuery([]Query{
 //		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
 //	}, []check.Checker{
-//		check.NewCheckerImpl(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.NE),
+//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.NE),
 //	}, )
 //}
 //
-//func parseLT(str string, impl *index.IndexImpl) Query {
+//func parseLT(str string, impl *index.Indexer) Query {
 //	strSlice, storageIdx := strings.Split(str, "<"), impl.GetStorageIndex()
 //	return NewAndQuery([]Query{
 //		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
 //	}, []check.Checker{
-//		check.NewCheckerImpl(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.LT),
+//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.LT),
 //	}, )
 //}
 //
-//func parseLE(str string, impl *index.IndexImpl) Query {
+//func parseLE(str string, impl *index.Indexer) Query {
 //	strSlice, storageIdx := strings.Split(str, "<="), impl.GetStorageIndex()
 //	return NewAndQuery([]Query{
 //		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
 //	}, []check.Checker{
-//		check.NewCheckerImpl(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.LE),
+//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.LE),
 //	}, )
 //}
 //
-//func parseGT(str string, impl *index.IndexImpl) Query {
+//func parseGT(str string, impl *index.Indexer) Query {
 //	strSlice, storageIdx := strings.Split(str, ">"), impl.GetStorageIndex()
 //	return NewAndQuery([]Query{
 //		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
 //	}, []check.Checker{
-//		check.NewCheckerImpl(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.GT),
+//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.GT),
 //	}, )
 //}
 //
-//func parseGE(str string, impl *index.IndexImpl) Query {
+//func parseGE(str string, impl *index.Indexer) Query {
 //	strSlice, storageIdx := strings.Split(str, ">="), impl.GetStorageIndex()
 //	return NewAndQuery([]Query{
 //		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
 //	}, []check.Checker{
-//		check.NewCheckerImpl(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.GE),
+//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.GE),
 //	}, )
 //}
