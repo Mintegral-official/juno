@@ -12,7 +12,7 @@ type TermQuery struct {
 
 func NewTermQuery(iter datastruct.Iterator) *TermQuery {
 	if iter == nil {
-		return nil
+		return &TermQuery{}
 	}
 	return &TermQuery{
 		iterator: iter,

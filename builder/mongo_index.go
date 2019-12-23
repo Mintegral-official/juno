@@ -41,6 +41,9 @@ func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error)
 	client, err := mongo.Connect(ctx, opt)
 
 	if err != nil {
+		if mongoIndexBuilder.ops.Logger != nil {
+			mongoIndexBuilder.ops.Logger.Warnf("mongo connect failed: [%s]", err.Error())
+		}
 		return nil, helpers.ConnectError
 	}
 
@@ -50,10 +53,16 @@ func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error)
 	mongoIndexBuilder.findOpt.MaxTime = &d
 
 	if err = client.Ping(ctx, readpref.Primary()); err != nil {
+		if mongoIndexBuilder.ops.Logger != nil {
+			mongoIndexBuilder.ops.Logger.Warnf("mongo ping failed: [%s]", err.Error())
+		}
 		return nil, helpers.PingError
 	}
 	mongoIndexBuilder.collection = client.Database(ops.DB).Collection(ops.Collection)
 	if mongoIndexBuilder.collection == nil {
+		if mongoIndexBuilder.ops.Logger != nil {
+			mongoIndexBuilder.ops.Logger.Warnf("mongo database[%s] collection[%s] not found", ops.DB, ops.Collection)
+		}
 		return nil, helpers.CollectionNotFound
 	}
 	return mongoIndexBuilder, nil

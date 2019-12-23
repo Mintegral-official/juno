@@ -182,8 +182,8 @@ func main() {
 			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)),
 		},
 			[]check.Checker{
-				check.NewInChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
-				check.NewInChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 1.4, operation.GE),
+				check.NewChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
+				check.NewChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 1.4, operation.GE),
 			}),
 		query.NewTermQuery(invertIdx.Iterator("AdvertiserId_646").(*datastruct.SkipListIterator)),
 	}, nil)

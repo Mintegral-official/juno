@@ -16,7 +16,7 @@ type AndQuery struct {
 
 func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
 	if len(queries) == 0 {
-		return nil
+		return &AndQuery{}
 	}
 	return &AndQuery{
 		queries:  queries,
