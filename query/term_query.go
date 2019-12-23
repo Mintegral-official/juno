@@ -25,7 +25,8 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 		return 0, helpers.DocumentError
 	}
 
-	if element := tq.iterator.Next(); element != nil {
+	tq.iterator.Next()
+	if element := tq.iterator.Current(); element != nil {
 		v, ok := element.(*datastruct.Element)
 		if !ok {
 			return 0, helpers.ElementNotfound

@@ -2,6 +2,7 @@ package query
 
 import (
 	"fmt"
+	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/check"
@@ -12,6 +13,7 @@ type AndQuery struct {
 	queries  []Query
 	checkers []check.Checker
 	curIdx   int
+	treeNode *datastruct.TreeNode
 }
 
 func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
@@ -21,6 +23,7 @@ func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
 	return &AndQuery{
 		queries:  queries,
 		checkers: checkers,
+		treeNode: &datastruct.TreeNode{},
 	}
 }
 
@@ -30,15 +33,6 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 
 	if err != nil {
 		return 0, helpers.NoMoreData
-	}
-	if curIdx == len(aq.queries)-1 {
-		if !aq.check(target) {
-			target, err = aq.queries[curIdx].Next()
-			if err != nil {
-				return 0, helpers.NoMoreData
-			}
-		}
-		return target, nil
 	}
 
 	for {
@@ -102,15 +96,21 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	}
 
 	for i := 1; i < len(aq.queries); i++ {
-		tar, err := aq.queries[i].Current()
+		tar, err := aq.queries[i].GetGE(res)
 		if err != nil {
 			return 0, err
 		}
 		if tar != res {
-			return 0, helpers.ElementNotfound
+			if i == len(aq.queries)-1 {
+				return 0, helpers.ElementNotfound
+			}
+			continue
 		}
 	}
-	return res, nil
+	if aq.check(res) {
+		return res, nil
+	}
+	return 0, errors.New(fmt.Sprintf("the result [%d] is filter", res))
 }
 
 func (aq *AndQuery) String() string {

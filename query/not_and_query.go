@@ -1,6 +1,7 @@
 package query
 
 import (
+	"errors"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/check"
@@ -36,7 +37,13 @@ func (naq *NotAndQuery) Next() (document.DocId, error) {
 		}
 		for i := 1; i < len(naq.queries); i++ {
 			cur, err := naq.queries[i].GetGE(target)
-			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(naq.queries)-1 {
+			if err != nil {
+				_, _ = naq.queries[0].Next()
+				if naq.check(target) {
+					return target, nil
+				}
+			}
+			if helpers.Compare(target, cur) != 0 && i == len(naq.queries)-1 {
 				_, _ = naq.queries[0].Next()
 				if naq.check(target) {
 					return target, nil
@@ -83,15 +90,20 @@ func (naq *NotAndQuery) Current() (document.DocId, error) {
 		return 0, err
 	}
 	for i := 1; i < len(naq.queries); i++ {
-		tar, err := naq.queries[i].Current()
+		tar, err := naq.queries[i].GetGE(res)
+		_, _ = naq.queries[0].Next()
 		if err != nil {
-			return 0, err
+			continue
 		}
-		if tar != res {
-			return res, nil
+		if tar == res {
+			return 0, errors.New("this target is not result")
+		} else if i == len(naq.queries)-1 {
+			if naq.check(res) {
+				return res, nil
+			}
 		}
 	}
-	return res, err
+	return 0, errors.New("current data is not filter")
 }
 
 func (naq *NotAndQuery) String() string {

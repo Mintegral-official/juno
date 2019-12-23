@@ -2,7 +2,7 @@ package datastruct
 
 type Iterator interface {
 	HasNext() bool
-	Next() interface{}
+	Next()
 	Current() interface{}
 	GetGE(id interface{}) interface{}
 }

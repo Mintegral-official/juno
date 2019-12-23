@@ -47,9 +47,10 @@ func TestStorageIndexer(t *testing.T) {
 		a = s.Iterator("fieldName1")
 		c = 0
 		for a.HasNext() {
-			if a.Next() != nil {
+			if a.Current() != nil {
 				c++
 			}
+			a.Next()
 		}
 		So(c, ShouldEqual, 3)
 		So(s.Del("XXX", document.DocId(1)), ShouldBeFalse)

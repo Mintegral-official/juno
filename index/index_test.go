@@ -84,34 +84,38 @@ func TestNewIndex(t *testing.T) {
 		if1 := index.GetInvertedIndex().Iterator("field1_1")
 		c := 0
 		for if1.HasNext() {
-			if if1.Next() != nil {
+			if if1.Current() != nil {
 				c++
 			}
+			if1.Next()
 		}
 		So(c, ShouldEqual, 4)
 
 		if2 := index.invertedIndex.Iterator("field2_2")
 		c = 0
 		for if2.HasNext() {
-			if if2.Next() != nil {
+			if if2.Current() != nil {
 				c++
 			}
+			if2.Next()
 		}
 		So(c, ShouldEqual, 2)
 		sf1 := index.GetStorageIndex().Iterator("field1")
 		c = 0
 		for sf1.HasNext() {
-			if sf1.Next() != nil {
+			if sf1.Current() != nil {
 				c++
 			}
+			sf1.Next()
 		}
 		So(c, ShouldEqual, 2)
 		sf2 := index.storageIndex.Iterator("field2")
 		c = 0
 		for sf2.HasNext() {
-			if sf2.Next() != nil {
+			if sf2.Current() != nil {
 				c++
 			}
+			sf2.Next()
 		}
 		So(c, ShouldEqual, 1)
 		So(len(*index.GetBitMap()), ShouldEqual, 32768)
@@ -128,41 +132,44 @@ func TestNewIndex(t *testing.T) {
 		if1 := index.GetInvertedIndex().Iterator("field1_1")
 		c := 0
 		for if1.HasNext() {
-			if if1.Next() != nil {
+			if if1.Current() != nil {
 				c++
 			}
+			if1.Next()
 		}
 		So(c, ShouldEqual, 4)
 
 		if2 := index.invertedIndex.Iterator("field2_2")
 		c = 0
 		for if2.HasNext() {
-			if if2.Next() != nil {
+			if if2.Current() != nil {
 				c++
 			}
+			if2.Next()
 		}
 		So(c, ShouldEqual, 2)
 		sf1 := index.GetStorageIndex().Iterator("field1")
 		c = 0
 		for sf1.HasNext() {
-			if sf1.Next() != nil {
+			if sf1.Current() != nil {
 				c++
 			}
+			sf1.Next()
 		}
 		So(c, ShouldEqual, 1)
 		sf2 := index.storageIndex.Iterator("field2")
 		c = 0
 		for sf2.HasNext() {
-			if sf2.Next() != nil {
+			if sf2.Current() != nil {
 				c++
 			}
+			sf2.Next()
 		}
 		So(c, ShouldEqual, 1)
 		So(len(*index.GetBitMap()), ShouldEqual, 32768)
 		So(index.GetCampaignMap(), ShouldNotBeNil)
 	})
 }
-
 
 //func TestInterface(t *testing.T) {
 //	var a, b interface{}

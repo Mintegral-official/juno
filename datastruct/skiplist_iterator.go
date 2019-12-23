@@ -11,7 +11,7 @@ type SkipListIterator struct {
 
 func NewSkipListIterator(element *Element, cmp helpers.Comparable) *SkipListIterator {
 	sli := &SkipListIterator{element, cmp}
-	 _ = sli.Next()
+	sli.Next()
 	return sli
 }
 
@@ -19,21 +19,21 @@ func (slIterator *SkipListIterator) HasNext() bool {
 	return slIterator.Element != nil
 }
 
-func (slIterator *SkipListIterator) Next() interface{} {
+func (slIterator *SkipListIterator) Next() {
 	if slIterator.Element == nil {
-		return nil
+		return
 	}
 	next := slIterator.Element.Next(0)
 	if next == nil {
-		res := slIterator.Element
+		//res := slIterator.Element
 		slIterator.Element = nil
-		return res
+		return
 	}
 	for i, v := range next.next {
 		slIterator.Element.next[i] = v
 	}
 	slIterator.Element.key, slIterator.Element.value = next.key, next.value
-	return slIterator.Element
+	//return slIterator.Element
 }
 
 func (slIterator *SkipListIterator) GetLE(key interface{}) interface{} {

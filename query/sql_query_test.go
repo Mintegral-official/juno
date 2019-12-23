@@ -20,11 +20,11 @@ var doc1 = &document.DocInfo{
 			IndexType: 0,
 			Value:     2,
 		},
-		{
-			Name:      "field1",
-			IndexType: 2,
-			Value:     1,
-		},
+		//{
+		//	Name:      "field1",
+		//	IndexType: 2,
+		//	Value:     1,
+		//},
 	},
 }
 

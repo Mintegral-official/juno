@@ -2,6 +2,8 @@ package query
 
 import (
 	"container/heap"
+	"errors"
+	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/check"
@@ -73,7 +75,15 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 		return 0, helpers.NoMoreData
 	}
 	q := top.(Query)
-	return q.Current()
+	res, err := q.Current()
+	if err != nil {
+		return 0, err
+	}
+	if oq.check(res) {
+		return res, nil
+	}
+	return 0, errors.New(fmt.Sprintf("the result [%d] is filter", res))
+
 }
 
 func (oq *OrQuery) String() string {
