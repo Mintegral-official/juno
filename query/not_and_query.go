@@ -37,17 +37,16 @@ func (naq *NotAndQuery) Next() (document.DocId, error) {
 		}
 		for i := 1; i < len(naq.queries); i++ {
 			cur, err := naq.queries[i].GetGE(target)
-			if err != nil {
+			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(naq.queries)-1 {
 				_, _ = naq.queries[0].Next()
-				if naq.check(target) {
-					return target, nil
+				for !naq.check(target) {
+					target, err = naq.queries[0].Current()
+					if err != nil {
+						return 0, err
+					}
+					_, _ = naq.queries[0].Next()
 				}
-			}
-			if helpers.Compare(target, cur) != 0 && i == len(naq.queries)-1 {
-				_, _ = naq.queries[0].Next()
-				if naq.check(target) {
-					return target, nil
-				}
+				return target, nil
 			}
 		}
 		target, err = naq.queries[0].Next()

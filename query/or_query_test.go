@@ -24,7 +24,7 @@ func TestNewOrQuery_Next1(t *testing.T) {
 	//sl1.Add(document.DocId(9), [1]byte{})
 
 	Convey("Next1", t, func() {
-		a := NewOrQuery([]Query{&TermQuery{sl.Iterator()}}, nil)
+		a := NewOrQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 		v, e := a.Next()
 		// fmt.Println(v, e)
 		So(v, ShouldEqual, 1)
@@ -62,7 +62,7 @@ func TestOrQuery_GetGE(t *testing.T) {
 	Convey("getGE", t, func() {
 		s1 := sl.Iterator()
 		s2 := sl1.Iterator()
-		a := NewOrQuery([]Query{&TermQuery{s1}, &TermQuery{s2}}, nil)
+		a := NewOrQuery([]Query{NewTermQuery(s1),NewTermQuery(s2)}, nil)
 		v, e := a.GetGE(1)
 		//fmt.Println(v, e)
 		So(v, ShouldEqual, 1)
@@ -115,7 +115,7 @@ func TestOrQuery_GetGE(t *testing.T) {
 	})
 
 	Convey("GetGE2", t, func() {
-		a := NewOrQuery([]Query{&TermQuery{sl.Iterator()}, &TermQuery{sl1.Iterator()}}, nil)
+		a := NewOrQuery([]Query{NewTermQuery(sl.Iterator()),NewTermQuery(sl1.Iterator())}, nil)
 		v, e := a.GetGE(8)
 		So(v, ShouldEqual, 9)
 		So(e, ShouldBeNil)
@@ -151,7 +151,7 @@ func TestNewOrQuery_Next2(t *testing.T) {
 	sl2.Add(document.DocId(8), [1]byte{})
 
 	Convey("Next1", t, func() {
-		a := NewOrQuery([]Query{&TermQuery{sl2.Iterator()}, &TermQuery{sl.Iterator()}, &TermQuery{sl1.Iterator()}}, nil)
+		a := NewOrQuery([]Query{NewTermQuery(sl2.Iterator()), NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		v, e := a.Current()
 		// fmt.Println(v, e)
 		So(v, ShouldEqual, 1)

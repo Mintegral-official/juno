@@ -25,7 +25,7 @@ func TestInvertedIndexer_Del(t *testing.T) {
 func TestInvertedIndexer_Iterator(t *testing.T) {
 	s := NewInvertedIndexer()
 	Convey("Iterator", t, func() {
-		So(s.Iterator("filename"), ShouldNotBeNil)
+		So(s.Iterator("filename"), ShouldBeNil)
 	})
 }
 

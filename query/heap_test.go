@@ -26,8 +26,8 @@ func TestHeap_Compare(t *testing.T) {
 
 
 	h := &Heap{}
-	heap.Push(h, Query(&TermQuery{sl.Iterator()}))
-	heap.Push(h, Query(&TermQuery{sl1.Iterator()}))
+	heap.Push(h, Query(NewTermQuery(sl.Iterator())))
+	heap.Push(h, Query(NewTermQuery(sl1.Iterator())))
 	Convey("heap", t, func() {
 		So(h.Len(), ShouldEqual, 2)
 	})

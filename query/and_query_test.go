@@ -30,7 +30,7 @@ func TestAndQuery_Next(t *testing.T) {
 	sl1.Add(document.DocId(9), [1]byte{})
 
 	Convey("GetGE1", t, func() {
-		a := NewAndQuery([]Query{&TermQuery{sl.Iterator()}}, nil)
+		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 
 		v, e := a.GetGE(document.DocId(1))
 		So(v, ShouldEqual, 1)
@@ -62,7 +62,7 @@ func TestAndQuery_Next(t *testing.T) {
 	})
 
 	Convey("GetGE", t, func() {
-		a := NewAndQuery([]Query{&TermQuery{sl.Iterator()}, &TermQuery{sl1.Iterator()}}, nil)
+		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		v, e := a.GetGE(document.DocId(1))
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
@@ -94,15 +94,16 @@ func TestAndQuery_Next(t *testing.T) {
 		v, e = a.GetGE(document.DocId(6))
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
+		fmt.Println()
 
 		v, e = a.GetGE(document.DocId(10))
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
-
+		fmt.Println(a.String())
 	})
 
 	Convey("Next1", t, func() {
-		a := NewAndQuery([]Query{&TermQuery{sl.Iterator()}}, nil)
+		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 		v, e := a.Current()
 		//fmt.Println(v, e)
 		So(v, ShouldEqual, 1)
@@ -125,7 +126,7 @@ func TestAndQuery_Next(t *testing.T) {
 	})
 
 	Convey("Next2", t, func() {
-		a := NewAndQuery([]Query{&TermQuery{sl.Iterator()}, &TermQuery{sl1.Iterator()}}, nil)
+		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		v, e := a.Current()
 		// fmt.Println(v, e)
 		So(v, ShouldEqual, 1)

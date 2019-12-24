@@ -1,8 +1,9 @@
 package query
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/check"
@@ -13,24 +14,26 @@ type AndQuery struct {
 	queries  []Query
 	checkers []check.Checker
 	curIdx   int
-	treeNode *datastruct.TreeNode
+	aDebug   *debug.Debug
 }
 
 func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
+	aq := &AndQuery{}
 	if len(queries) == 0 {
-		return &AndQuery{}
+		return aq
 	}
-	return &AndQuery{
-		queries:  queries,
-		checkers: checkers,
-		treeNode: &datastruct.TreeNode{},
+	aq.queries = queries
+	aq.checkers = checkers
+	aq.aDebug = &debug.Debug{
+		Name: "NewAndQuery",
+		Msg:  []string{},
 	}
+	return aq
 }
 
 func (aq *AndQuery) Next() (document.DocId, error) {
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Next()
-
 	if err != nil {
 		return 0, helpers.NoMoreData
 	}
@@ -49,6 +52,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			if aq.check(target) {
 				return target, nil
 			}
+			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filter", target))
 			curIdx = (curIdx + 1) % len(aq.queries)
 			target, err = aq.queries[curIdx].Next()
 			if err != nil {
@@ -61,7 +65,6 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	curIdx, lastIdx := aq.curIdx, aq.curIdx
 	res, err := aq.queries[aq.curIdx].GetGE(id)
-
 	if err != nil {
 		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in queries[%d]", int64(res), curIdx))
 	}
@@ -80,6 +83,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			if aq.check(res) {
 				return res, nil
 			}
+			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filter", res))
 			curIdx = (curIdx + 1) % len(aq.queries)
 			res, err = aq.queries[curIdx].Next()
 			if err != nil {
@@ -102,7 +106,7 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 		}
 		if tar != res {
 			if i == len(aq.queries)-1 {
-				return 0, helpers.ElementNotfound
+				return 0, errors.New("no filter num")
 			}
 			continue
 		}
@@ -110,11 +114,28 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	if aq.check(res) {
 		return res, nil
 	}
+	aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filter", res))
 	return 0, errors.New(fmt.Sprintf("the result [%d] is filter", res))
 }
 
 func (aq *AndQuery) String() string {
-	return ""
+	nilCount := 0
+	for i := 0; i < len(aq.queries); i++ {
+		if aq.queries[i] == nil {
+			nilCount++
+			aq.aDebug.AddDebug(fmt.Sprintf("querys[%d] is nil", i))
+		}
+		aq.aDebug.AddDebug(aq.queries[i].String())
+	}
+	aq.aDebug.AddDebug(fmt.Sprintf("len(querys) = [%d]", len(aq.queries)))
+	aq.aDebug.AddDebug(fmt.Sprintf("len(checkers) = [%d]", len(aq.checkers)))
+	aq.aDebug.AddDebug(fmt.Sprintf("the num of query is nil : [%d]", nilCount))
+
+	if res, err := json.Marshal(aq.aDebug); err == nil {
+		return string(res)
+	} else {
+		return err.Error()
+	}
 }
 
 func (aq *AndQuery) check(id document.DocId) bool {

@@ -76,6 +76,5 @@ func (sIndexer *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 			return sl.Iterator()
 		}
 	}
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
-	return sl.Iterator()
+	return nil
 }
