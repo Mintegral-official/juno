@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -221,6 +222,8 @@ func TestNewOrQuery_Next2(t *testing.T) {
 		// fmt.Println(v, e)
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
+
+		fmt.Println(a.String())
 
 	})
 }

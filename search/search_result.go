@@ -8,26 +8,35 @@ import (
 )
 
 type Result struct {
-	Docs []document.DocId
-	Time time.Duration
+	Docs       []document.DocId
+	Time       time.Duration
+	QueryDebug string
 }
 
-func Search(iIndexer *index.Indexer, query query.Query) *Result {
+func NewResult() *Result {
+	return &Result{
+		Docs: []document.DocId{},
+	}
+}
+
+func (r *Result) Search(iIndexer *index.Indexer, query query.Query) *Result {
 	if query == nil {
 		return nil
 	}
-	s, now := &Result{Docs: []document.DocId{}}, time.Now()
+	now := time.Now()
 	if _, err := query.Current(); err != nil {
-		return s
+
+		return r
 	}
 	id, err := query.Next()
 	for err == nil {
 		if !iIndexer.GetBitMap().IsExist(uint64(iIndexer.GetCampaignMap()[id])) {
 			continue
 		}
-		s.Docs = append(s.Docs, id)
+		r.Docs = append(r.Docs, id)
 		id, err = query.Next()
 	}
-	s.Time = time.Since(now)
-	return s
+	r.Time = time.Since(now)
+	r.QueryDebug = query.String()
+	return r
 }

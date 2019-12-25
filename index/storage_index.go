@@ -11,4 +11,5 @@ type StorageIndex interface {
 	Del(fieldName string, id document.DocId) bool
 	Iterator(fieldName string) datastruct.Iterator
 	Count() int
+	String() string
 }

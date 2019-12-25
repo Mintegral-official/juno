@@ -81,7 +81,7 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc1), ShouldBeNil)
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
-		if1 := index.GetInvertedIndex().Iterator("field1_1")
+		if1 := index.GetInvertedIndex().Iterator("field1", 1)
 		c := 0
 		for if1.HasNext() {
 			if if1.Current() != nil {
@@ -91,7 +91,7 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 4)
 
-		if2 := index.invertedIndex.Iterator("field2_2")
+		if2 := index.invertedIndex.Iterator("field2", 2)
 		c = 0
 		for if2.HasNext() {
 			if if2.Current() != nil {
@@ -129,7 +129,7 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
 		index.Del(doc1)
-		if1 := index.GetInvertedIndex().Iterator("field1_1")
+		if1 := index.GetInvertedIndex().Iterator("field1", 1)
 		c := 0
 		for if1.HasNext() {
 			if if1.Current() != nil {
@@ -139,7 +139,7 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 4)
 
-		if2 := index.invertedIndex.Iterator("field2_2")
+		if2 := index.invertedIndex.Iterator("field2", 2)
 		c = 0
 		for if2.HasNext() {
 			if if2.Current() != nil {

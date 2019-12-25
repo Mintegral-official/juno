@@ -25,7 +25,7 @@ func TestInvertedIndexer_Del(t *testing.T) {
 func TestInvertedIndexer_Iterator(t *testing.T) {
 	s := NewInvertedIndexer()
 	Convey("Iterator", t, func() {
-		So(s.Iterator("filename"), ShouldBeNil)
+		So(s.Iterator("filename", nil), ShouldBeNil)
 	})
 }
 
@@ -37,15 +37,15 @@ func TestInvertedIndexer(t *testing.T) {
 	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
 	s.data.Store("fieldName4", sl2)
 	Convey("Add", t, func() {
-		So(s.Add("fieldName1", document.DocId(1)), ShouldBeNil)
-		So(s.Add("fieldName1", document.DocId(5)), ShouldBeNil)
-		So(s.Add("fieldName1", document.DocId(6)), ShouldBeNil)
-		So(s.Add("fieldName1", document.DocId(7)), ShouldBeNil)
-		So(s.Add("fieldName4", document.DocId(2)), ShouldBeNil)
+		So(s.Add("fieldName_1", document.DocId(1)), ShouldBeNil)
+		So(s.Add("fieldName_1", document.DocId(5)), ShouldBeNil)
+		So(s.Add("fieldName_1", document.DocId(6)), ShouldBeNil)
+		So(s.Add("fieldName_1", document.DocId(7)), ShouldBeNil)
+		So(s.Add("fieldName_4", document.DocId(2)), ShouldBeNil)
 		So(s.Del("fieldName", 1), ShouldBeFalse)
-		So(s.Del("fieldName1", document.DocId(1)), ShouldBeTrue)
-		a := s.Iterator("fieldName1")
-		So(s.Iterator("fieldName1"), ShouldNotBeNil)
+		So(s.Del("fieldName_1", document.DocId(1)), ShouldBeTrue)
+		a := s.Iterator("fieldName", 1)
+		So(s.Iterator("fieldName", 1), ShouldNotBeNil)
 		c := 0
 		for a.HasNext() {
 			// fmt.Println(a.Current())
@@ -53,7 +53,7 @@ func TestInvertedIndexer(t *testing.T) {
 			c++
 		}
 		So(c, ShouldEqual, 3)
-		So(s.Count(), ShouldEqual, 3)
+		So(s.Count(), ShouldEqual, 5)
 	})
 
 	Convey("Add", t, func() {

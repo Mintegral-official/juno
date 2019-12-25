@@ -8,12 +8,12 @@ import (
 )
 
 type InChecker struct {
-	si    *datastruct.SkipListIterator
+	si    datastruct.Iterator
 	value interface{}
 	op    operation.OP
 }
 
-func NewInChecker(si *datastruct.SkipListIterator, value interface{}, op operation.OP) *InChecker {
+func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP) *InChecker {
 	return &InChecker{
 		si:    si,
 		value: value,

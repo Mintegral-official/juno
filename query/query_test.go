@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -16,17 +17,22 @@ func TestQuery(t *testing.T) {
 		q := NewNotAndQuery([]Query{
 			NewTermQuery(storage.Iterator("field1")),
 			NewTermQuery(storage.Iterator("field2")),
+			NewAndQuery([]Query{
+				NewTermQuery(storage.Iterator("field1")),
+				NewTermQuery(storage.Iterator("field2")),
+			}, nil),
 		}, nil)
 
 		cur, err := q.Current()
 		convey.So(cur, convey.ShouldEqual, 0)
-		convey.So(err, convey.ShouldBeNil)
-		cur, err = q.Next()
-		convey.So(cur, convey.ShouldEqual, 2)
-		convey.So(err, convey.ShouldBeNil)
+		convey.So(err, convey.ShouldNotBeNil)
 		cur, err = q.Next()
 		convey.So(cur, convey.ShouldEqual, 0)
 		convey.So(err, convey.ShouldNotBeNil)
+		cur, err = q.Next()
+		convey.So(cur, convey.ShouldEqual, 0)
+		convey.So(err, convey.ShouldNotBeNil)
+		fmt.Println(q.String())
 	})
 }
 

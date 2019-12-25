@@ -78,3 +78,7 @@ func (sIndexer *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 	}
 	return nil
 }
+
+func (sIndexer *StorageIndexer) String() string {
+	return ""
+}

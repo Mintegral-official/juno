@@ -1,6 +1,7 @@
 package index
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -12,7 +13,9 @@ type InvertedIndexer struct {
 }
 
 func NewInvertedIndexer() *InvertedIndexer {
-	return &InvertedIndexer{data: sync.Map{}}
+	return &InvertedIndexer{
+		data: sync.Map{},
+	}
 }
 
 func (iIndexer *InvertedIndexer) Count() int {
@@ -57,11 +60,15 @@ func (iIndexer *InvertedIndexer) Del(fieldName string, id document.DocId) bool {
 	return false
 }
 
-func (iIndexer *InvertedIndexer) Iterator(fieldName string) datastruct.Iterator {
-	if v, ok := iIndexer.data.Load(fieldName); ok {
+func (iIndexer *InvertedIndexer) Iterator(name string, value interface{}) datastruct.Iterator {
+	if v, ok := iIndexer.data.Load(name + "_" + fmt.Sprint(value)); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			return sl.Iterator()
 		}
 	}
 	return nil
+}
+
+func (iIndexer *InvertedIndexer) String() string {
+	return ""
 }

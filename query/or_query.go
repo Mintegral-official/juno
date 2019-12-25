@@ -2,8 +2,10 @@ package query
 
 import (
 	"container/heap"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/check"
@@ -12,20 +14,24 @@ import (
 type OrQuery struct {
 	checkers []check.Checker
 	h        Heap
+	aDebug   *debug.Debug
 }
 
 func NewOrQuery(queries []Query, checkers []check.Checker) *OrQuery {
+	oq := &OrQuery{aDebug: &debug.Debug{
+		Name: "NewOrQuery",
+		Msg:  []string{},
+	},}
 	if len(queries) == 0 {
-		return &OrQuery{}
+		return oq
 	}
 	h := &Heap{}
 	for i := 0; i < len(queries); i++ {
 		heap.Push(h, queries[i])
 	}
-	return &OrQuery{
-		checkers: checkers,
-		h:        *h,
-	}
+	oq.h = *h
+	oq.checkers = checkers
+	return oq
 }
 
 func (oq *OrQuery) Next() (document.DocId, error) {
@@ -34,6 +40,7 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 		if oq.check(target) {
 			return target, nil
 		}
+		oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filter", target))
 		target, err = oq.Current()
 	}
 	return 0, helpers.NoMoreData
@@ -64,6 +71,7 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 		target, err = oq.Current()
 	}
 	for err == nil && !oq.check(target) {
+		oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
 		target, err = oq.Next()
 	}
 	return target, err
@@ -82,12 +90,21 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	if oq.check(res) {
 		return res, nil
 	}
-	return 0, errors.New(fmt.Sprintf("the result [%d] is filter", res))
+	oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", res))
+	return 0, errors.New(fmt.Sprintf("the result [%d] is not suitable", res))
 
 }
 
 func (oq *OrQuery) String() string {
-	return ""
+	for i := 0; i < oq.h.Len(); i++ {
+		oq.aDebug.AddDebug(oq.h[i].String())
+	}
+
+	if res, err := json.Marshal(oq.aDebug); err == nil {
+		return string(res)
+	} else {
+		return err.Error()
+	}
 }
 
 func (oq *OrQuery) check(id document.DocId) bool {

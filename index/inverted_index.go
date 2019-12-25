@@ -8,6 +8,7 @@ import (
 type InvertedIndex interface {
 	Add(fieldName string, id document.DocId) error
 	Del(fieldName string, id document.DocId) bool
-	Iterator(fieldName string) datastruct.Iterator
+	Iterator(name string, value interface{}) datastruct.Iterator
 	Count() int
+	String() string
 }

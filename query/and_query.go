@@ -52,7 +52,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			if aq.check(target) {
 				return target, nil
 			}
-			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filter", target))
+			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
 			curIdx = (curIdx + 1) % len(aq.queries)
 			target, err = aq.queries[curIdx].Next()
 			if err != nil {
@@ -83,7 +83,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			if aq.check(res) {
 				return res, nil
 			}
-			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filter", res))
+			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", res))
 			curIdx = (curIdx + 1) % len(aq.queries)
 			res, err = aq.queries[curIdx].Next()
 			if err != nil {
@@ -106,7 +106,7 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 		}
 		if tar != res {
 			if i == len(aq.queries)-1 {
-				return 0, errors.New("no filter num")
+				return 0, errors.New("no suitable num")
 			}
 			continue
 		}
@@ -114,22 +114,14 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	if aq.check(res) {
 		return res, nil
 	}
-	aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filter", res))
-	return 0, errors.New(fmt.Sprintf("the result [%d] is filter", res))
+	aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", res))
+	return 0, errors.New(fmt.Sprintf("the result [%d] is not suitable", res))
 }
 
 func (aq *AndQuery) String() string {
-	nilCount := 0
 	for i := 0; i < len(aq.queries); i++ {
-		if aq.queries[i] == nil {
-			nilCount++
-			aq.aDebug.AddDebug(fmt.Sprintf("querys[%d] is nil", i))
-		}
 		aq.aDebug.AddDebug(aq.queries[i].String())
 	}
-	aq.aDebug.AddDebug(fmt.Sprintf("len(querys) = [%d]", len(aq.queries)))
-	aq.aDebug.AddDebug(fmt.Sprintf("len(checkers) = [%d]", len(aq.checkers)))
-	aq.aDebug.AddDebug(fmt.Sprintf("the num of query is nil : [%d]", nilCount))
 
 	if res, err := json.Marshal(aq.aDebug); err == nil {
 		return string(res)

@@ -132,6 +132,10 @@ func (indexer *Indexer) Load(filename string) error {
 	return nil
 }
 
+func (indexer *Indexer) String() string {
+	return ""
+}
+
 func (indexer *Indexer) GetDataType(fieldName string) document.FieldType {
 	return 0
 }

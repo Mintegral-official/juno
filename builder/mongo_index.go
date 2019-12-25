@@ -73,7 +73,7 @@ func (mib *MongoIndexBuilder) GetIndex() *index.Indexer {
 }
 
 func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
-
+	// TODO  修改 case -> select
 	mib.start = time.Now().UnixNano()
 	err := mib.base(name)
 	mib.end = time.Now().UnixNano()

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Mintegral-official/juno/builder"
-	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
@@ -175,21 +174,23 @@ func main() {
 	storageIdx := tIndex.GetStorageIndex()
 
 	q := query.NewOrQuery([]query.Query{
-		query.NewTermQuery(invertIdx.Iterator("AdvertiserId_457").(*datastruct.SkipListIterator)),
-		query.NewTermQuery(invertIdx.Iterator("Platform_1").(*datastruct.SkipListIterator)),
+		query.NewTermQuery(invertIdx.Iterator("AdvertiserId", 457)),
+		query.NewTermQuery(invertIdx.Iterator("Platform", 1)),
 		query.NewAndQuery([]query.Query{
-			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)),
-			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)),
+			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price")),
+			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price")),
 		},
 			[]check.Checker{
-				check.NewChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 20.0, operation.LT),
-				check.NewChecker(storageIdx.Iterator("Price").(*datastruct.SkipListIterator), 1.4, operation.GE),
+				check.NewChecker(storageIdx.Iterator("Price"), 20.0, operation.LT),
+				check.NewChecker(storageIdx.Iterator("Price"), 1.4, operation.GE),
 			}),
-		query.NewTermQuery(invertIdx.Iterator("AdvertiserId_646").(*datastruct.SkipListIterator)),
+		query.NewTermQuery(invertIdx.Iterator("AdvertiserId", 646)),
 	}, nil)
 
-	res := search.Search(tIndex, q)
+	r := search.NewResult()
+	res := r.Search(tIndex, q)
 	fmt.Println("res: ", len(res.Docs), res.Time)
+	fmt.Println(r.QueryDebug)
 
 	c := make(chan os.Signal)
 	signal.Notify(c)
