@@ -26,7 +26,7 @@ func (ee *Operations) Less(value interface{}) bool {
 	if value == nil {
 		return false
 	}
-	return helpers.Compare(ee.FieldValue, value) == -1
+	return helpers.Compare(ee.FieldValue, value) < 0
 }
 
 func (ee *Operations) In(value []interface{}) bool {
