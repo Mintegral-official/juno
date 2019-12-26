@@ -3,7 +3,6 @@ package check
 import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/operation"
 )
 
@@ -36,11 +35,11 @@ func (c *InChecker) Check(id document.DocId) bool {
 		return false
 	}
 	key := element.(*datastruct.Element).Key()
-	if key == nil {
+	if key == 0 {
 		return false
 	}
 
-	if k := key.(document.DocId); helpers.Compare(k, id) != 0 {
+	if key != id {
 		return false
 	}
 	v = iter.Current().(*datastruct.Element).Value()

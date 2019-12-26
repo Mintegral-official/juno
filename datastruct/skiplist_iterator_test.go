@@ -1,13 +1,15 @@
 package datastruct
 
 import (
-	"github.com/Mintegral-official/juno/helpers"
+	"fmt"
+	"github.com/Mintegral-official/juno/document"
 	. "github.com/smartystreets/goconvey/convey"
+	"reflect"
 	"testing"
 )
 
 func TestNewSkipListIterator(t *testing.T) {
-	sl, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	sl, _ := NewSkipList(DefaultMaxLevel)
 	sl.Add(1, nil)
 	sl.Add(3, nil)
 	// slt := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
@@ -31,12 +33,12 @@ func TestNewSkipListIterator(t *testing.T) {
 }
 
 func TestSkipListIterator_Iterator(t *testing.T) {
-	s, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	s, _ := NewSkipList(DefaultMaxLevel)
 	for i := 0; i < 100; i++ {
-		s.Add(i, nil)
+		s.Add(document.DocId(i), nil)
 	}
 	for i := 101; i < 150; i += 3 {
-		s.Add(i, nil)
+		s.Add(document.DocId(i), nil)
 	}
 
 	Convey("Next", t, func() {
@@ -93,9 +95,9 @@ func TestSkipListIterator_Iterator(t *testing.T) {
 }
 
 func TestSkipListIterator_GetGE(t *testing.T) {
-	s, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	s, _ := NewSkipList(DefaultMaxLevel)
 	for i := 0; i < 100; i++ {
-		s.Add(i, nil)
+		s.Add(document.DocId(i), nil)
 	}
 	a := s.Iterator()
 
@@ -113,20 +115,20 @@ func TestSkipListIterator_GetGE(t *testing.T) {
 
 func getGE(s *SkipListIterator) {
 	for i := 0; i < 100000; i++ {
-		s.GetGE(arr[i])
+		s.GetGE(document.DocId(arr[i]))
 	}
 }
 
 func add1(s *SkipList) {
 	for i := 0; i < 200000; i++ {
-		s.Add(arr[i], [1]byte{})
+		s.Add(document.DocId(arr[i]), [1]byte{})
 	}
 }
 
 func TestSkipListIterator_First(t *testing.T) {
-	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	a, _ := NewSkipList(DefaultMaxLevel)
 	for i := 0; i < 1000; i++ {
-		a.Add(i, nil)
+		a.Add(document.DocId(i), nil)
 	}
 	s := a.Iterator()
 	Convey("del", t, func() {
@@ -146,7 +148,7 @@ func TestSkipListIterator_First(t *testing.T) {
 }
 
 func BenchmarkSkipListIterator_GetGE(b *testing.B) {
-	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	a, _ := NewSkipList(DefaultMaxLevel)
 	add1(a)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -156,7 +158,7 @@ func BenchmarkSkipListIterator_GetGE(b *testing.B) {
 }
 
 func BenchmarkSkipListIterator_GetGE_RunParallel(b *testing.B) {
-	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	a, _ := NewSkipList(DefaultMaxLevel)
 	add1(a)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -168,7 +170,7 @@ func BenchmarkSkipListIterator_GetGE_RunParallel(b *testing.B) {
 }
 
 func BenchmarkNewSkipListIterator_Next(b *testing.B) {
-	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
+	a, _ := NewSkipList(DefaultMaxLevel)
 	add1(a)
 	s := a.Iterator()
 	b.ResetTimer()
@@ -194,3 +196,9 @@ func BenchmarkNewSkipListIterator_Next(b *testing.B) {
 //		}
 //	})
 //}
+
+func TestNewBitMap2(t *testing.T) {
+	var a int8 = 1
+	var b byte = 1
+	fmt.Println(reflect.TypeOf(a) == reflect.TypeOf(b))
+}

@@ -1,22 +1,24 @@
 package datastruct
 
 import (
+	"github.com/Mintegral-official/juno/document"
 	"unsafe"
 )
 
 type Element struct {
-	key   interface{}
+	key   document.DocId
 	value interface{}
 	next  []unsafe.Pointer
 }
 
-func newNode(key, value interface{}, level int) *Element {
+func newNode(key document.DocId, value interface{}, level int) *Element {
 	if level <= 0 || level > DefaultMaxLevel {
 		level = DefaultMaxLevel
 	}
 	return &Element{
-		key, value,
-		make([]unsafe.Pointer, level),
+		key:   key,
+		value: value,
+		next:  make([]unsafe.Pointer, level),
 	}
 }
 
@@ -40,9 +42,9 @@ func (element *Element) Next(n int) *Element {
 	return (*Element)(element.next[n])
 }
 
-func (element *Element) Key() interface{} {
+func (element *Element) Key() document.DocId {
 	if element == nil {
-		return nil
+		return 0
 	}
 	return element.key
 }
@@ -58,7 +60,7 @@ func ElementCopy(element *Element) *Element {
 	if element == nil {
 		return nil
 	}
-	var e = newNode(nil, nil, len(element.next))
+	var e = newNode(0, nil, len(element.next))
 	e.key = element.key
 	e.value = element.value
 	for i, v := range element.next {

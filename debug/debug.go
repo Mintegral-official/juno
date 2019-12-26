@@ -6,7 +6,13 @@ type Debug struct {
 	Node *Debug   `json:"node"`
 }
 
+func NewDebug(name string) *Debug {
+	return &Debug{
+		Name: name,
+		Msg:  []string{},
+	}
+}
+
 func (d *Debug) AddDebug(msg string) {
 	d.Msg = append(d.Msg, msg)
 }
-

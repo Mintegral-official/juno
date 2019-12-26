@@ -1,16 +1,16 @@
 package datastruct
 
 import (
-	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/document"
 )
 
 type SkipListIterator struct {
 	Element *Element
-	cmp     helpers.Comparable
+	//cmp     helpers.Comparable
 }
 
-func NewSkipListIterator(element *Element, cmp helpers.Comparable) *SkipListIterator {
-	sli := &SkipListIterator{element, cmp}
+func NewSkipListIterator(element *Element) *SkipListIterator {
+	sli := &SkipListIterator{element}
 	sli.Next()
 	return sli
 }
@@ -36,14 +36,15 @@ func (slIterator *SkipListIterator) Next() {
 	//return slIterator.Element
 }
 
-func (slIterator *SkipListIterator) GetLE(key interface{}) interface{} {
+func (slIterator *SkipListIterator) GetLE(key document.DocId) interface{} {
 	for i := len(slIterator.Element.next) - 1; i >= 0; {
 		next := slIterator.Element.Next(i)
 		if next == nil {
 			i--
 			continue
 		}
-		cmp := slIterator.cmp.Compare(key, next.key)
+		//	cmp := slIterator.cmp.Compare(key, next.key)
+		cmp := int(key - next.key)
 		if cmp == 0 {
 			for ; i >= 0; i-- {
 				slIterator.Element.next[i] = next.next[i]
@@ -59,12 +60,12 @@ func (slIterator *SkipListIterator) GetLE(key interface{}) interface{} {
 	return slIterator.Element
 }
 
-func (slIterator *SkipListIterator) GetGE(key interface{}) interface{} {
+func (slIterator *SkipListIterator) GetGE(key document.DocId) interface{} {
 	e := slIterator.GetLE(key).(*Element)
 	if e == nil {
 		return nil
 	}
-	c := slIterator.cmp.Compare(key, e.key)
+	c := int(key - e.key)
 	if c > 0 {
 		slIterator.Next()
 	}

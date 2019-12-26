@@ -1,13 +1,16 @@
 package index
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/log"
 	"github.com/sirupsen/logrus"
+	"strconv"
 )
 
 type Indexer struct {
@@ -18,6 +21,7 @@ type Indexer struct {
 	count           document.DocId
 	name            string
 	logger          log.Logger
+	aDebug          *debug.Debug
 }
 
 func NewIndex(name string) *Indexer {
@@ -29,6 +33,7 @@ func NewIndex(name string) *Indexer {
 		count:           1,
 		name:            name,
 		logger:          logrus.New(),
+		aDebug:          debug.NewDebug(name),
 	}
 
 }
@@ -133,7 +138,20 @@ func (indexer *Indexer) Load(filename string) error {
 }
 
 func (indexer *Indexer) String() string {
-	return ""
+	indexer.aDebug.AddDebug("invert index count: " + strconv.Itoa(indexer.invertedIndex.Count()) +
+		", storage index count: " + strconv.Itoa(indexer.storageIndex.Count()))
+	var (
+		invert  = debug.NewDebug("invert index")
+		storage = debug.NewDebug("storage index")
+	)
+	invert.AddDebug(indexer.invertedIndex.String())
+	storage.AddDebug(indexer.storageIndex.String())
+	invert.Node, indexer.aDebug.Node = storage, invert
+	if res, err := json.Marshal(indexer.aDebug); err == nil {
+		return string(res)
+	} else {
+		return err.Error()
+	}
 }
 
 func (indexer *Indexer) GetDataType(fieldName string) document.FieldType {

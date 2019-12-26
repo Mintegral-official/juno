@@ -10,6 +10,7 @@ import (
 type Result struct {
 	Docs       []document.DocId
 	Time       time.Duration
+	IndexDebug string
 	QueryDebug string
 }
 
@@ -24,10 +25,6 @@ func (r *Result) Search(iIndexer *index.Indexer, query query.Query) *Result {
 		return nil
 	}
 	now := time.Now()
-	if _, err := query.Current(); err != nil {
-
-		return r
-	}
 	id, err := query.Next()
 	for err == nil {
 		if !iIndexer.GetBitMap().IsExist(uint64(iIndexer.GetCampaignMap()[id])) {
@@ -37,6 +34,7 @@ func (r *Result) Search(iIndexer *index.Indexer, query query.Query) *Result {
 		id, err = query.Next()
 	}
 	r.Time = time.Since(now)
+	r.IndexDebug = iIndexer.String()
 	r.QueryDebug = query.String()
 	return r
 }

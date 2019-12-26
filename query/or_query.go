@@ -18,15 +18,17 @@ type OrQuery struct {
 }
 
 func NewOrQuery(queries []Query, checkers []check.Checker) *OrQuery {
-	oq := &OrQuery{aDebug: &debug.Debug{
-		Name: "NewOrQuery",
-		Msg:  []string{},
-	},}
+	oq := &OrQuery{
+		aDebug: debug.NewDebug("OrQuery"),
+	}
 	if len(queries) == 0 {
 		return oq
 	}
 	h := &Heap{}
 	for i := 0; i < len(queries); i++ {
+		if queries[i] == nil {
+			continue
+		}
 		heap.Push(h, queries[i])
 	}
 	oq.h = *h
@@ -40,7 +42,7 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 		if oq.check(target) {
 			return target, nil
 		}
-		oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filter", target))
+		oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
 		target, err = oq.Current()
 	}
 	return 0, helpers.NoMoreData
@@ -71,7 +73,7 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 		target, err = oq.Current()
 	}
 	for err == nil && !oq.check(target) {
-		oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
+		oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
 		target, err = oq.Next()
 	}
 	return target, err
@@ -90,8 +92,8 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	if oq.check(res) {
 		return res, nil
 	}
-	oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", res))
-	return 0, errors.New(fmt.Sprintf("the result [%d] is not suitable", res))
+	oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", res))
+	return 0, errors.New(fmt.Sprintf("the result [%d] is filtered out", res))
 
 }
 

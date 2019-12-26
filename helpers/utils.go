@@ -7,18 +7,12 @@ import (
 
 func Compare(i, j interface{}) int {
 	switch i.(type) {
-	case document.DocId:
-		return DocIdFunc(i, j)
-	case int:
-		return IntCompare(i, j)
-	case string:
-		return StringCompare(i, j)
-	case float32:
-		return Float32Compare(i, j)
-	case float64:
-		return Float64Compare(i, j)
-	case rune:
-		return RuneFunc(i, j)
+	case int8, int16, rune, int64, int, *int8, *int16, *rune, *int64, *int:
+		return intCompare(i, j)
+	case string, *string:
+		return stringCompare(i, j)
+	case float32, *float32, float64, *float64:
+		return floatCompare(i, j)
 	default:
 		panic(fmt.Sprintf("parameters[%T - %T] type wrong.", i, j))
 	}
@@ -43,10 +37,10 @@ func Merge(arr1, arr2 []document.DocId) []document.DocId {
 	i, j := 0, 0
 	var res []document.DocId
 	for i < len(arr1) && j < len(arr2) {
-		if Compare(arr1[i], arr2[j]) < 0 {
+		if arr1[i] < arr2[j] {
 			res = append(res, arr1[i])
 			i++
-		} else if Compare(arr1[i], arr2[j]) == 0 {
+		} else if arr1[i] == arr2[j] {
 			res = append(res, arr1[i])
 			i++
 			j++

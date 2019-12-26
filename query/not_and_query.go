@@ -19,10 +19,7 @@ type NotAndQuery struct {
 
 func NewNotAndQuery(queries []Query, checkers []check.Checker) *NotAndQuery {
 	naq := &NotAndQuery{
-		aDebug: &debug.Debug{
-			Name: "NewNotAndQuery",
-			Msg:  []string{},
-		},
+		aDebug: debug.NewDebug("NotAndQuery"),
 	}
 	if len(queries) == 0 {
 		return naq
@@ -43,14 +40,14 @@ func (naq *NotAndQuery) Next() (document.DocId, error) {
 			if naq.check(target) {
 				return target, nil
 			}
-			naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
+			naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
 		}
 		for i := 1; i < len(naq.queries); i++ {
 			cur, err := naq.queries[i].GetGE(target)
-			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(naq.queries)-1 {
+			if (target != cur || err != nil) && i == len(naq.queries)-1 {
 				_, _ = naq.queries[0].Next()
 				for !naq.check(target) {
-					naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
+					naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
 					target, err = naq.queries[0].Current()
 					if err != nil {
 						return 0, err
@@ -72,7 +69,7 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		}
 		if len(naq.queries) == 1 {
 			for !naq.check(target) {
-				naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
+				naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
 				target, err = naq.queries[0].Next()
 			}
 			return target, nil
@@ -80,17 +77,17 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		for i := 1; i < len(naq.queries); i++ {
 			if _, err := naq.queries[i].Current(); err != nil {
 				for !naq.check(target) {
-					naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
+					naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
 					target, err = naq.queries[0].Next()
 				}
 				return target, nil
 			}
 			cur, err := naq.queries[i].GetGE(target)
-			if (helpers.Compare(target, cur) != 0 || err != nil) && i == len(naq.queries)-1 {
+			if (target != cur || err != nil) && i == len(naq.queries)-1 {
 				if naq.check(target) {
 					return target, nil
 				}
-				naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
+				naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
 			}
 		}
 		_, _ = naq.queries[0].Next()
@@ -114,11 +111,11 @@ func (naq *NotAndQuery) Current() (document.DocId, error) {
 			if naq.check(res) {
 				return res, nil
 			}
-			naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", res))
+			naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", res))
 		}
 	}
-	naq.aDebug.AddDebug(fmt.Sprintf("current data[%d] is not suitable", res))
-	return 0, errors.New("current data is not suitable")
+	naq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", res))
+	return 0, errors.New("current data is filtered out")
 }
 
 func (naq *NotAndQuery) String() string {

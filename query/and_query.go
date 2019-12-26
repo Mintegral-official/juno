@@ -18,16 +18,14 @@ type AndQuery struct {
 }
 
 func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
-	aq := &AndQuery{}
+	aq := &AndQuery{
+		aDebug: debug.NewDebug("AndQuery"),
+	}
 	if len(queries) == 0 {
 		return aq
 	}
 	aq.queries = queries
 	aq.checkers = checkers
-	aq.aDebug = &debug.Debug{
-		Name: "NewAndQuery",
-		Msg:  []string{},
-	}
 	return aq
 }
 
@@ -52,7 +50,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			if aq.check(target) {
 				return target, nil
 			}
-			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", target))
+			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
 			curIdx = (curIdx + 1) % len(aq.queries)
 			target, err = aq.queries[curIdx].Next()
 			if err != nil {
@@ -83,7 +81,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			if aq.check(res) {
 				return res, nil
 			}
-			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", res))
+			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", res))
 			curIdx = (curIdx + 1) % len(aq.queries)
 			res, err = aq.queries[curIdx].Next()
 			if err != nil {
@@ -114,8 +112,8 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	if aq.check(res) {
 		return res, nil
 	}
-	aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is not suitable", res))
-	return 0, errors.New(fmt.Sprintf("the result [%d] is not suitable", res))
+	aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", res))
+	return 0, errors.New(fmt.Sprintf("the result [%d] is filtered out", res))
 }
 
 func (aq *AndQuery) String() string {

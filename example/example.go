@@ -106,7 +106,6 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 
 func (c *CampaignParser) Parse(bytes []byte, userData interface{}) *builder.ParserResult {
 	ud, ok := userData.(*UserData)
-	fmt.Println(ud)
 	if !ok {
 		return nil
 	}
@@ -166,31 +165,42 @@ func main() {
 
 	tIndex := b.GetIndex()
 
-	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4 and advertiserId!=646)
+	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4)
 	// invert list
-	invertIdx := tIndex.GetInvertedIndex()
+	//invertIdx := tIndex.GetInvertedIndex()
 
 	// storage
 	storageIdx := tIndex.GetStorageIndex()
 
-	q := query.NewOrQuery([]query.Query{
-		query.NewTermQuery(invertIdx.Iterator("AdvertiserId", 457)),
-		query.NewTermQuery(invertIdx.Iterator("Platform", 1)),
-		query.NewAndQuery([]query.Query{
-			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price")),
-			query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price")),
+	q := query.NewOrQuery(
+		[]query.Query{
+			query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+			//query.NewTermQuery(invertIdx.Iterator("Platform", 1)),
+			query.NewAndQuery(
+				[]query.Query{
+					query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price")),
+					query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price")),
+				},
+				[]check.Checker{
+					check.NewChecker(storageIdx.Iterator("Price"), 20.0, operation.LT),
+					check.NewChecker(storageIdx.Iterator("Price"), 1.4, operation.GE),
+				},
+			),
+		}, []check.Checker{
+			check.NewChecker(storageIdx.Iterator("AdvertiserId"), 646, operation.EQ),
+			check.NewChecker(storageIdx.Iterator("AdvertiserId"), 457, operation.GE),
 		},
-			[]check.Checker{
-				check.NewChecker(storageIdx.Iterator("Price"), 20.0, operation.LT),
-				check.NewChecker(storageIdx.Iterator("Price"), 1.4, operation.GE),
-			}),
-		query.NewTermQuery(invertIdx.Iterator("AdvertiserId", 646)),
-	}, nil)
+	)
 
 	r := search.NewResult()
 	res := r.Search(tIndex, q)
+	fmt.Println("+****************************+")
 	fmt.Println("res: ", len(res.Docs), res.Time)
+	fmt.Println("+****************************+")
 	fmt.Println(r.QueryDebug)
+	fmt.Println("+****************************+")
+	fmt.Println(r.IndexDebug)
+	fmt.Println("+****************************+")
 
 	c := make(chan os.Signal)
 	signal.Notify(c)

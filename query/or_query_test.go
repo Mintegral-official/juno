@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
 func TestNewOrQuery_Next1(t *testing.T) {
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), [1]byte{})
 	sl.Add(document.DocId(3), [1]byte{})
@@ -46,14 +45,14 @@ func TestNewOrQuery_Next1(t *testing.T) {
 }
 
 func TestOrQuery_GetGE(t *testing.T) {
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), [1]byte{})
 	sl.Add(document.DocId(3), [1]byte{})
 	sl.Add(document.DocId(6), [1]byte{})
 	sl.Add(document.DocId(10), [1]byte{})
 
-	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl1.Add(document.DocId(1), [1]byte{})
 	sl1.Add(document.DocId(4), [1]byte{})
@@ -130,21 +129,21 @@ func TestOrQuery_GetGE(t *testing.T) {
 
 func TestNewOrQuery_Next2(t *testing.T) {
 
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), [1]byte{})
 	sl.Add(document.DocId(3), [1]byte{})
 	sl.Add(document.DocId(6), [1]byte{})
 	sl.Add(document.DocId(10), [1]byte{})
 
-	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl1.Add(document.DocId(1), [1]byte{})
 	sl1.Add(document.DocId(4), [1]byte{})
 	sl1.Add(document.DocId(6), [1]byte{})
 	sl1.Add(document.DocId(9), [1]byte{})
 
-	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl2.Add(document.DocId(2), [1]byte{})
 	sl2.Add(document.DocId(5), [1]byte{})

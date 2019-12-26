@@ -3,21 +3,20 @@ package check
 import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/operation"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
 func TestInChecker_Check(t *testing.T) {
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), 1)
 	sl.Add(document.DocId(3), 6)
 	sl.Add(document.DocId(6), 5)
 	sl.Add(document.DocId(10), 10)
 
-	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl1.Add(document.DocId(1), 1)
 	sl1.Add(document.DocId(4), 1)

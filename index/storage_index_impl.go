@@ -1,28 +1,32 @@
 package index
 
 import (
+	"encoding/json"
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"strconv"
 	"sync"
 )
 
 type StorageIndexer struct {
-	data sync.Map
+	data   sync.Map
+	aDebug *debug.Debug
 }
 
 func NewStorageIndexer() *StorageIndexer {
-	return &StorageIndexer{data: sync.Map{}}
+	return &StorageIndexer{
+		data:   sync.Map{},
+		aDebug: debug.NewDebug("storage index"),
+	}
 }
 
 func (sIndexer *StorageIndexer) Count() int {
 	var count = 0
 	sIndexer.data.Range(func(key, value interface{}) bool {
-		if key != nil {
-			count++
-			return true
-		}
-		return false
+		count++
+		return true
 	})
 	return count
 }
@@ -49,7 +53,7 @@ func (sIndexer *StorageIndexer) Add(fieldName string, id document.DocId, value i
 			return helpers.ParseError
 		}
 	} else {
-		sl, err := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+		sl, err := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		if err != nil {
 			return err
 		}
@@ -73,12 +77,19 @@ func (sIndexer *StorageIndexer) Del(fieldName string, id document.DocId) bool {
 func (sIndexer *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 	if v, ok := sIndexer.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
+			sIndexer.aDebug.AddDebug("index: " + fieldName + " len: " + strconv.Itoa(sl.Len()))
 			return sl.Iterator()
 		}
 	}
-	return nil
+	sIndexer.aDebug.AddDebug("index: " + fieldName + " is nil")
+	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+	return sl.Iterator()
 }
 
 func (sIndexer *StorageIndexer) String() string {
-	return ""
+	if res, err := json.Marshal(sIndexer.aDebug); err == nil {
+		return string(res)
+	} else {
+		return err.Error()
+	}
 }

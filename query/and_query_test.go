@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+	"unsafe"
 )
 
 func TestAndQuery(t *testing.T) {
@@ -15,14 +15,14 @@ func TestAndQuery(t *testing.T) {
 }
 
 func TestAndQuery_Next(t *testing.T) {
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), [1]byte{})
 	sl.Add(document.DocId(3), [1]byte{})
 	sl.Add(document.DocId(6), [1]byte{})
 	sl.Add(document.DocId(10), [1]byte{})
 
-	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl1.Add(document.DocId(1), [1]byte{})
 	sl1.Add(document.DocId(4), [1]byte{})
@@ -140,4 +140,18 @@ func TestAndQuery_Next(t *testing.T) {
 		So(e, ShouldBeNil)
 
 	})
+}
+
+func f(a, b interface{}) bool {
+	aa, bb := unsafe.Pointer(&a), unsafe.Pointer(&b)
+	//fmt.Println(*(*float64)(aa))
+	//fmt.Println(*(*float64)(bb))
+	return *(*float64)(aa) == *(*float64)(bb)
+}
+
+func TestAndQuery_Current(t *testing.T) {
+    fmt.Println(f(1.1, 1.1))
+    fmt.Println(f(1.1, 1.2))
+    fmt.Println(f(1, 1))
+    fmt.Println(f(2, 1))
 }

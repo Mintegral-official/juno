@@ -15,10 +15,7 @@ type TermQuery struct {
 
 func NewTermQuery(iter datastruct.Iterator) *TermQuery {
 	tq := &TermQuery{
-		aDebug: &debug.Debug{
-			Name: "NewTermQuery",
-			Msg:  []string{},
-		},
+		aDebug: debug.NewDebug("TermQuery"),
 	}
 	if iter == nil {
 		tq.aDebug.AddDebug("the iterator is nil")
@@ -37,14 +34,10 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 	tq.iterator.Next()
 	if element := tq.iterator.Current(); element != nil {
 		v, ok := element.(*datastruct.Element)
-		if !ok || v == nil || v.Key() == nil {
+		if !ok || v == nil || v.Key() == 0 {
 			return 0, helpers.ElementNotfound
 		}
-		if v, ok := v.Key().(document.DocId); ok {
-			return v, nil
-		} else {
-			return 0, helpers.DocIdNotFound
-		}
+		return v.Key(), nil
 	}
 	return 0, helpers.ElementNotfound
 }
@@ -57,28 +50,24 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 
 	if v := tq.iterator.GetGE(id); v != nil {
 		v, ok := v.(*datastruct.Element)
-		if !ok || v == nil || v.Key() == nil {
+		if !ok || v == nil || v.Key() == 0 {
 			return 0, helpers.ElementNotfound
 		}
-		if v, ok := v.Key().(document.DocId); ok {
-			return v, nil
-		}
-		return 0, helpers.DocIdNotFound
+		return v.Key(), nil
 	}
 	return 0, helpers.ElementNotfound
 }
 
 func (tq *TermQuery) Current() (document.DocId, error) {
-	v := tq.iterator.Current()
-	if v == nil {
-		return 0, helpers.ElementNotfound
+	if tq.iterator == nil {
+		return 0, helpers.DocumentError
 	}
-	res, ok := v.(*datastruct.Element)
-	if !ok {
-		return 0, helpers.ElementNotfound
-	}
-	if res, ok := res.Key().(document.DocId); ok {
-		return res, nil
+	if v := tq.iterator.Current(); v != nil {
+		v, ok := v.(*datastruct.Element)
+		if !ok || v == nil || v.Key() == 0 {
+			return 0, helpers.ElementNotfound
+		}
+		return v.Key(), nil
 	}
 	return 0, helpers.ElementNotfound
 }

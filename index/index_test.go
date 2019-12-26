@@ -1,6 +1,7 @@
 package index
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
@@ -168,6 +169,7 @@ func TestNewIndex(t *testing.T) {
 		So(c, ShouldEqual, 1)
 		So(len(*index.GetBitMap()), ShouldEqual, 32768)
 		So(index.GetCampaignMap(), ShouldNotBeNil)
+		fmt.Println(index.String())
 	})
 }
 
@@ -294,7 +296,6 @@ func TestNewIndex2(t *testing.T) {
 //	fmt.Println(unsafe.Alignof(&[]int{}))
 //	fmt.Println(unsafe.Alignof(true))
 //}
-type a int64
 
 func TestStorageIndexer_Add(t *testing.T) {
 

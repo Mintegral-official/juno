@@ -1,6 +1,7 @@
 package index
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -25,16 +26,16 @@ func TestInvertedIndexer_Del(t *testing.T) {
 func TestInvertedIndexer_Iterator(t *testing.T) {
 	s := NewInvertedIndexer()
 	Convey("Iterator", t, func() {
-		So(s.Iterator("filename", nil), ShouldBeNil)
+		So(s.Iterator("filename", nil), ShouldNotBeNil)
 	})
 }
 
 func TestInvertedIndexer(t *testing.T) {
 	s := NewInvertedIndexer()
-	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	s.data.Store("fieldName1", sl1)
 	s.data.Store("fieldName2", nil)
-	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	s.data.Store("fieldName4", sl2)
 	Convey("Add", t, func() {
 		So(s.Add("fieldName_1", document.DocId(1)), ShouldBeNil)
@@ -46,6 +47,9 @@ func TestInvertedIndexer(t *testing.T) {
 		So(s.Del("fieldName_1", document.DocId(1)), ShouldBeTrue)
 		a := s.Iterator("fieldName", 1)
 		So(s.Iterator("fieldName", 1), ShouldNotBeNil)
+		So(s.Iterator("fieldName", 2), ShouldNotBeNil)
+		So(s.Iterator("fieldName", 4), ShouldNotBeNil)
+		So(s.Iterator("fieldName", 0), ShouldNotBeNil)
 		c := 0
 		for a.HasNext() {
 			// fmt.Println(a.Current())
@@ -68,4 +72,5 @@ func TestInvertedIndexer(t *testing.T) {
 			}
 		}
 	})
+	fmt.Println(s.String())
 }
