@@ -9,6 +9,9 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/log"
+	"sync"
+
+	//cmap "github.com/easierway/concurrent_map"
 	"github.com/sirupsen/logrus"
 	"strconv"
 )
@@ -16,7 +19,7 @@ import (
 type Indexer struct {
 	invertedIndex   InvertedIndex
 	storageIndex    StorageIndex
-	campaignMapping map[document.DocId]document.DocId
+	campaignMapping *sync.Map
 	bitmap          *datastruct.BitSet
 	count           document.DocId
 	name            string
@@ -28,7 +31,7 @@ func NewIndex(name string) *Indexer {
 	return &Indexer{
 		invertedIndex:   NewInvertedIndexer(),
 		storageIndex:    NewStorageIndexer(),
-		campaignMapping: make(map[document.DocId]document.DocId, 2000000),
+		campaignMapping: &sync.Map{},
 		bitmap:          datastruct.NewBitMap(),
 		count:           1,
 		name:            name,
@@ -46,7 +49,7 @@ func (indexer *Indexer) GetStorageIndex() StorageIndex {
 	return indexer.storageIndex
 }
 
-func (indexer *Indexer) GetCampaignMap() map[document.DocId]document.DocId {
+func (indexer *Indexer) GetCampaignMap() *sync.Map {
 	return indexer.campaignMapping
 }
 
@@ -69,8 +72,8 @@ func (indexer *Indexer) Add(doc *document.DocInfo) error {
 				indexer.WarnStatus("invert index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
-			indexer.campaignMapping[doc.Id] = indexer.count
-			indexer.bitmap.Set(uint64(indexer.count))
+			indexer.campaignMapping.Store(doc.Id, indexer.count)
+			indexer.bitmap.Set(indexer.count)
 			indexer.count++
 		} else if doc.Fields[j].IndexType == document.StorageIndexType {
 			if err = indexer.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
@@ -82,8 +85,8 @@ func (indexer *Indexer) Add(doc *document.DocInfo) error {
 				indexer.WarnStatus("invert index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
 				return err
 			}
-			indexer.campaignMapping[doc.Id] = indexer.count
-			indexer.bitmap.Set(uint64(indexer.count))
+			indexer.campaignMapping.Store(doc.Id, indexer.count)
+			indexer.bitmap.Set(indexer.count)
 			indexer.count++
 			if err = indexer.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
 				indexer.WarnStatus("storage index", doc.Fields[j].Name, fmt.Sprint(doc.Fields[j].Value), err.Error())
@@ -108,12 +111,12 @@ func (indexer *Indexer) Del(doc *document.DocInfo) {
 		}
 		if doc.Fields[j].IndexType == document.InvertedIndexType {
 			indexer.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), indexer.count)
-			indexer.bitmap.Del(uint64(indexer.count))
+			indexer.bitmap.Del(indexer.count)
 		} else if doc.Fields[j].IndexType == document.StorageIndexType {
 			indexer.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		} else if doc.Fields[j].IndexType == document.BothIndexType {
 			indexer.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), indexer.count)
-			indexer.bitmap.Del(uint64(indexer.count))
+			indexer.bitmap.Del(indexer.count)
 			indexer.storageIndex.Del(doc.Fields[j].Name, doc.Id)
 		} else {
 			panic("the del doc type is nil or wrong")
