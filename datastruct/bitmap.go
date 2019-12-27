@@ -1,41 +1,43 @@
 package datastruct
 
-type BitSet []uint64
+import "github.com/Mintegral-official/juno/document"
+
+type BitSet []document.DocId
 
 const (
-	AddressBitsPerWord uint8  = 6
-	WordsPerSize       uint64 = 64
+	AddressBitsPerWord uint8          = 6
+	WordsPerSize       document.DocId = 64
 )
 
 func NewBitMap() *BitSet {
 	wordsLen := (2<<20 - 1) >> AddressBitsPerWord
-	temp := BitSet(make([]uint64, wordsLen+1, wordsLen+1))
+	temp := BitSet(make([]document.DocId, wordsLen+1, wordsLen+1))
 	return &temp
 }
 
-func (bs *BitSet) Set(bitIndex uint64) {
+func (bs *BitSet) Set(bitIndex document.DocId) {
 	wIndex := bs.wordIndex(bitIndex)
 	bs.expandTo(wIndex)
-	(*bs)[wIndex] |= uint64(0x01) << (bitIndex % WordsPerSize)
+	(*bs)[wIndex] |= document.DocId(0x01) << (bitIndex % WordsPerSize)
 }
 
-func (bs *BitSet) Del(bitIndex uint64) {
+func (bs *BitSet) Del(bitIndex document.DocId) {
 	wIndex := bs.wordIndex(bitIndex)
 	if wIndex < len(*bs) {
-		(*bs)[wIndex] &^= uint64(0x01) << (bitIndex % WordsPerSize)
+		(*bs)[wIndex] &^= document.DocId(0x01) << (bitIndex % WordsPerSize)
 	}
 }
 
-func (bs *BitSet) IsExist(bitIndex uint64) bool {
+func (bs *BitSet) IsExist(bitIndex document.DocId) bool {
 	wIndex := bs.wordIndex(bitIndex)
-	return (wIndex < len(*bs)) && ((*bs)[wIndex]&(uint64(0x01)<<(bitIndex%WordsPerSize)) != 0)
+	return (wIndex < len(*bs)) && ((*bs)[wIndex]&(document.DocId(0x01)<<(bitIndex%WordsPerSize)) != 0)
 }
 
 func (bs *BitSet) IsFully() bool {
 	return len(*bs) == cap(*bs)
 }
 
-func (bs BitSet) wordIndex(bitIndex uint64) int {
+func (bs BitSet) wordIndex(bitIndex document.DocId) int {
 	return int(bitIndex >> AddressBitsPerWord)
 }
 
@@ -45,7 +47,7 @@ func (bs *BitSet) expandTo(wordIndex int) {
 		if wordsRequired < 2*len(*bs) {
 			wordsRequired = 2 * len(*bs)
 		}
-		newCap := make([]uint64, wordsRequired, wordsRequired)
+		newCap := make([]document.DocId, wordsRequired, wordsRequired)
 		copy(newCap, *bs)
 		*bs = newCap
 	}

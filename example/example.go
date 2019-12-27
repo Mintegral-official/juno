@@ -46,61 +46,67 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 		Fields: []*document.Field{},
 	}
 	docInfo.Id = document.DocId(info.CampaignId)
-	if info.Price == nil {
-		return docInfo
-	}
-	docInfo.Fields = []*document.Field{
-		{
+	if info.AdvertiserId != nil {
+		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "AdvertiserId",
 			IndexType: 2,
-			Value:     info.AdvertiserId,
-		},
-		{
+			Value:     *info.AdvertiserId,
+		})
+	}
+	if info.Platform != nil {
+		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "Platform",
 			IndexType: 2,
-			Value:     info.Platform,
-		},
-		{
+			Value:     *info.Platform,
+		})
+	}
+	if info.Price != nil {
+		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "Price",
 			IndexType: 2,
 			Value:     *info.Price,
-		},
-		{
-			Name:      "Platform",
-			IndexType: 2,
-			Value:     info.Platform,
-		},
-		{
+		})
+	}
+	if info.StartTime != nil {
+		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "StartTime",
 			IndexType: 1,
-			Value:     info.StartTime,
-		},
-		{
+			Value:     *info.StartTime,
+		})
+	}
+
+	if info.EndTime != nil {
+		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "EndTime",
 			IndexType: 1,
-			Value:     info.EndTime,
-		},
-		{
-			Name:      "PackageName",
-			IndexType: 2,
-			Value:     info.PackageName,
-		},
-		{
+			Value:     *info.EndTime,
+		})
+	}
+
+	if info.CampaignType != nil {
+		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "CampaignType",
 			IndexType: 1,
-			Value:     info.CampaignType,
-		},
-		{
+			Value:     *info.CampaignType,
+		})
+	}
+
+	if info.OsVersionMaxV2 != nil {
+		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "OsVersionMaxV2",
 			IndexType: 1,
-			Value:     info.OsVersionMaxV2,
-		},
-		{
+			Value:     *info.OsVersionMaxV2,
+		})
+	}
+
+	if info.OsVersionMinV2 != nil {
+		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "OsVersionMinV2",
 			IndexType: 1,
-			Value:     info.OsVersionMinV2,
-		},
+			Value:     *info.OsVersionMinV2,
+		})
 	}
+
 	return docInfo
 }
 
@@ -167,35 +173,32 @@ func main() {
 
 	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4)
 	// invert list
-	//invertIdx := tIndex.GetInvertedIndex()
+	invertIdx := tIndex.GetInvertedIndex()
 
 	// storage
 	storageIdx := tIndex.GetStorageIndex()
 
 	q := query.NewOrQuery(
 		[]query.Query{
-			query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-			//query.NewTermQuery(invertIdx.Iterator("Platform", 1)),
+			query.NewTermQuery(invertIdx.Iterator("AdvertiserId", 457)),
+			query.NewTermQuery(invertIdx.Iterator("Platform", 1)),
 			query.NewAndQuery(
 				[]query.Query{
-					query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price")),
-					query.NewTermQuery(tIndex.GetStorageIndex().Iterator("Price")),
+					query.NewTermQuery(storageIdx.Iterator("Price")),
+					query.NewTermQuery(storageIdx.Iterator("Price")),
 				},
 				[]check.Checker{
 					check.NewChecker(storageIdx.Iterator("Price"), 20.0, operation.LT),
 					check.NewChecker(storageIdx.Iterator("Price"), 1.4, operation.GE),
 				},
 			),
-		}, []check.Checker{
-			check.NewChecker(storageIdx.Iterator("AdvertiserId"), 646, operation.EQ),
-			check.NewChecker(storageIdx.Iterator("AdvertiserId"), 457, operation.GE),
-		},
+		}, nil,
 	)
 
-	r := search.NewResult()
-	res := r.Search(tIndex, q)
+	r := search.NewSearcher()
+	r.Search(tIndex, q)
 	fmt.Println("+****************************+")
-	fmt.Println("res: ", len(res.Docs), res.Time)
+	fmt.Println("res: ", len(r.Docs), r.Time)
 	fmt.Println("+****************************+")
 	fmt.Println(r.QueryDebug)
 	fmt.Println("+****************************+")

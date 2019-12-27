@@ -6,21 +6,21 @@ import (
 	"github.com/Mintegral-official/juno/query/operation"
 )
 
-type InChecker struct {
+type CheckerImpl struct {
 	si    datastruct.Iterator
 	value interface{}
 	op    operation.OP
 }
 
-func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP) *InChecker {
-	return &InChecker{
+func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP) *CheckerImpl {
+	return &CheckerImpl{
 		si:    si,
 		value: value,
 		op:    op,
 	}
 }
 
-func (c *InChecker) Check(id document.DocId) bool {
+func (c *CheckerImpl) Check(id document.DocId) bool {
 	if c == nil {
 		return true
 	}
@@ -43,5 +43,8 @@ func (c *InChecker) Check(id document.DocId) bool {
 		return false
 	}
 	v = iter.Current().(*datastruct.Element).Value()
+	if v == nil {
+		return false
+	}
 	return UtilCheck(v, c.op, c.value)
 }

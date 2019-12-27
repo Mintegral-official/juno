@@ -13,7 +13,6 @@ const (
 )
 
 type SkipList struct {
-	//cmp               helpers.Comparable
 	randSource        rand.Source
 	header            *Element
 	level             int

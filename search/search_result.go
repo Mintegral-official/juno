@@ -4,37 +4,38 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
+	//	cmap "github.com/easierway/concurrent_map"
 	"time"
 )
 
-type Result struct {
+type Searcher struct {
 	Docs       []document.DocId
 	Time       time.Duration
 	IndexDebug string
 	QueryDebug string
 }
 
-func NewResult() *Result {
-	return &Result{
+func NewSearcher() *Searcher {
+	return &Searcher{
 		Docs: []document.DocId{},
 	}
 }
 
-func (r *Result) Search(iIndexer *index.Indexer, query query.Query) *Result {
+func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	if query == nil {
-		return nil
+		panic("the query should not be nil")
+		return
 	}
 	now := time.Now()
 	id, err := query.Next()
 	for err == nil {
-		if !iIndexer.GetBitMap().IsExist(uint64(iIndexer.GetCampaignMap()[id])) {
+		if v, ok := iIndexer.GetCampaignMap().Load(id); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
 			continue
 		}
-		r.Docs = append(r.Docs, id)
+		s.Docs = append(s.Docs, id)
 		id, err = query.Next()
 	}
-	r.Time = time.Since(now)
-	r.IndexDebug = iIndexer.String()
-	r.QueryDebug = query.String()
-	return r
+	s.Time = time.Since(now)
+	s.IndexDebug = iIndexer.String()
+	s.QueryDebug = query.String()
 }

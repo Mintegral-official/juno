@@ -47,7 +47,7 @@ func GenerateRandomNumber(start int, end int, count int) []int {
 
 func init() {
 	t := time.Now()
-	//arr = GenerateRandomNumber(0, 1500000000, 2000000)
+	arr = GenerateRandomNumber(0, 1500000000, 200000)
 	fmt.Println(time.Since(t))
 
 	fmt.Println(len(arr))
@@ -105,13 +105,13 @@ func TestSkipList_Get(t *testing.T) {
 }
 
 func add(s *SkipList, arr []int) {
-	for i := 0; i < 2000000; i++ {
+	for i := 0; i < len(arr); i++ {
 		s.Add(document.DocId(arr[i]), [1]byte{})
 	}
 }
 
 func get(s *SkipList, arr []int) {
-	for i := 0; i < 1000000; i++ {
+	for i := 0; i < len(arr)/2; i++ {
 		_, _ = s.Get(document.DocId(arr[i]))
 	}
 }
@@ -130,7 +130,7 @@ func BenchmarkSkipList_FindGE(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		for j := 0; j < 1000000; j++ {
+		for j := 0; j < len(arr)/2; j++ {
 			s.findGE(document.DocId(arr[j]), true, s.previousNodeCache)
 		}
 	}
@@ -143,7 +143,7 @@ func BenchmarkSkipList_FindGE_RunParallel(b *testing.B) {
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			for i := 0; i < 1000000; i++ {
+			for i := 0; i < len(arr)/2; i++ {
 				s.findGE(document.DocId(arr[i]), true, s.previousNodeCache)
 			}
 		}
@@ -156,7 +156,7 @@ func BenchmarkNewSkipList_FindLT(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		for i := 0; i < 1000000; i++ {
+		for i := 0; i < len(arr)/2; i++ {
 			s.findLT(document.DocId(arr[i]))
 		}
 	}
@@ -169,7 +169,7 @@ func BenchmarkNewSkipList_FindLT_RunParallel(b *testing.B) {
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			for i := 0; i < 1000000; i++ {
+			for i := 0; i < len(arr)/2; i++ {
 				s.findLT(document.DocId(arr[i]))
 			}
 		}
