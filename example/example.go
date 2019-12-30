@@ -179,16 +179,16 @@ func main() {
 
 	q := query.NewOrQuery(
 		[]query.Query{
-			query.NewTermQuery(invertIdx.Iterator("AdvertiserId", 457)),
-			query.NewTermQuery(invertIdx.Iterator("Platform", 1)),
+			query.NewTermQuery(invertIdx.Iterator("AdvertiserId", int32(457))),
+			query.NewTermQuery(invertIdx.Iterator("Platform", int32(1))),
 			query.NewAndQuery(
 				[]query.Query{
 					query.NewTermQuery(storageIdx.Iterator("Price")),
 					query.NewTermQuery(storageIdx.Iterator("Price")),
 				},
 				[]check.Checker{
-					check.NewInChecker(storageIdx.Iterator("Price"), 20.0, 1.4, 3.6, 5.7, 2.5),
-					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), 647, 658, 670),
+					check.NewInChecker(storageIdx.Iterator("Price"), []float64{20.0, 1.4, 3.6, 5.7, 2.5}),
+					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), []int32{647, 658, 670}),
 				},
 			),
 		}, nil,
@@ -213,7 +213,6 @@ func main() {
 	fmt.Println(r.IndexDebug)
 	fmt.Println("+****************************+")
 	fmt.Println("res: ", len(r.Docs), r.Time)
-
 
 	c := make(chan os.Signal)
 	signal.Notify(c)

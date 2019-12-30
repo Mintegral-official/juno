@@ -3,15 +3,9 @@ package helpers
 import (
 	"fmt"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/sirupsen/logrus"
-	"reflect"
 )
 
 func Compare(i, j interface{}) int {
-	if reflect.TypeOf(i).Kind() != reflect.TypeOf(j).Kind() {
-		logrus.New().Warnf("parameters[%v[%T] - %v[%T]] type is not same.\n", i, i, j, j)
-		return stringCompare(reflect.ValueOf(i).String(), reflect.ValueOf(j).String())
-	}
 	switch i.(type) {
 	case int8, int16, int32, int64, int, *int8, *int16, *int32, *int64, *int:
 		return intCompare(i, j)
