@@ -2,6 +2,10 @@ package query
 
 import (
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/index"
+	"github.com/Mintegral-official/juno/query/check"
+	"github.com/Mintegral-official/juno/query/operation"
+	"strings"
 )
 
 type SqlQuery struct {
@@ -41,114 +45,114 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 	return sq.Stack.Pop().(*datastruct.TreeNode)
 }
 
+func (sq *SqlQuery) LRD(impl *index.Indexer) Query {
+	node, tmp := sq.exp2Tree().To(), 0
+	for !sq.Stack.Empty() || !node.Empty() {
+		if !node.Empty() {
+			if node.Peek() != "&" && node.Peek() != "|" {
+				if strings.Contains(node.Peek().(string), "@") {
+					sq.Stack.Push(parseIn(node.Pop().(string), impl))
+				} else if strings.Contains(node.Peek().(string), "#") {
+					sq.Stack.Push(parseNotIn(node.Pop().(string), impl))
+					tmp = 1
+				} else if strings.Contains(node.Peek().(string), "=") {
+					sq.Stack.Push(parseEq(node.Pop().(string), impl))
+				} else if strings.Contains(node.Peek().(string), "!=") {
+					sq.Stack.Push(parseNE(node.Pop().(string), impl))
+				} else if strings.Contains(node.Peek().(string), "<") {
+					sq.Stack.Push(parseLT(node.Pop().(string), impl))
+				} else if strings.Contains(node.Peek().(string), "<=") {
+					sq.Stack.Push(parseLE(node.Pop().(string), impl))
+				} else if strings.Contains(node.Peek().(string), ">") {
+					sq.Stack.Push(parseGT(node.Pop().(string), impl))
+				} else if strings.Contains(node.Peek().(string), ">=") {
+					sq.Stack.Push(parseGE(node.Pop().(string), impl))
+				}
+			} else if node.Peek() == "&" {
+				if tmp == 1 {
+					sq.Stack.Push(NewNotAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
+					tmp = 0
+				} else {
+					sq.Stack.Push(NewAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
+				}
+				node.Pop()
+			} else if node.Peek() == "|" {
+				sq.Stack.Push(NewOrQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
+				node.Pop()
+			}
+		} else {
+			return sq.Stack.Pop().(Query)
+		}
+	}
+	return sq.Stack.Pop().(Query)
+}
 
+func parseIn(str string, impl *index.Indexer) Query {
+	strSlice, invert := strings.Split(str, "@"), impl.GetInvertedIndex()
+	values := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
+	var querys []Query
+	for _, v := range values {
+		querys = append(querys, NewTermQuery(invert.Iterator(strSlice[0], v)))
+	}
+	return NewOrQuery(querys, nil)
+}
 
-//func (sq *SqlQuery) LRD(impl *index.Indexer) Query {
-//	node, tmp := sq.exp2Tree(), 0
-//	for !sq.Stack.Empty() || node != nil {
-//		if node != nil {
-//			if node.Data != "&" && node.Data != "|" {
-//				if strings.Contains(node.Data.(string), "@") {
-//					sq.Stack.Push(parseIn(node.Data.(string), impl))
-//				} else if strings.Contains(node.Data.(string), "#") {
-//					sq.Stack.Push(parseNotIn(node.Data.(string), impl))
-//					tmp = 1
-//				} else if strings.Contains(node.Data.(string), "=") {
-//					sq.Stack.Push(parseEq(node.Data.(string), impl))
-//				} else if strings.Contains(node.Data.(string), "!=") {
-//					sq.Stack.Push(parseNE(node.Data.(string), impl))
-//				} else if strings.Contains(node.Data.(string), "<") {
-//					sq.Stack.Push(parseLT(node.Data.(string), impl))
-//				} else if strings.Contains(node.Data.(string), "<=") {
-//					sq.Stack.Push(parseLE(node.Data.(string), impl))
-//				} else if strings.Contains(node.Data.(string), ">") {
-//					sq.Stack.Push(parseGT(node.Data.(string), impl))
-//				} else if strings.Contains(node.Data.(string), ">=") {
-//					sq.Stack.Push(parseGE(node.Data.(string), impl))
-//				}
-//			} else if node.Data == "&" {
-//				if tmp == 1 {
-//					sq.Stack.Push(NewNotAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
-//					tmp = 0
-//				} else {
-//					sq.Stack.Push(NewAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
-//				}
-//			} else if node.Data == "|" {
-//				sq.Stack.Push(NewOrQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
-//			}
-//		} else {
-//			return sq.Stack.Pop().(Query)
-//		}
-//	}
-//	return sq.Stack.Pop().(Query)
-//}
-//
-//func parseIn(str string, impl *index.Indexer) Query {
-//	strSlice, invert := strings.Split(str, "@"), impl.GetInvertedIndex()
-//	values := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
-//	var querys []Query
-//	for _, v := range values {
-//		querys = append(querys, NewTermQuery(invert.Iterator(strSlice[0]+"_"+v).(*datastruct.SkipListIterator)))
-//	}
-//	return NewOrQuery(querys, nil)
-//}
-//
-//func parseNotIn(str string, impl *index.Indexer) Query {
-//	strSlice, invert := strings.Split(str, "#"), impl.GetInvertedIndex()
-//	values := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
-//	var querys []Query
-//	for _, v := range values {
-//		querys = append(querys, NewTermQuery(invert.Iterator(strSlice[0]+"_"+v).(*datastruct.SkipListIterator)))
-//	}
-//	return NewOrQuery(querys, nil)
-//}
-//
-//func parseEq(str string, impl *index.Indexer) Query {
-//	strSlice, invert := strings.Split(str, "="), impl.GetInvertedIndex()
-//	return NewTermQuery(invert.Iterator(strSlice[0] + "_" + strSlice[1]).(*datastruct.SkipListIterator))
-//}
-//
-//func parseNE(str string, impl *index.Indexer) Query {
-//	strSlice, storageIdx := strings.Split(str, "!="), impl.GetStorageIndex()
-//	return NewAndQuery([]Query{
-//		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
-//	}, []check.Checker{
-//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.NE),
-//	}, )
-//}
-//
-//func parseLT(str string, impl *index.Indexer) Query {
-//	strSlice, storageIdx := strings.Split(str, "<"), impl.GetStorageIndex()
-//	return NewAndQuery([]Query{
-//		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
-//	}, []check.Checker{
-//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.LT),
-//	}, )
-//}
-//
-//func parseLE(str string, impl *index.Indexer) Query {
-//	strSlice, storageIdx := strings.Split(str, "<="), impl.GetStorageIndex()
-//	return NewAndQuery([]Query{
-//		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
-//	}, []check.Checker{
-//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.LE),
-//	}, )
-//}
-//
-//func parseGT(str string, impl *index.Indexer) Query {
-//	strSlice, storageIdx := strings.Split(str, ">"), impl.GetStorageIndex()
-//	return NewAndQuery([]Query{
-//		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
-//	}, []check.Checker{
-//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.GT),
-//	}, )
-//}
-//
-//func parseGE(str string, impl *index.Indexer) Query {
-//	strSlice, storageIdx := strings.Split(str, ">="), impl.GetStorageIndex()
-//	return NewAndQuery([]Query{
-//		NewTermQuery(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator)),
-//	}, []check.Checker{
-//		check.NewInChecker(storageIdx.Iterator(strSlice[0]).(*datastruct.SkipListIterator), strSlice[1], operation.GE),
-//	}, )
-//}
+func parseNotIn(str string, impl *index.Indexer) Query {
+	strSlice, invert := strings.Split(str, "#"), impl.GetInvertedIndex()
+	values := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
+	var querys []Query
+	for _, v := range values {
+		querys = append(querys, NewTermQuery(invert.Iterator(strSlice[0], v)))
+	}
+	return NewOrQuery(querys, nil)
+}
+
+func parseEq(str string, impl *index.Indexer) Query {
+	strSlice, invert := strings.Split(str, "="), impl.GetInvertedIndex()
+	return NewTermQuery(invert.Iterator(strSlice[0], strSlice[1]))
+}
+
+func parseNE(str string, impl *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "!="), impl.GetStorageIndex()
+	return NewAndQuery([]Query{
+		NewTermQuery(storageIdx.Iterator(strSlice[0])),
+	}, []check.Checker{
+		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.NE),
+	}, )
+}
+
+func parseLT(str string, impl *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "<"), impl.GetStorageIndex()
+	return NewAndQuery([]Query{
+		NewTermQuery(storageIdx.Iterator(strSlice[0])),
+	}, []check.Checker{
+		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.LT),
+	}, )
+}
+
+func parseLE(str string, impl *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "<="), impl.GetStorageIndex()
+	return NewAndQuery([]Query{
+		NewTermQuery(storageIdx.Iterator(strSlice[0])),
+	}, []check.Checker{
+		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.LE),
+	}, )
+}
+
+func parseGT(str string, impl *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, ">"), impl.GetStorageIndex()
+	return NewAndQuery([]Query{
+		NewTermQuery(storageIdx.Iterator(strSlice[0])),
+	}, []check.Checker{
+		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.GT),
+	}, )
+}
+
+func parseGE(str string, impl *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, ">="), impl.GetStorageIndex()
+	return NewAndQuery([]Query{
+		NewTermQuery(storageIdx.Iterator(strSlice[0])),
+	}, []check.Checker{
+		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.GE),
+	}, )
+}

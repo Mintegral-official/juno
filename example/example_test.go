@@ -6,7 +6,6 @@ import (
 	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
-	"github.com/Mintegral-official/juno/query/operation"
 	"github.com/Mintegral-official/juno/search"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -52,12 +51,15 @@ func BenchmarkCampaignParser_Parse(b *testing.B) {
 
 	tIndex := bi.GetIndex()
 
-	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4)
+	// search: advertiserId=457 or platform=android or (price in [20.0, 1.4, 3.6, 5.7, 2.5] And AdvertiserId not in [647, 658, 670])
 	// invert list
 	invertIdx := tIndex.GetInvertedIndex()
 
 	// storage
 	storageIdx := tIndex.GetStorageIndex()
+
+	b.ReportAllocs()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		q := query.NewOrQuery(
@@ -70,8 +72,8 @@ func BenchmarkCampaignParser_Parse(b *testing.B) {
 						query.NewTermQuery(storageIdx.Iterator("Price")),
 					},
 					[]check.Checker{
-						check.NewChecker(storageIdx.Iterator("Price"), 20.0, operation.LT),
-						check.NewChecker(storageIdx.Iterator("Price"), 1.4, operation.GE),
+						check.NewInChecker(storageIdx.Iterator("Price"), 20.0, 1.4, 3.6, 5.7, 2.5),
+						check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), 647, 658, 670),
 					},
 				),
 			}, nil,
@@ -80,7 +82,7 @@ func BenchmarkCampaignParser_Parse(b *testing.B) {
 		r := search.NewSearcher()
 		r.Search(tIndex, q)
 		//fmt.Println("+****************************+")
-		//fmt.Println("res: ", len(r.Docs), r.Time)
+		fmt.Println("res: ", len(r.Docs), r.Time)
 		//fmt.Println("+****************************+")
 		//fmt.Println(r.QueryDebug)
 		//fmt.Println("+****************************+")

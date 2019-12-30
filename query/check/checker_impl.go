@@ -35,10 +35,6 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 		return false
 	}
 	key := element.(*datastruct.Element).Key()
-	if key == 0 {
-		return false
-	}
-
 	if key != id {
 		return false
 	}

@@ -54,11 +54,9 @@ func TestInChecker_Check(t *testing.T) {
 	})
 
 	Convey("in checker", t, func() {
-		c := NewChecker(sl.Iterator(), 6, operation.EQ)
-		d := NewChecker(sl.Iterator(), 10, operation.EQ)
-		o := NewInInChecker([]Checker{
-			c, d,
-		})
+		//c := NewChecker(sl.Iterator(), 6, operation.EQ)
+		//d := NewChecker(sl.Iterator(), 10, operation.EQ)
+		o := NewInChecker(sl.Iterator(), 1, 6, 3, 10)
 		So(o.Check(3), ShouldBeTrue)
 		So(o.Check(6), ShouldBeFalse)
 		So(o.Check(10), ShouldBeTrue)
@@ -66,14 +64,12 @@ func TestInChecker_Check(t *testing.T) {
 	})
 
 	Convey("not checker", t, func() {
-		c := NewChecker(sl.Iterator(), 6, operation.NE)
-		d := NewChecker(sl.Iterator(), 10, operation.NE)
-		o := NewNotChecker([]Checker{
-			c, d,
-		})
-		So(o.Check(3), ShouldBeTrue)
-		So(o.Check(6), ShouldBeFalse)
-		So(o.Check(10), ShouldBeTrue)
+		//c := NewChecker(sl.Iterator(), 6, operation.NE)
+		//d := NewChecker(sl.Iterator(), 10, operation.NE)
+		o := NewNotChecker(sl.Iterator(), 1, 6, 3, 10)
+		So(o.Check(3), ShouldBeFalse)
 		So(o.Check(6), ShouldBeTrue)
+		So(o.Check(10), ShouldBeFalse)
+		So(o.Check(6), ShouldBeFalse)
 	})
 }

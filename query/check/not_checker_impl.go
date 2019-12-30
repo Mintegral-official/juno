@@ -1,30 +1,45 @@
 package check
 
 import (
+	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/query/operation"
 )
 
 type NotChecker struct {
-	c []Checker
+	si    datastruct.Iterator
+	value []interface{}
 }
 
-func NewNotChecker(c []Checker) *NotChecker {
-	if c == nil {
-		return nil
-	}
+func NewNotChecker(si datastruct.Iterator, value ...interface{}) *NotChecker {
 	return &NotChecker{
-		c: c,
+		si:    si,
+		value: value,
 	}
 }
 
-func (n *NotChecker) Check(id document.DocId) bool {
-	if n == nil {
+func (nc *NotChecker) Check(id document.DocId) bool {
+	if nc == nil {
 		return true
 	}
-	for _, cValue := range n.c {
-		if !cValue.Check(id) {
-			return true
-		}
+	iter := nc.si
+	v := iter.Current().(*datastruct.Element).Value()
+	if v == nil {
+		return false
 	}
-	return false
+
+	element := iter.GetGE(id)
+	if element == nil {
+		return false
+	}
+	key := element.(*datastruct.Element).Key()
+	if key != id {
+		return false
+	}
+	v = iter.Current().(*datastruct.Element).Value()
+	if v == nil {
+		return false
+	}
+	o := operation.Operations{FieldValue: v}
+	return !o.In(nc.value)
 }

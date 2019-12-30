@@ -7,7 +7,6 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
-	"github.com/Mintegral-official/juno/query/operation"
 	"github.com/Mintegral-official/juno/search"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -171,7 +170,7 @@ func main() {
 
 	tIndex := b.GetIndex()
 
-	// search: advertiserId=457 or platform=android or (price < 20.0 And price >= 16.4)
+	// search: advertiserId=457 or platform=android or (price in [20.0, 1.4, 3.6, 5.7, 2.5] And price >= 1.4)
 	// invert list
 	invertIdx := tIndex.GetInvertedIndex()
 
@@ -188,8 +187,8 @@ func main() {
 					query.NewTermQuery(storageIdx.Iterator("Price")),
 				},
 				[]check.Checker{
-					check.NewChecker(storageIdx.Iterator("Price"), 20.0, operation.LT),
-					check.NewChecker(storageIdx.Iterator("Price"), 1.4, operation.GE),
+					check.NewInChecker(storageIdx.Iterator("Price"), 20.0, 1.4, 3.6, 5.7, 2.5),
+					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), 647, 658, 670),
 				},
 			),
 		}, nil,
@@ -199,11 +198,22 @@ func main() {
 	r.Search(tIndex, q)
 	fmt.Println("+****************************+")
 	fmt.Println("res: ", len(r.Docs), r.Time)
-	fmt.Println("+****************************+")
+	//fmt.Println("+****************************+")
+	//fmt.Println(r.QueryDebug)
+	//fmt.Println("+****************************+")
+	//fmt.Println(r.IndexDebug)
+	//fmt.Println("+****************************+")
+
+	a := "AdvertiserId=457 | Platform=1 | (Price @ [20.0, 1.4, 3.6, 5.7, 2.5] & Price >= 1.4)"
+	sq := query.NewSqlQuery(a)
+	m := sq.LRD(tIndex)
+	r = search.NewSearcher()
+	r.Search(tIndex, m)
 	fmt.Println(r.QueryDebug)
-	fmt.Println("+****************************+")
 	fmt.Println(r.IndexDebug)
 	fmt.Println("+****************************+")
+	fmt.Println("res: ", len(r.Docs), r.Time)
+
 
 	c := make(chan os.Signal)
 	signal.Notify(c)
