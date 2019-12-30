@@ -23,17 +23,17 @@ func NewInvertedIndexer() *InvertedIndexer {
 	}
 }
 
-func (iIndexer *InvertedIndexer) Count() int {
+func (i *InvertedIndexer) Count() int {
 	var count = 0
-	iIndexer.data.Range(func(key, value interface{}) bool {
+	i.data.Range(func(key, value interface{}) bool {
 		count++
 		return true
 	})
 	return count
 }
 
-func (iIndexer *InvertedIndexer) Add(fieldName string, id document.DocId) error {
-	if v, ok := iIndexer.data.Load(fieldName); ok {
+func (i *InvertedIndexer) Add(fieldName string, id document.DocId) error {
+	if v, ok := i.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Add(id, nil)
 		} else {
@@ -45,38 +45,38 @@ func (iIndexer *InvertedIndexer) Add(fieldName string, id document.DocId) error 
 			return err
 		}
 		sl.Add(id, nil)
-		iIndexer.data.Store(fieldName, sl)
+		i.data.Store(fieldName, sl)
 	}
 	return nil
 }
 
-func (iIndexer *InvertedIndexer) Del(fieldName string, id document.DocId) bool {
+func (i *InvertedIndexer) Del(fieldName string, id document.DocId) bool {
 
-	if v, ok := iIndexer.data.Load(fieldName); ok {
+	if v, ok := i.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
 			sl.Del(id)
-			iIndexer.data.Store(fieldName, sl)
+			i.data.Store(fieldName, sl)
 			return true
 		}
 	}
 	return false
 }
 
-func (iIndexer *InvertedIndexer) Iterator(name string, value interface{}) datastruct.Iterator {
+func (i *InvertedIndexer) Iterator(name string, value interface{}) datastruct.Iterator {
 	var fieldName = name + "_" + fmt.Sprint(value)
-	if v, ok := iIndexer.data.Load(fieldName); ok {
+	if v, ok := i.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
-			iIndexer.aDebug.AddDebug("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
+			i.aDebug.AddDebug("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
 			return sl.Iterator()
 		}
 	}
-	iIndexer.aDebug.AddDebug("index: " + fieldName + " is nil")
+	i.aDebug.AddDebug("index: " + fieldName + " is nil")
 	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	return sl.Iterator()
 }
 
-func (iIndexer *InvertedIndexer) String() string {
-	if res, err := json.Marshal(iIndexer.aDebug); err == nil {
+func (i *InvertedIndexer) String() string {
+	if res, err := json.Marshal(i.aDebug); err == nil {
 		return string(res)
 	} else {
 		return err.Error()

@@ -22,38 +22,38 @@ func newNode(key document.DocId, value interface{}, level int) *Element {
 	}
 }
 
-func (element *Element) setNext(n int, x *Element) {
-	if element == nil {
+func (e *Element) setNext(n int, x *Element) {
+	if e == nil {
 		return
 	}
-	if n < 0 || n > len(element.next) {
+	if n < 0 || n > len(e.next) {
 		return
 	}
-	element.next[n] = unsafe.Pointer(x)
+	e.next[n] = unsafe.Pointer(x)
 }
 
-func (element *Element) Next(n int) *Element {
-	if element == nil {
+func (e *Element) Next(n int) *Element {
+	if e == nil {
 		return nil
 	}
-	if n < 0 || n > len(element.next) {
+	if n < 0 || n > len(e.next) {
 		return nil
 	}
-	return (*Element)(element.next[n])
+	return (*Element)(e.next[n])
 }
 
-func (element *Element) Key() document.DocId {
-	if element == nil {
+func (e *Element) Key() document.DocId {
+	if e == nil {
 		return 0
 	}
-	return element.key
+	return e.key
 }
 
-func (element *Element) Value() interface{} {
-	if element == nil {
+func (e *Element) Value() interface{} {
+	if e == nil {
 		return nil
 	}
-	return element.value
+	return e.value
 }
 
 func ElementCopy(element *Element) *Element {

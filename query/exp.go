@@ -3,6 +3,7 @@ package query
 import (
 	"bytes"
 	"github.com/Mintegral-official/juno/datastruct"
+	"strconv"
 )
 
 var Char = []rune{
@@ -27,7 +28,7 @@ func (e *Expression) GetValue() string {
 func (e *Expression) string2Strings() []string {
 	str, s, n := e.value, make([]string, 0), 0
 	var t bytes.Buffer
-	for _, v := range str {
+	for i, v := range str {
 		if v == ' ' {
 			continue
 		}
@@ -36,7 +37,7 @@ func (e *Expression) string2Strings() []string {
 		} else {
 			vs := string(v)
 			if !e.isSign(vs) {
-				panic("Illegal Character: " + vs)
+				panic("index: " + strconv.Itoa(i) + ", Illegal Character: " + vs)
 			}
 			if t.Len() > 0 {
 				s = append(s, t.String())
