@@ -1,7 +1,6 @@
 package index
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -23,10 +22,10 @@ func TestNewStorageIndexer(t *testing.T) {
 
 func TestStorageIndexer(t *testing.T) {
 	s := NewStorageIndexer()
-	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	s.data.Store("fieldName1", sl1)
 	s.data.Store("fieldName2", nil)
-	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	s.data.Store("fieldName4", sl2)
 	Convey("ADD & GET &DEL & ITERATOR", t, func() {
 		So(s.Add("fieldName1", document.DocId(1), nil), ShouldBeNil)
@@ -62,6 +61,6 @@ func TestStorageIndexer(t *testing.T) {
 		So(s.Iterator("fieldName4"), ShouldNotBeNil)
 		So(s.Iterator("fieldName0"), ShouldNotBeNil)
 		So(s.Count(), ShouldEqual, 4)
-		fmt.Println(s.String())
+		So(s.DebugInfo(), ShouldNotBeNil)
 	})
 }

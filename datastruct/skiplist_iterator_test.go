@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewSkipListIterator(t *testing.T) {
-	sl, _ := NewSkipList(DefaultMaxLevel)
+	sl := NewSkipList(DefaultMaxLevel)
 	sl.Add(1, nil)
 	sl.Add(3, nil)
 	// slt := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
@@ -33,7 +33,7 @@ func TestNewSkipListIterator(t *testing.T) {
 }
 
 func TestSkipListIterator_Iterator(t *testing.T) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	for i := 0; i < 100; i++ {
 		s.Add(document.DocId(i), nil)
 	}
@@ -95,7 +95,7 @@ func TestSkipListIterator_Iterator(t *testing.T) {
 }
 
 func TestSkipListIterator_GetGE(t *testing.T) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	for i := 0; i < 100; i++ {
 		s.Add(document.DocId(i), nil)
 	}
@@ -126,7 +126,7 @@ func add1(s *SkipList) {
 }
 
 func TestSkipListIterator_First(t *testing.T) {
-	a, _ := NewSkipList(DefaultMaxLevel)
+	a := NewSkipList(DefaultMaxLevel)
 	for i := 0; i < 1000; i++ {
 		a.Add(document.DocId(i), nil)
 	}
@@ -148,7 +148,7 @@ func TestSkipListIterator_First(t *testing.T) {
 }
 
 func BenchmarkSkipListIterator_GetGE(b *testing.B) {
-	a, _ := NewSkipList(DefaultMaxLevel)
+	a := NewSkipList(DefaultMaxLevel)
 	add1(a)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -158,7 +158,7 @@ func BenchmarkSkipListIterator_GetGE(b *testing.B) {
 }
 
 func BenchmarkSkipListIterator_GetGE_RunParallel(b *testing.B) {
-	a, _ := NewSkipList(DefaultMaxLevel)
+	a := NewSkipList(DefaultMaxLevel)
 	add1(a)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -170,7 +170,7 @@ func BenchmarkSkipListIterator_GetGE_RunParallel(b *testing.B) {
 }
 
 func BenchmarkNewSkipListIterator_Next(b *testing.B) {
-	a, _ := NewSkipList(DefaultMaxLevel)
+	a := NewSkipList(DefaultMaxLevel)
 	add1(a)
 	s := a.Iterator()
 	b.ResetTimer()

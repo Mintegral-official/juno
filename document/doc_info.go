@@ -32,7 +32,14 @@ const (
 )
 
 const (
-	NumberFieldType = iota
+	BoolFieldType = iota
+	Int8FieldType
+	Int16FieldType
+	Int32FieldType
+	IntFieldType
+	Int64FieldType
+	Float32FieldType
+	Float64FieldType
 	StringFieldType
 	SelfDefinedFieldType
 )

@@ -1,7 +1,6 @@
 package query
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -14,12 +13,12 @@ type AndQuery struct {
 	queries  []Query
 	checkers []check.Checker
 	curIdx   int
-	aDebug   *debug.Debug
+	debugs   *debug.Debugs
 }
 
 func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
 	aq := &AndQuery{
-		aDebug: debug.NewDebug("AndQuery"),
+		debugs: debug.NewDebugs(debug.NewDebug("AndQuery")),
 	}
 	if len(queries) == 0 {
 		return aq
@@ -30,6 +29,7 @@ func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
 }
 
 func (aq *AndQuery) Next() (document.DocId, error) {
+	aq.debugs.NextNum++
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Next()
 	if err != nil {
@@ -50,7 +50,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			if aq.check(target) {
 				return target, nil
 			}
-			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
+			aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", target))
 			curIdx = (curIdx + 1) % len(aq.queries)
 			target, err = aq.queries[curIdx].Next()
 			if err != nil {
@@ -61,6 +61,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 }
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
+	aq.debugs.GetNum++
 	curIdx, lastIdx := aq.curIdx, aq.curIdx
 	res, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
@@ -81,7 +82,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			if aq.check(res) {
 				return res, nil
 			}
-			aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", res))
+			aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", res))
 			curIdx = (curIdx + 1) % len(aq.queries)
 			res, err = aq.queries[curIdx].Next()
 			if err != nil {
@@ -92,6 +93,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
+	aq.debugs.CurNum++
 	res, err := aq.queries[0].Current()
 	if err != nil {
 		return 0, err
@@ -112,20 +114,18 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	if aq.check(res) {
 		return res, nil
 	}
-	aq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", res))
+	aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", res))
 	return 0, errors.New(fmt.Sprintf("the result [%d] is filtered out", res))
 }
 
-func (aq *AndQuery) String() string {
+func (aq *AndQuery) DebugInfo() *debug.Debug {
+	aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("next has been called: %d", aq.debugs.NextNum))
+	aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("get has been called: %d", aq.debugs.GetNum))
+	aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("current has been called: %d", aq.debugs.CurNum))
 	for i := 0; i < len(aq.queries); i++ {
-		aq.aDebug.AddDebug(aq.queries[i].String())
+		aq.debugs.DebugInfo.AddDebug(aq.queries[i].DebugInfo())
 	}
-
-	if res, err := json.Marshal(aq.aDebug); err == nil {
-		return string(res)
-	} else {
-		return err.Error()
-	}
+	return aq.debugs.DebugInfo
 }
 
 func (aq *AndQuery) check(id document.DocId) bool {

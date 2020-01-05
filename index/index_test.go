@@ -1,7 +1,6 @@
 package index
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
@@ -14,17 +13,17 @@ var doc1 = &document.DocInfo{
 		{
 			Name:      "field1",
 			IndexType: 1,
-			Value:     1,
+			Value:     "1",
 		},
 		{
 			Name:      "field2",
 			IndexType: 0,
-			Value:     2,
+			Value:     "2",
 		},
 		{
 			Name:      "field1",
 			IndexType: 2,
-			Value:     1,
+			Value:     "1",
 		},
 	},
 }
@@ -35,17 +34,17 @@ var doc2 = &document.DocInfo{
 		{
 			Name:      "field1",
 			IndexType: 0,
-			Value:     1,
+			Value:     "1",
 		},
 		{
 			Name:      "field2",
 			IndexType: 1,
-			Value:     2,
+			Value:     "2",
 		},
 		{
 			Name:      "field1",
 			IndexType: 0,
-			Value:     1,
+			Value:     "1",
 		},
 	},
 }
@@ -56,17 +55,17 @@ var doc3 = &document.DocInfo{
 		{
 			Name:      "field1",
 			IndexType: 0,
-			Value:     1,
+			Value:     "1",
 		},
 		{
 			Name:      "field2",
 			IndexType: 0,
-			Value:     2,
+			Value:     "2",
 		},
 		{
 			Name:      "field1",
 			IndexType: 1,
-			Value:     1,
+			Value:     "1",
 		},
 	},
 }
@@ -82,7 +81,7 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc1), ShouldBeNil)
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
-		if1 := index.GetInvertedIndex().Iterator("field1", 1)
+		if1 := index.GetInvertedIndex().Iterator("field1", "1")
 		c := 0
 		for if1.HasNext() {
 			if if1.Current() != nil {
@@ -92,7 +91,7 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 4)
 
-		if2 := index.invertedIndex.Iterator("field2", 2)
+		if2 := index.invertedIndex.Iterator("field2", "2")
 		c = 0
 		for if2.HasNext() {
 			if if2.Current() != nil {
@@ -130,7 +129,7 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
 		index.Del(doc1)
-		if1 := index.GetInvertedIndex().Iterator("field1", 1)
+		if1 := index.GetInvertedIndex().Iterator("field1", "1")
 		c := 0
 		for if1.HasNext() {
 			if if1.Current() != nil {
@@ -140,7 +139,7 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 4)
 
-		if2 := index.invertedIndex.Iterator("field2", 2)
+		if2 := index.invertedIndex.Iterator("field2", "2")
 		c = 0
 		for if2.HasNext() {
 			if if2.Current() != nil {
@@ -169,7 +168,7 @@ func TestNewIndex(t *testing.T) {
 		So(c, ShouldEqual, 1)
 		So(len(*index.GetBitMap()), ShouldEqual, 32768)
 		So(index.GetCampaignMap(), ShouldNotBeNil)
-		fmt.Println(index.String())
+		So(index.DebugInfo(), ShouldNotBeNil)
 	})
 }
 

@@ -1,7 +1,6 @@
 package index
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
@@ -9,11 +8,9 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/log"
-	"sync"
-
-	//cmap "github.com/easierway/concurrent_map"
 	"github.com/sirupsen/logrus"
 	"strconv"
+	"sync"
 )
 
 type Indexer struct {
@@ -106,9 +103,6 @@ func (i *Indexer) Del(doc *document.DocInfo) {
 		return
 	}
 	for j := range doc.Fields {
-		if doc.Fields[j].Value == nil {
-			continue
-		}
 		if doc.Fields[j].IndexType == document.InvertedIndexType {
 			i.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), i.count)
 			i.bitmap.Del(i.count)
@@ -140,25 +134,40 @@ func (i *Indexer) Load(filename string) error {
 	return nil
 }
 
-func (i *Indexer) String() string {
-	i.aDebug.AddDebug("invert index count: " + strconv.Itoa(i.invertedIndex.Count()) +
-		", storage index count: " + strconv.Itoa(i.storageIndex.Count()))
-	var (
-		invert  = debug.NewDebug("invert index")
-		storage = debug.NewDebug("storage index")
-	)
-	invert.AddDebug(i.invertedIndex.String())
-	storage.AddDebug(i.storageIndex.String())
-	invert.Node, i.aDebug.Node = storage, invert
-	if res, err := json.Marshal(i.aDebug); err == nil {
-		return string(res)
-	} else {
-		return err.Error()
-	}
+func (i *Indexer) DebugInfo() *debug.Debug {
+	i.aDebug.AddDebugMsg("invert index count: " + strconv.Itoa(i.invertedIndex.Count()))
+	i.aDebug.AddDebugMsg("storage index count: " + strconv.Itoa(i.storageIndex.Count()))
+	i.aDebug.AddDebug(i.invertedIndex.DebugInfo(), i.storageIndex.DebugInfo())
+	return i.aDebug
 }
 
 func (i *Indexer) GetDataType(fieldName string) document.FieldType {
-	return 0
+	v := i.storageIndex.Iterator(fieldName).Current().(*datastruct.Element).Value()
+	if v == nil {
+		panic(fmt.Sprintf("the field[%v] is not found", fieldName))
+	}
+	switch v.(type) {
+	case bool:
+		return document.BoolFieldType
+	case int8, byte:
+		return document.Int8FieldType
+	case int16:
+		return document.Int16FieldType
+	case int32:
+		return document.Int32FieldType
+	case int:
+		return document.IntFieldType
+	case int64:
+		return document.Int64FieldType
+	case float32:
+		return document.Float32FieldType
+	case float64:
+		return document.Float64FieldType
+	case string:
+		return document.StringFieldType
+	default:
+		return document.SelfDefinedFieldType
+	}
 }
 
 func (i *Indexer) WarnStatus(idxType, name, value, err string) {

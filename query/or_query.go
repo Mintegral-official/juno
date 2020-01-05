@@ -2,7 +2,6 @@ package query
 
 import (
 	"container/heap"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Mintegral-official/juno/debug"
@@ -14,12 +13,12 @@ import (
 type OrQuery struct {
 	checkers []check.Checker
 	h        Heap
-	aDebug   *debug.Debug
+	debugs   *debug.Debugs
 }
 
 func NewOrQuery(queries []Query, checkers []check.Checker) *OrQuery {
 	oq := &OrQuery{
-		aDebug: debug.NewDebug("OrQuery"),
+		debugs: debug.NewDebugs(debug.NewDebug("OrQuery")),
 	}
 	if len(queries) == 0 {
 		return oq
@@ -37,12 +36,13 @@ func NewOrQuery(queries []Query, checkers []check.Checker) *OrQuery {
 }
 
 func (oq *OrQuery) Next() (document.DocId, error) {
+	oq.debugs.NextNum++
 	for target, err := oq.Current(); err == nil; {
 		oq.next()
 		if oq.check(target) {
 			return target, nil
 		}
-		oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
+		oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", target))
 		target, err = oq.Current()
 	}
 	return 0, helpers.NoMoreData
@@ -67,19 +67,21 @@ func (oq *OrQuery) getGE(id document.DocId) {
 }
 
 func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
+	oq.debugs.GetNum++
 	target, err := oq.Current()
 	for err == nil && target < id {
 		oq.getGE(id)
 		target, err = oq.Current()
 	}
 	for err == nil && !oq.check(target) {
-		oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", target))
+		oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", target))
 		target, err = oq.Next()
 	}
 	return target, err
 }
 
 func (oq *OrQuery) Current() (document.DocId, error) {
+	oq.debugs.CurNum++
 	top := oq.h.Top()
 	if top == nil {
 		return 0, helpers.NoMoreData
@@ -92,21 +94,19 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	if oq.check(res) {
 		return res, nil
 	}
-	oq.aDebug.AddDebug(fmt.Sprintf("docID[%d] is filtered out", res))
+	oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", res))
 	return 0, errors.New(fmt.Sprintf("the result [%d] is filtered out", res))
 
 }
 
-func (oq *OrQuery) String() string {
+func (oq *OrQuery) DebugInfo() *debug.Debug {
+	oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("next has been called: %d", oq.debugs.NextNum))
+	oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("get has been called: %d", oq.debugs.GetNum))
+	oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("current has been called: %d", oq.debugs.CurNum))
 	for i := 0; i < oq.h.Len(); i++ {
-		oq.aDebug.AddDebug(oq.h[i].String())
+		oq.debugs.DebugInfo.AddDebug(oq.h[i].DebugInfo())
 	}
-
-	if res, err := json.Marshal(oq.aDebug); err == nil {
-		return string(res)
-	} else {
-		return err.Error()
-	}
+	return oq.debugs.DebugInfo
 }
 
 func (oq *OrQuery) check(id document.DocId) bool {

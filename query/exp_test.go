@@ -14,6 +14,10 @@ func TestString2Strings(t *testing.T) {
 		a := e.ToPostfix(e.string2Strings())
 		So(len(a), ShouldEqual, 11)
 		So(e.GetValue(), ShouldNotBeNil)
+		So(e.string2Strings(), ShouldNotBeNil)
+		//for _, v := range e.string2Strings() {
+		//	fmt.Println("***"+v+"***")
+		//}
 	})
 	//fmt.Println(e.string2Strings())
 	//fmt.Println(e.ToPostfix(e.string2Strings()))

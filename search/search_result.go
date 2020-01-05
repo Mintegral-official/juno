@@ -4,7 +4,6 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
-	//	cmap "github.com/easierway/concurrent_map"
 	"time"
 )
 
@@ -36,6 +35,6 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 		id, err = query.Next()
 	}
 	s.Time = time.Since(now)
-	s.IndexDebug = iIndexer.String()
-	s.QueryDebug = query.String()
+	s.IndexDebug = iIndexer.DebugInfo().String()
+	s.QueryDebug = query.DebugInfo().String()
 }

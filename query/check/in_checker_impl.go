@@ -22,7 +22,7 @@ func (i *InChecker) Check(id document.DocId) bool {
 	if i == nil {
 		return true
 	}
-	iter := i.si
+	var iter = i.si
 	v := iter.Current().(*datastruct.Element).Value()
 	if v == nil {
 		return false

@@ -59,14 +59,13 @@ func init() {
 
 func TestNewSkipList(t *testing.T) {
 	Convey("NewSKipList", t, func() {
-		s, err := NewSkipList(DefaultMaxLevel)
+		s := NewSkipList(DefaultMaxLevel)
 		So(s, ShouldNotBeNil)
-		So(err, ShouldBeNil)
 	})
 }
 
 func TestSkipList_Add_Del_Len(t *testing.T) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	var arr []int
 	arr = GenerateRandomNumber(0, 1500000000, 100)
 	for i := 0; i < 100; i++ {
@@ -84,7 +83,7 @@ func TestSkipList_Add_Del_Len(t *testing.T) {
 
 func TestSkipList_Get(t *testing.T) {
 	//fmt.Println(s.findGE(-1, true, s.previousNodeCache))
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	var arr []int
 	arr = GenerateRandomNumber(0, 1500000000, 100)
 	for i := 0; i < 100; i++ {
@@ -117,7 +116,7 @@ func get(s *SkipList, arr []int) {
 }
 
 func BenchmarkNewSkipList_Add(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		add(s, arr)
@@ -125,7 +124,7 @@ func BenchmarkNewSkipList_Add(b *testing.B) {
 }
 
 func BenchmarkSkipList_FindGE(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -137,7 +136,7 @@ func BenchmarkSkipList_FindGE(b *testing.B) {
 }
 
 func BenchmarkSkipList_FindGE_RunParallel(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -151,7 +150,7 @@ func BenchmarkSkipList_FindGE_RunParallel(b *testing.B) {
 }
 
 func BenchmarkNewSkipList_FindLT(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -163,7 +162,7 @@ func BenchmarkNewSkipList_FindLT(b *testing.B) {
 }
 
 func BenchmarkNewSkipList_FindLT_RunParallel(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -177,7 +176,7 @@ func BenchmarkNewSkipList_FindLT_RunParallel(b *testing.B) {
 }
 
 func BenchmarkSkipList_Get(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -187,7 +186,7 @@ func BenchmarkSkipList_Get(b *testing.B) {
 }
 
 func BenchmarkSkipList_GetRunParallel(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()

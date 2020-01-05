@@ -64,16 +64,16 @@ func BenchmarkCampaignParser_Parse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		q := query.NewOrQuery(
 			[]query.Query{
-				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", int32(457))),
-				query.NewTermQuery(invertIdx.Iterator("Platform", int32(1))),
+				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
+				query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
 				query.NewAndQuery(
 					[]query.Query{
 						query.NewTermQuery(storageIdx.Iterator("Price")),
 						query.NewTermQuery(storageIdx.Iterator("Price")),
 					},
 					[]check.Checker{
-						check.NewInChecker(storageIdx.Iterator("Price"), []float64{20.0, 1.4, 3.6, 5.7, 2.5}),
-						check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), []int32{647, 658, 670}),
+						check.NewInChecker(storageIdx.Iterator("Price"), "2.3", "1.4", "3.65", "2.46", "2.5"),
+						check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), "647", "658", "670"),
 					},
 				),
 			}, nil,
@@ -88,6 +88,16 @@ func BenchmarkCampaignParser_Parse(b *testing.B) {
 		//fmt.Println("+****************************+")
 		//fmt.Println(r.IndexDebug)
 		//fmt.Println("+****************************+")
+
+		a := "AdvertiserId=457 | Platform=1 | (Price @ [2.3, 1.4, 3.65, 2.46, 2.5] & AdvertiserId # [647, 658, 670])"
+		sq := query.NewSqlQuery(a)
+		m := sq.LRD(tIndex)
+		r = search.NewSearcher()
+		r.Search(tIndex, m)
+		//fmt.Println(r.QueryDebug)
+		//fmt.Println(r.IndexDebug)
+		fmt.Println("+****************************+")
+		fmt.Println("res sql: ", len(r.Docs), r.Time)
 
 	}
 	bi = nil

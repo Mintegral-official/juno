@@ -6,7 +6,6 @@ import (
 
 type SkipListIterator struct {
 	Element *Element
-	//cmp     helpers.Comparable
 }
 
 func NewSkipListIterator(element *Element) *SkipListIterator {
@@ -25,7 +24,6 @@ func (si *SkipListIterator) Next() {
 	}
 	next := si.Element.Next(0)
 	if next == nil {
-		//res := slIterator.Element
 		si.Element = nil
 		return
 	}
@@ -33,7 +31,6 @@ func (si *SkipListIterator) Next() {
 		si.Element.next[i] = v
 	}
 	si.Element.key, si.Element.value = next.key, next.value
-	//return slIterator.Element
 }
 
 func (si *SkipListIterator) GetLE(key document.DocId) interface{} {
