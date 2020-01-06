@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/Mintegral-official/juno/datastruct"
 	"strconv"
+	"strings"
 )
 
 var Char = []rune{
@@ -26,6 +27,18 @@ func (e *Expression) GetValue() string {
 }
 
 func (e *Expression) string2Strings() []string {
+	if strings.Contains(e.value, " and ") {
+		e.value = strings.Replace(e.value, "and", " & ", -1)
+	}
+	if strings.Contains(e.value, " or ") {
+		e.value = strings.Replace(e.value, " or ", " | ", -1)
+	}
+	if strings.Contains(e.value, " in ") {
+		e.value = strings.Replace(e.value, " in ", " @ ", -1)
+	}
+	if strings.Contains(e.value, " !in ") {
+		e.value = strings.Replace(e.value, " !in ", " # ", -1)
+	}
 	str, s, n := e.value, make([]string, 0), 0
 	var t bytes.Buffer
 	for i, v := range str {

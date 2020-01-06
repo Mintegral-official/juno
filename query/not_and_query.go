@@ -131,11 +131,14 @@ func (naq *NotAndQuery) DebugInfo() *debug.Debug {
 }
 
 func (naq *NotAndQuery) check(id document.DocId) bool {
-	if naq.checkers == nil {
+	if len(naq.checkers) == 0 {
 		return true
 	}
-	for i := 1; i < len(naq.checkers); i++ {
-		if naq.checkers[i].Check(id) {
+	for _, v := range naq.checkers {
+		if v == nil {
+			continue
+		}
+		if v.Check(id) {
 			return false
 		}
 	}

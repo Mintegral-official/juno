@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-
 //func TestNewSqlQuery(t *testing.T) {
 //	s := "country= CN &   (a =1 | ( b = 1 & a!=0)) | (c in [1,2,3] & d not in [2,4,5])"
 //	s = strings.Replace(strings.Replace(s, " not in ", " # ", -1), " in ", "@", -1)
@@ -26,17 +25,20 @@ func TestSqlQuery_LRD(t *testing.T) {
 			{
 				Name:      "field1",
 				IndexType: 1,
-				Value:     "1",
+				Value:     int64(1),
+				ValueType: document.IntFieldType,
 			},
 			{
 				Name:      "field2",
 				IndexType: 0,
 				Value:     "2",
+				ValueType: document.StringFieldType,
 			},
 			{
 				Name:      "field1",
 				IndexType: 0,
-				Value:     "1",
+				Value:     int64(1),
+				ValueType: document.IntFieldType,
 			},
 		},
 	}
@@ -47,17 +49,20 @@ func TestSqlQuery_LRD(t *testing.T) {
 			{
 				Name:      "field1",
 				IndexType: 0,
-				Value:     "1",
+				Value:     int64(1),
+				ValueType: document.IntFieldType,
 			},
 			{
 				Name:      "field2",
 				IndexType: 1,
 				Value:     "2",
+				ValueType: document.StringFieldType,
 			},
 			{
 				Name:      "field1",
 				IndexType: 0,
-				Value:     "1",
+				Value:     int64(1),
+				ValueType: document.IntFieldType,
 			},
 		},
 	}
@@ -68,48 +73,46 @@ func TestSqlQuery_LRD(t *testing.T) {
 			{
 				Name:      "field1",
 				IndexType: 0,
-				Value:     "1",
+				Value:     int64(1),
+				ValueType: document.IntFieldType,
 			},
 			{
 				Name:      "field2",
 				IndexType: 0,
 				Value:     "2",
+				ValueType: document.StringFieldType,
 			},
 			{
 				Name:      "field1",
 				IndexType: 1,
-				Value:     "1",
+				Value:     int64(1),
+				ValueType: document.IntFieldType,
 			},
 		},
 	}
-	s := "field1>= 1 &   (field2 !=1 | ( field2 = 1 & field1=1)) | (field1 @ [1,2] & field1 # [2,3])"
+	s := "field1>= 1 and   (field2 !=1 or ( field2 = 1 and field1=1)) | (field1 in [1,2] and field1 !in [2,3])"
 	sq := NewSqlQuery(s)
 	Convey("sql query", t, func() {
 		node := sq.exp2Tree()
 		n := node.To()
-		//node.Print()
+		node.Print()
 		So(n.Len(), ShouldEqual, 11)
 		//fmt.Println(n.Len())
 		idx := index.NewIndex("index")
 		So(idx.Add(doc1), ShouldBeNil)
 		So(idx.Add(doc2), ShouldBeNil)
 		So(idx.Add(doc3), ShouldBeNil)
-		storage := idx.GetStorageIndex().Iterator("field1")
-		for storage.HasNext() {
-			fmt.Println(storage.Current())
-			storage.Next()
+		q := sq.LRD(idx)
+		if _, err := q.Current(); err != nil {
+			So(err, ShouldNotBeNil)
+			//	fmt.Println(err)
 		}
-		//q := sq.LRD(idx)
-		//if _, err := q.Current(); err != nil {
-		//	So(err, ShouldNotBeNil)
-		//	//	fmt.Println(err)
-		//}
-		//id, err := q.Next()
-		//for err == nil {
-		//	So(id, ShouldNotEqual, 0)
-		//	//	fmt.Println(id)
-		//	id, err = q.Next()
-		//}
+		id, err := q.Next()
+		for err == nil {
+			//So(id, ShouldNotEqual, 0)
+			fmt.Println(id)
+			id, err = q.Next()
+		}
 		//So(idx.DebugInfo(), ShouldNotBeNil)
 		//So(q.DebugInfo(), ShouldNotBeNil)
 		//fmt.Println(idx.DebugInfo())
@@ -145,3 +148,8 @@ func TestSqlQuery_LRD(t *testing.T) {
 //		//fmt.Println(q.DebugInfo())
 //	})
 //}
+
+func TestNewSqlQuery(t *testing.T) {
+	var a interface{} = []int{1,2,3}
+	fmt.Println(len(a.([]int)))
+}

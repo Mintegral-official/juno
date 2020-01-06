@@ -6,7 +6,7 @@ import (
 )
 
 func TestString2Strings(t *testing.T) {
-	s := "country= CN &   (a =1 | ( b = 1 & a!=0)) | (c @ [1,2,3] & d # [2,4,5])"
+	s := "country= CN and   (a =1 or ( b = 1 & a!=0)) or (c in [1,2,3] and d !in [2,4,5])"
 	e := NewExpression(s)
 	Convey("string2string", t, func() {
 		So(e.string2Strings(), ShouldNotBeNil)

@@ -1,6 +1,8 @@
 package index
 
 import (
+	"fmt"
+	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
@@ -13,17 +15,20 @@ var doc1 = &document.DocInfo{
 		{
 			Name:      "field1",
 			IndexType: 1,
-			Value:     "1",
+			Value:     1,
+			ValueType: document.IntFieldType,
 		},
 		{
 			Name:      "field2",
 			IndexType: 0,
 			Value:     "2",
+			ValueType: document.StringFieldType,
 		},
 		{
 			Name:      "field1",
 			IndexType: 2,
 			Value:     "1",
+			ValueType: document.StringFieldType,
 		},
 	},
 }
@@ -35,16 +40,19 @@ var doc2 = &document.DocInfo{
 			Name:      "field1",
 			IndexType: 0,
 			Value:     "1",
+			ValueType: document.StringFieldType,
 		},
 		{
 			Name:      "field2",
 			IndexType: 1,
 			Value:     "2",
+			ValueType: document.StringFieldType,
 		},
 		{
 			Name:      "field1",
 			IndexType: 0,
 			Value:     "1",
+			ValueType: document.StringFieldType,
 		},
 	},
 }
@@ -56,16 +64,19 @@ var doc3 = &document.DocInfo{
 			Name:      "field1",
 			IndexType: 0,
 			Value:     "1",
+			ValueType: document.StringFieldType,
 		},
 		{
 			Name:      "field2",
 			IndexType: 0,
 			Value:     "2",
+			ValueType: document.StringFieldType,
 		},
 		{
 			Name:      "field1",
 			IndexType: 1,
-			Value:     "1",
+			Value:     1,
+			ValueType: document.IntFieldType,
 		},
 	},
 }
@@ -120,6 +131,8 @@ func TestNewIndex(t *testing.T) {
 		So(c, ShouldEqual, 1)
 		So(len(*index.GetBitMap()), ShouldEqual, 32768)
 		So(index.GetCampaignMap(), ShouldNotBeNil)
+		So(index.GetDataType("field1"), ShouldEqual, 1)
+		So(index.GetDataType("field2"), ShouldEqual, 3)
 	})
 
 	Convey("Del", t, func() {
@@ -169,20 +182,19 @@ func TestNewIndex(t *testing.T) {
 		So(len(*index.GetBitMap()), ShouldEqual, 32768)
 		So(index.GetCampaignMap(), ShouldNotBeNil)
 		So(index.DebugInfo(), ShouldNotBeNil)
+		So(index.GetDataType("field1"), ShouldEqual, 1)
+		So(index.GetDataType("field2"), ShouldEqual, 3)
 	})
 }
 
-//func TestInterface(t *testing.T) {
-//	var a, b interface{}
-//	i := int64(1)
-//	a = &i
-//	b = &i
-//
-//	if b == a {
-//		// fmt.Println("xxxxxxxxxxxxxxx")
-//	}
-//
-//}
+func f1(a interface{}) interface{} {
+	return a.(bool)
+}
+
+func TestInterface(t *testing.T) {
+	var a interface{} = true
+	fmt.Println(f1(a))
+}
 
 func TestNewIndex2(t *testing.T) {
 
@@ -297,5 +309,52 @@ func TestNewIndex2(t *testing.T) {
 //}
 
 func TestStorageIndexer_Add(t *testing.T) {
+	var a = &document.DocInfo{
+		Id: 0,
+		Fields: []*document.Field{
+			{
+				Name:      "f1",
+				IndexType: 0,
+				Value:     []int64{1, 2, 3},
+				ValueType: document.SliceFieldType,
+			},
+			{
+				Name:      "f2",
+				IndexType: 1,
+				Value:     []float64{1.1, 2.2, 3.4},
+				ValueType: document.SliceFieldType,
+			},
+			{
+				Name:      "f1",
+				IndexType: 0,
+				Value:     []int64{1, 22, 33},
+				ValueType: document.SliceFieldType,
+			},
+		},
+	}
+	Convey("add", t, func() {
+		index := NewIndex("index")
+		_ = index.Add(a)
+		idx := index.invertedIndex.Iterator("f1", "1")
+		So(idx.HasNext(), ShouldBeTrue)
+		c := 0
+		for idx.HasNext() {
+			if idx.Current() != nil {
+				c++
+			}
+			idx.Next()
+		}
+		So(c, ShouldEqual, 2)
+		sto := index.storageIndex.Iterator("f2")
+		So(sto.HasNext(), ShouldBeTrue)
+		c = 0
+		for sto.HasNext() {
+			if sto.Current().(*datastruct.Element).Value() != nil {
+				c++
+			}
+			sto.Next()
+		}
+		So(c, ShouldEqual, 1)
+	})
 
 }

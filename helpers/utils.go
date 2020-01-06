@@ -57,3 +57,21 @@ func Merge(arr1, arr2 []document.DocId) []document.DocId {
 	}
 	return res
 }
+
+func SliceEqual(a, b []document.DocId) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	if (a == nil) != (b == nil) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
+}

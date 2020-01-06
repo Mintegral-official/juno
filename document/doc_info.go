@@ -32,22 +32,21 @@ const (
 )
 
 const (
-	BoolFieldType = iota
-	Int8FieldType
-	Int16FieldType
-	Int32FieldType
+	BoolFieldType FieldType = iota
 	IntFieldType
-	Int64FieldType
-	Float32FieldType
-	Float64FieldType
+	FloatFieldType
 	StringFieldType
+	SliceFieldType
+	MapFieldType
 	SelfDefinedFieldType
+	DefaultFieldType = StringFieldType
 )
 
 type Field struct {
 	Name      string
 	IndexType IndexType
 	Value     interface{}
+	ValueType FieldType
 }
 
 type DocInfo struct {

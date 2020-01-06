@@ -110,10 +110,13 @@ func (oq *OrQuery) DebugInfo() *debug.Debug {
 }
 
 func (oq *OrQuery) check(id document.DocId) bool {
-	if oq.checkers == nil {
+	if len(oq.checkers) == 0 {
 		return true
 	}
 	for _, v := range oq.checkers {
+		if v == nil {
+			continue
+		}
 		if v.Check(id) {
 			return true
 		}

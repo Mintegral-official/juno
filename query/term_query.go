@@ -60,7 +60,7 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 
 func (tq *TermQuery) Current() (document.DocId, error) {
 	tq.debugs.CurNum++
-	if tq.iterator == nil {
+	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
 	if v := tq.iterator.Current(); v != nil {

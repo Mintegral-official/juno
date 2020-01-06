@@ -129,10 +129,13 @@ func (aq *AndQuery) DebugInfo() *debug.Debug {
 }
 
 func (aq *AndQuery) check(id document.DocId) bool {
-	if aq.checkers == nil {
+	if len(aq.checkers) == 0 {
 		return true
 	}
 	for _, c := range aq.checkers {
+		if c == nil {
+			continue
+		}
 		if !c.Check(id) {
 			return false
 		}

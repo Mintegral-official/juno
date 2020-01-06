@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
@@ -48,40 +47,40 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 	return sq.Stack.Pop().(*datastruct.TreeNode)
 }
 
-func (sq *SqlQuery) LRD(impl *index.Indexer) Query {
+func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
 	node, tmp := sq.exp2Tree().To(), 0
 	for !sq.Stack.Empty() || !node.Empty() {
 		if !node.Empty() {
 			if node.Peek() != "&" && node.Peek() != "|" {
 				if strings.Contains(node.Peek().(string), "@") {
-					sq.Stack.Push(parseIn(node.Pop().(string), impl))
+					sq.Stack.Push(parseIn(node.Pop().(string), idx))
 				}
 				if strings.Contains(node.Peek().(string), "#") {
-					sq.Stack.Push(parseNotIn(node.Pop().(string), impl))
+					sq.Stack.Push(parseNotIn(node.Pop().(string), idx))
 					tmp = 1
 				}
 				if strings.Contains(node.Peek().(string), "=") &&
 					!strings.Contains(node.Peek().(string), ">") &&
 					!strings.Contains(node.Peek().(string), "<") &&
 					!strings.Contains(node.Peek().(string), "!") {
-					sq.Stack.Push(parseEQ(node.Pop().(string), impl))
+					sq.Stack.Push(parseEQ(node.Pop().(string), idx))
 				}
 				if strings.Contains(node.Peek().(string), "!=") {
-					sq.Stack.Push(parseNE(node.Pop().(string), impl))
+					sq.Stack.Push(parseNE(node.Pop().(string), idx))
 				}
 				if strings.Contains(node.Peek().(string), "<") &&
 					!strings.Contains(node.Peek().(string), "=") {
-					sq.Stack.Push(parseLT(node.Pop().(string), impl))
+					sq.Stack.Push(parseLT(node.Pop().(string), idx))
 				}
 				if strings.Contains(node.Peek().(string), "<=") {
-					sq.Stack.Push(parseLE(node.Pop().(string), impl))
+					sq.Stack.Push(parseLE(node.Pop().(string), idx))
 				}
 				if strings.Contains(node.Peek().(string), ">") &&
 					!strings.Contains(node.Peek().(string), "=") {
-					sq.Stack.Push(parseGT(node.Pop().(string), impl))
+					sq.Stack.Push(parseGT(node.Pop().(string), idx))
 				}
 				if strings.Contains(node.Peek().(string), ">=") {
-					sq.Stack.Push(parseGE(node.Pop().(string), impl))
+					sq.Stack.Push(parseGE(node.Pop().(string), idx))
 				}
 			} else if node.Peek() == "&" {
 				if tmp == 1 {
@@ -102,304 +101,126 @@ func (sq *SqlQuery) LRD(impl *index.Indexer) Query {
 	return sq.Stack.Pop().(Query)
 }
 
-func parseIn(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, "@"), impl.GetStorageIndex()
+func parseIn(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "@"), idx.GetStorageIndex()
 	s := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
 	var (
-		typ  = impl.GetDataType(strSlice[0])
-		iter = storageIdx.Iterator(strSlice[0])
-		c    = make([]check.Checker, 1)
+		value = changeType(idx, strSlice[0], s...)
+		c     = make([]check.Checker, 1)
 	)
-	for i := 1; i < len(s); i++ {
-		switch typ {
-		case document.BoolFieldType:
-			b, _ := strconv.ParseBool(s[i])
-			c = append(c, check.NewInChecker(iter, b))
-		case document.Int8FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 8)
-			c = append(c, check.NewInChecker(iter, int8(b)))
-		case document.Int16FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 16)
-			c = append(c, check.NewInChecker(iter, int16(b)))
-		case document.Int32FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 32)
-			c = append(c, check.NewInChecker(iter, int32(b)))
-		case document.IntFieldType:
-			b, _ := strconv.Atoi(s[i])
-			c = append(c, check.NewInChecker(iter, b))
-		case document.Int64FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 64)
-			c = append(c, check.NewInChecker(iter, b))
-		case document.Float32FieldType:
-			b, _ := strconv.ParseFloat(s[i], 32)
-			c = append(c, check.NewInChecker(iter, float32(b)))
-		case document.Float64FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 64)
-			c = append(c, check.NewInChecker(iter, b))
-		case document.StringFieldType:
-			c = append(c, check.NewInChecker(iter, s[i]))
-		default:
-			panic(fmt.Sprintf("the data[%v] type[%T] is wrong.", s[0], typ))
-		}
-	}
-	return NewAndQuery([]Query{NewTermQuery(iter),}, c, )
+	c = append(c, check.NewInChecker(storageIdx.Iterator(strSlice[0]), value...))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseNotIn(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, "#"), impl.GetStorageIndex()
+func parseNotIn(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "#"), idx.GetStorageIndex()
 	s := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
 	var (
-		typ  = impl.GetDataType(strSlice[0])
-		iter = storageIdx.Iterator(strSlice[0])
-		c    = make([]check.Checker, 1)
+		value = changeType(idx, strSlice[0], s...)
+		c     = make([]check.Checker, 1)
 	)
-	for i := 1; i < len(s); i++ {
-		switch typ {
-		case document.BoolFieldType:
-			b, _ := strconv.ParseBool(s[i])
-			c = append(c, check.NewNotChecker(iter, b))
-		case document.Int8FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 8)
-			c = append(c, check.NewNotChecker(iter, int8(b)))
-		case document.Int16FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 16)
-			c = append(c, check.NewNotChecker(iter, int16(b)))
-		case document.Int32FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 32)
-			c = append(c, check.NewNotChecker(iter, int32(b)))
-		case document.IntFieldType:
-			b, _ := strconv.Atoi(s[i])
-			c = append(c, check.NewNotChecker(iter, b))
-		case document.Int64FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 64)
-			c = append(c, check.NewNotChecker(iter, b))
-		case document.Float32FieldType:
-			b, _ := strconv.ParseFloat(s[i], 32)
-			c = append(c, check.NewNotChecker(iter, float32(b)))
-		case document.Float64FieldType:
-			b, _ := strconv.ParseInt(s[i], 10, 64)
-			c = append(c, check.NewNotChecker(iter, b))
-		case document.StringFieldType:
-			c = append(c, check.NewNotChecker(iter, strSlice[i]))
-		default:
-			panic(fmt.Sprintf("the data[%v] type[%T] is wrong.", strSlice[0], typ))
-		}
-	}
-	return NewAndQuery([]Query{NewTermQuery(iter),}, c, )
+	c = append(c, check.NewNotChecker(storageIdx.Iterator(strSlice[0]), value...))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 
 }
 
-func parseEQ(str string, impl *index.Indexer) Query {
-	strSlice, invert := strings.Split(str, "="), impl.GetInvertedIndex()
+func parseEQ(str string, idx *index.Indexer) Query {
+	strSlice, invert := strings.Split(str, "="), idx.GetInvertedIndex()
 	return NewTermQuery(invert.Iterator(strSlice[0], strSlice[1]))
 }
 
-func parseNE(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, "!="), impl.GetStorageIndex()
+func parseNE(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "!="), idx.GetStorageIndex()
 	var (
-		typ  = impl.GetDataType(strSlice[0])
-		iter = storageIdx.Iterator(strSlice[0])
-		c    = make([]check.Checker, 1)
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
 	)
-	for i := 1; i < len(strSlice); i++ {
-		switch typ {
-		case document.BoolFieldType:
-			b, _ := strconv.ParseBool(strSlice[i])
-			c = append(c, check.NewNotChecker(iter, b))
-		case document.Int8FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 8)
-			c = append(c, check.NewNotChecker(iter, int8(b)))
-		case document.Int16FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 16)
-			c = append(c, check.NewNotChecker(iter, int16(b)))
-		case document.Int32FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 32)
-			c = append(c, check.NewNotChecker(iter, int32(b)))
-		case document.IntFieldType:
-			b, _ := strconv.Atoi(strSlice[i])
-			c = append(c, check.NewNotChecker(iter, b))
-		case document.Int64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewNotChecker(iter, b))
-		case document.Float32FieldType:
-			b, _ := strconv.ParseFloat(strSlice[i], 32)
-			c = append(c, check.NewNotChecker(iter, float32(b)))
-		case document.Float64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewNotChecker(iter, b))
-		case document.StringFieldType:
-			c = append(c, check.NewNotChecker(iter, strSlice[i]))
-		default:
-			panic(fmt.Sprintf("the data[%v] type[%T] is wrong.", strSlice[0], typ))
-		}
-	}
-	return NewAndQuery([]Query{NewTermQuery(iter),}, c, )
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.NE))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseLT(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, "<"), impl.GetStorageIndex()
+func parseLT(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "<"), idx.GetStorageIndex()
 	var (
-		typ  = impl.GetDataType(strSlice[0])
-		iter = storageIdx.Iterator(strSlice[0])
-		c    = make([]check.Checker, 1)
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
 	)
-	for i := 1; i < len(strSlice); i++ {
-		switch typ {
-		case document.BoolFieldType:
-			b, _ := strconv.ParseBool(strSlice[i])
-			c = append(c, check.NewChecker(iter, b, operation.LT))
-		case document.Int8FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 8)
-			c = append(c, check.NewChecker(iter, int8(b), operation.LT))
-		case document.Int16FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 16)
-			c = append(c, check.NewChecker(iter, int16(b), operation.LT))
-		case document.Int32FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 32)
-			c = append(c, check.NewChecker(iter, int32(b), operation.LT))
-		case document.IntFieldType:
-			b, _ := strconv.Atoi(strSlice[i])
-			c = append(c, check.NewChecker(iter, b, operation.LT))
-		case document.Int64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewChecker(iter, b, operation.LT))
-		case document.Float32FieldType:
-			b, _ := strconv.ParseFloat(strSlice[i], 32)
-			c = append(c, check.NewChecker(iter, float32(b), operation.LT))
-		case document.Float64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewChecker(iter, b, operation.LT))
-		case document.StringFieldType:
-			c = append(c, check.NewChecker(iter, strSlice[i], operation.LT))
-		default:
-			panic(fmt.Sprintf("the data[%v] type[%T] is wrong.", strSlice[0], typ))
-		}
-	}
-	return NewAndQuery([]Query{NewTermQuery(iter),}, c, )
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LT))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseLE(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, "<="), impl.GetStorageIndex()
+func parseLE(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "<="), idx.GetStorageIndex()
 	var (
-		typ  = impl.GetDataType(strSlice[0])
-		iter = storageIdx.Iterator(strSlice[0])
-		c    = make([]check.Checker, 1)
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
 	)
-	for i := 1; i < len(strSlice); i++ {
-		switch typ {
-		case document.BoolFieldType:
-			b, _ := strconv.ParseBool(strSlice[i])
-			c = append(c, check.NewChecker(iter, b, operation.LE))
-		case document.Int8FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 8)
-			c = append(c, check.NewChecker(iter, int8(b), operation.LE))
-		case document.Int16FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 16)
-			c = append(c, check.NewChecker(iter, int16(b), operation.LE))
-		case document.Int32FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 32)
-			c = append(c, check.NewChecker(iter, int32(b), operation.LE))
-		case document.IntFieldType:
-			b, _ := strconv.Atoi(strSlice[i])
-			c = append(c, check.NewChecker(iter, b, operation.LE))
-		case document.Int64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewChecker(iter, b, operation.LE))
-		case document.Float32FieldType:
-			b, _ := strconv.ParseFloat(strSlice[i], 32)
-			c = append(c, check.NewChecker(iter, float32(b), operation.LE))
-		case document.Float64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewChecker(iter, b, operation.LE))
-		case document.StringFieldType:
-			c = append(c, check.NewChecker(iter, strSlice[i], operation.LE))
-		default:
-			panic(fmt.Sprintf("the data[%v] type[%T] is wrong.", strSlice[0], typ))
-		}
-	}
-	return NewAndQuery([]Query{NewTermQuery(iter),}, c, )
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LE))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseGT(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, ">"), impl.GetStorageIndex()
+func parseGT(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, ">"), idx.GetStorageIndex()
 	var (
-		typ  = impl.GetDataType(strSlice[0])
-		iter = storageIdx.Iterator(strSlice[0])
-		c    = make([]check.Checker, 1)
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
 	)
-	for i := 1; i < len(strSlice); i++ {
-		switch typ {
-		case document.BoolFieldType:
-			b, _ := strconv.ParseBool(strSlice[i])
-			c = append(c, check.NewChecker(iter, b, operation.GT))
-		case document.Int8FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 8)
-			c = append(c, check.NewChecker(iter, int8(b), operation.GT))
-		case document.Int16FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 16)
-			c = append(c, check.NewChecker(iter, int16(b), operation.GT))
-		case document.Int32FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 32)
-			c = append(c, check.NewChecker(iter, int32(b), operation.GT))
-		case document.IntFieldType:
-			b, _ := strconv.Atoi(strSlice[i])
-			c = append(c, check.NewChecker(iter, b, operation.GT))
-		case document.Int64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewChecker(iter, b, operation.GT))
-		case document.Float32FieldType:
-			b, _ := strconv.ParseFloat(strSlice[i], 32)
-			c = append(c, check.NewChecker(iter, float32(b), operation.GT))
-		case document.Float64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewChecker(iter, b, operation.GT))
-		case document.StringFieldType:
-			c = append(c, check.NewChecker(iter, strSlice[i], operation.GT))
-		default:
-			panic(fmt.Sprintf("the data[%v] type[%T] is wrong.", strSlice[0], typ))
-		}
-	}
-	return NewAndQuery([]Query{NewTermQuery(iter),}, c, )
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GT))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseGE(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, ">="), impl.GetStorageIndex()
+func parseGE(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, ">="), idx.GetStorageIndex()
 	var (
-		typ  = impl.GetDataType(strSlice[0])
-		iter = storageIdx.Iterator(strSlice[0])
-		c    = make([]check.Checker, 1)
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
 	)
-	for i := 1; i < len(strSlice); i++ {
-		switch typ {
-		case document.BoolFieldType:
-			b, _ := strconv.ParseBool(strSlice[i])
-			c = append(c, check.NewChecker(iter, b, operation.GE))
-		case document.Int8FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 8)
-			c = append(c, check.NewChecker(iter, int8(b), operation.GE))
-		case document.Int16FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 16)
-			c = append(c, check.NewChecker(iter, int16(b), operation.GE))
-		case document.Int32FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 32)
-			c = append(c, check.NewChecker(iter, int32(b), operation.GE))
-		case document.IntFieldType:
-			b, _ := strconv.Atoi(strSlice[i])
-			c = append(c, check.NewChecker(iter, b, operation.GE))
-		case document.Int64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewChecker(iter, b, operation.GE))
-		case document.Float32FieldType:
-			b, _ := strconv.ParseFloat(strSlice[i], 32)
-			c = append(c, check.NewChecker(iter, float32(b), operation.GE))
-		case document.Float64FieldType:
-			b, _ := strconv.ParseInt(strSlice[i], 10, 64)
-			c = append(c, check.NewChecker(iter, b, operation.GE))
-		case document.StringFieldType:
-			c = append(c, check.NewChecker(iter, strSlice[i], operation.GE))
-		default:
-			panic(fmt.Sprintf("the data[%v] type[%T] is wrong.", strSlice[0], typ))
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GE))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+}
+
+func changeType(idx *index.Indexer, name string, value ...string) (res []interface{}) {
+	switch typ := idx.GetDataType(name); typ {
+	case document.BoolFieldType:
+		for _, v := range value {
+			if b, err := strconv.ParseBool(v); err == nil {
+				res = append(res, b)
+			} else {
+				panic("the value type is not bool.")
+			}
 		}
+		return res
+	case document.IntFieldType:
+		for _, v := range value {
+			if b, err := strconv.ParseInt(v, 10, 64); err == nil {
+				res = append(res, b)
+			} else {
+				panic("the value type is not int.")
+			}
+		}
+		return res
+	case document.FloatFieldType:
+		for _, v := range value {
+			if b, err := strconv.ParseFloat(v, 64); err == nil {
+				res = append(res, b)
+			} else {
+				panic("the value type is not float.")
+			}
+		}
+		return res
+	case document.StringFieldType:
+		for _, v := range value {
+			res = append(res, v)
+		}
+		return res
+	case document.SliceFieldType:
+		fallthrough
+	case document.SelfDefinedFieldType:
+		fallthrough
+	default:
+		for _, v := range value {
+			res = append(res, v)
+		}
+		return res
 	}
-	return NewAndQuery([]Query{NewTermQuery(iter),}, c, )
 }

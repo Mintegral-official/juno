@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func BenchmarkCampaignParser_Parse(b *testing.B) {
+func BenchmarkCampaignParser_Parse1(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -62,21 +62,30 @@ func BenchmarkCampaignParser_Parse(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		q := query.NewOrQuery(
-			[]query.Query{
-				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
+		q := query.NewOrQuery([]query.Query{
+			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
-				query.NewAndQuery(
-					[]query.Query{
-						query.NewTermQuery(storageIdx.Iterator("Price")),
-						query.NewTermQuery(storageIdx.Iterator("Price")),
-					},
-					[]check.Checker{
-						check.NewInChecker(storageIdx.Iterator("Price"), "2.3", "1.4", "3.65", "2.46", "2.5"),
-						check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), "647", "658", "670"),
-					},
-				),
-			}, nil,
+			}, nil),
+			query.NewOrQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
+			}, nil),
+			query.NewOrQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "4")),
+				query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "5")),
+			}, nil),
+			query.NewAndQuery([]query.Query{
+				query.NewAndQuery([]query.Query{
+					query.NewTermQuery(storageIdx.Iterator("Price")),
+				}, []check.Checker{
+					check.NewInChecker(storageIdx.Iterator("Price"),
+						2.3, 1.4, 3.65, 2.46, 2.5),
+				}),
+				query.NewAndQuery([]query.Query{
+					query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+				}, []check.Checker{
+					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), int64(647), int64(658), int64(670)),
+				})}, nil)},
+			nil,
 		)
 
 		r := search.NewSearcher()
@@ -89,15 +98,25 @@ func BenchmarkCampaignParser_Parse(b *testing.B) {
 		//fmt.Println(r.IndexDebug)
 		//fmt.Println("+****************************+")
 
-		a := "AdvertiserId=457 | Platform=1 | (Price @ [2.3, 1.4, 3.65, 2.46, 2.5] & AdvertiserId # [647, 658, 670])"
+		//a := "AdvertiserId=457 | Platform=1 | (Price @ [2.3, 1.4, 3.65, 2.46, 2.5] & AdvertiserId # [647, 658, 670])"
+		//sq := query.NewSqlQuery(a)
+		//m := sq.LRD(tIndex)
+		//r = search.NewSearcher()
+		//r.Search(tIndex, m)
+		////fmt.Println(r.QueryDebug)
+		////fmt.Println(r.IndexDebug)
+		//fmt.Println("+****************************+")
+		//fmt.Println("res sql: ", len(r.Docs), r.Time)
+		a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
 		sq := query.NewSqlQuery(a)
+
 		m := sq.LRD(tIndex)
-		r = search.NewSearcher()
-		r.Search(tIndex, m)
-		//fmt.Println(r.QueryDebug)
-		//fmt.Println(r.IndexDebug)
+		r2 := search.NewSearcher()
+		r2.Search(tIndex, m)
+		//fmt.Println(r2.QueryDebug)
+		fmt.Println(r2.IndexDebug)
 		fmt.Println("+****************************+")
-		fmt.Println("res sql: ", len(r.Docs), r.Time)
+		fmt.Println("res: ", len(r2.Docs), r2.Time)
 
 	}
 	bi = nil
