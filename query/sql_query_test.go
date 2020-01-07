@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	. "github.com/smartystreets/goconvey/convey"
@@ -95,7 +94,7 @@ func TestSqlQuery_LRD(t *testing.T) {
 	Convey("sql query", t, func() {
 		node := sq.exp2Tree()
 		n := node.To()
-		node.Print()
+		//node.Print()
 		So(n.Len(), ShouldEqual, 11)
 		//fmt.Println(n.Len())
 		idx := index.NewIndex("index")
@@ -109,8 +108,8 @@ func TestSqlQuery_LRD(t *testing.T) {
 		}
 		id, err := q.Next()
 		for err == nil {
-			//So(id, ShouldNotEqual, 0)
-			fmt.Println(id)
+			So(id, ShouldNotEqual, 0)
+			//fmt.Println(id)
 			id, err = q.Next()
 		}
 		//So(idx.DebugInfo(), ShouldNotBeNil)
@@ -149,7 +148,3 @@ func TestSqlQuery_LRD(t *testing.T) {
 //	})
 //}
 
-func TestNewSqlQuery(t *testing.T) {
-	var a interface{} = []int{1,2,3}
-	fmt.Println(len(a.([]int)))
-}

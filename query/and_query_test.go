@@ -10,7 +10,9 @@ import (
 
 func TestAndQuery(t *testing.T) {
 	a := NewAndQuery(nil, nil)
-	fmt.Println(a)
+	Convey("and query", t, func() {
+		So(a, ShouldNotBeNil)
+	})
 }
 
 func TestAndQuery_Next(t *testing.T) {

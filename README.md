@@ -12,8 +12,9 @@
 ## 主要特性
 
 1. 支持倒排索引
-   1. 数值型（int, double）
-   2. 字符串型
+   1. 数值型（int）
+   2. 字符串型 (string)
+   3. 切片 ([]int64 []string)
 2. 正排索引
    1. 数值型（int, double）
    2. 字符串型
@@ -26,40 +27,87 @@
 
 ```go
 // 建立索引
-ib := NewIndexBuilder(cfg)
-ii := ib.build()
+// build index
+b, e := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
+    URI:            "mongodb://127.0.0.1:27017",
+    IncInterval:    5,
+    BaseInterval:   7200,
+    IncParser:      &CampaignParser{},
+    BaseParser:     &CampaignParser{},
+    BaseQuery:      bson.M{"status": 1},
+    IncQuery:       bson.M{"updated": bson.M{"$gte": time.Now().Unix() - 5, "$lte": time.Now().Unix()}},
+    DB:             "new_adn",
+    Collection:     "campaign",
+    ConnectTimeout: 10000,
+    ReadTimeout:    20000,
+    UserData:       &UserData{},
+    Logger:         logrus.New(),
+    OnBeforeInc: func(userData interface{}) interface{} {
+        ud, ok := userData.(*UserData)
+        if !ok {
+            return nil
+        }
+        incQuery := bson.M{"updated": bson.M{"$gte": ud.upTime - 5, "$lte": time.Now().Unix()}}
+        return incQuery
+    },
+})
+b.Build(ctx, "indexName")
+idx := b.GetIndex()
+
+// invert list
+invertIdx := idx.GetInvertedIndex()
+
+// storage list
+storageIdx := idx.GetStorageIndex()
+	
 
 // 正排
-if1 := ii.GetStorageIndex().Iterator("AdvertiserId").(*datastruct.SkipListIterator)
-if2 := ii.GetStorageIndex().Iterator("Platform").(*datastruct.SkipListIterator)
-if3 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+if1 := idx.GetStorageIndex().Iterator("AdvertiserId")
+if2 := idx.GetStorageIndex().Iterator("Platform")
+if3 := idx.GetStorageIndex().Iterator("Price")
 
-if331 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-if332 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-if333 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
-if334 := ii.GetStorageIndex().Iterator("Price").(*datastruct.SkipListIterator)
+//倒排
+if1 := idx.GetInvertIndex().Iterator("Platform", "1")
+if2 := idx.GetInvertIndex().Iterator("AdvertiserId", "100")
 
-// 查询
+// query查询
 q := query.NewOrQuery([]query.Query{
-			query.NewTermQuery(if3),
-			query.NewAndQuery([]query.Query{
-				query.NewTermQuery(if1),
-				query.NewTermQuery(if2),
-				query.NewTermQuery(if3),
-			}, nil),
-		},
-			[]check.Checker{
-				check.NewInChecker(if331, 20.0, operation.LT),
-				check.NewInChecker(if332, 16.4, operation.LE),
-				check.NewInChecker(if333, 0.5, operation.EQ),
-				check.NewInChecker(if334, 1.24, operation.EQ),
-			},
-		)
-searchResult := index.Search(query)
-fmt.Println(searchResult)
+    query.NewOrQuery([]query.Query{
+        query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
+    }, nil),
+    query.NewOrQuery([]query.Query{
+        query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
+    }, nil),
+    query.NewOrQuery([]query.Query{
+        query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "4")),
+        query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "5")),
+    }, nil),
+    query.NewAndQuery([]query.Query{
+        query.NewAndQuery([]query.Query{
+            query.NewTermQuery(storageIdx.Iterator("Price")),
+        }, []check.Checker{
+            check.NewInChecker(storageIdx.Iterator("Price"),
+                2.3, 1.4, 3.65, 2.46, 2.5),
+        }),
+        query.NewAndQuery([]query.Query{
+            query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+        }, []check.Checker{
+            check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), int64(647), int64(658), int64(670)),
+        })}, nil)},
+    nil,
+)
+// 查询
+r1 := search.NewSearcher()
+r1.Search(tIndex, q)
+
+//sql 查询  or and in !in (只支持小写)
+a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
+sq := query.NewSqlQuery(a)
+m := sq.LRD(tIndex)
+r2 := search.NewSearcher()
+r2.Search(tIndex, m)
+
 ```
-
-
 
 ## 设计
 
@@ -74,14 +122,10 @@ fmt.Println(searchResult)
 
 查询是类sql语法，有表达式组成（可嵌套），表达式有 and, or, not等操作
 
-支持 =, >=, >, <=,<, !=, range, in
+支持 =, >=, >, <=,<, !=, range(暂不支持), in, !in
 
 查询语法支持三种格式  string,  json, go stuct
 
-```shell
-and : &  or : |  in : @  not : #
-country=us & (price # [1.0, 2.0, 3.04]) and (platform=ios or package @ ["pacakge1", "pacakge1"] )
-```
 
 ```json
 {
@@ -124,28 +168,6 @@ country=us & (price # [1.0, 2.0, 3.04]) and (platform=ios or package @ ["pacakge
 }
 ```
 
-```go
-// 构建查询
-q := query.NewOrQuery([]query.Query{
-    query.NewTermQuery(invertIdx.Iterator("A_1").(*datastruct.SkipListIterator)),
-    query.NewTermQuery(invertIdx.Iterator("B_2").(*datastruct.SkipListIterator)),
-    query.NewAndQuery([]query.Query{
-        query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
-        query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
-    },
-        []check.Checker{
-            check.NewInChecker(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 20.0, operation.LT),
-            check.NewInChecker(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 16.4, operation.GE),
-        }),
-    query.NewTermQuery(invertIdx.Iterator("A_3").(*datastruct.SkipListIterator)),
-}, nil)
-
-// 遍历结果
-for q.HasNext() {
-  docid := q.Next()
-}
-```
-
 #### 查询执行过程
 
 1. 构建查询语法树
@@ -171,7 +193,7 @@ type Index interface {
 	GetDataType(fieldName string) document.FieldType  // 获取field类型
 	Dump(filename string) error  // 将索引Dump到磁盘
 	Load(filename string) error  // 从磁盘加载索引
-	Search(query *query.Query)  // 查询接口
+	DebugInfo() *debug.Debug  // 调试信息
 }
 ```
 
@@ -243,56 +265,6 @@ type InvertIndex interface {
 
 索引构建模块能方便的将数据源中的数据构建成索引，同时能感知数据源的变化，并将变化同步至索引中
 
-示例：
-
-```go
-// build index
-b, e := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
-    URI:            "mongodb://127.0.0.1:27017",
-    IncInterval:    5,
-    BaseInterval:   120,
-    IncParser:      &CampaignParser{},
-    BaseParser:     &CampaignParser{},
-    BaseQuery:      bson.M{"status": 1},
-    IncQuery:       bson.M{"updated": bson.M{"$gt": time.Now().Unix() - int64(5*time.Second)}},
-    DB:             "new_adn",
-    Collection:     "campaign",
-    ConnectTimeout: 10000,
-    ReadTimeout:    20000,
-})
-if e != nil {
-    fmt.Println(e)
-    return
-}
-if e := b.Build(ctx); e != nil {
-    fmt.Println("build error", e.Error())
-}
-tIndex := b.GetIndex()
-// invert list
-invertIdx := tIndex.GetInvertedIndex()
-
-// storage
-storageIdx := tIndex.GetStorageIndex()
-
-// A=1 or B=2 or (c>=16.4 and c <20.0) or A=3
-// query
-q := query.NewOrQuery([]query.Query{
-    query.NewTermQuery(invertIdx.Iterator("A_1").(*datastruct.SkipListIterator)),
-    query.NewTermQuery(invertIdx.Iterator("B_2").(*datastruct.SkipListIterator)),
-    query.NewAndQuery([]query.Query{
-        query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
-        query.NewTermQuery(tIndex.GetStorageIndex().Iterator("C").(*datastruct.SkipListIterator)),
-    },
-        []check.Checker{
-            check.NewInChecker(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 20.0, operation.LT),
-            check.NewInChecker(storageIdx.Iterator("C").(*datastruct.SkipListIterator), 16.4, operation.GE),
-        }),
-    query.NewTermQuery(invertIdx.Iterator("A_3").(*datastruct.SkipListIterator)),
-}, nil)
-
-// search
-res := search.Search(tIndex, q)
-```
 
 索引构建模块会支持多种数据源，如文件、mongo、mysql等
 
