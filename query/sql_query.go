@@ -57,7 +57,7 @@ func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
 				}
 				if strings.Contains(node.Peek().(string), "#") {
 					sq.Stack.Push(parseNotIn(node.Pop().(string), idx))
-					tmp = 1
+					//tmp = 1
 				}
 				if strings.Contains(node.Peek().(string), "=") &&
 					!strings.Contains(node.Peek().(string), ">") &&
@@ -67,6 +67,7 @@ func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
 				}
 				if strings.Contains(node.Peek().(string), "!=") {
 					sq.Stack.Push(parseNE(node.Pop().(string), idx))
+					tmp=1
 				}
 				if strings.Contains(node.Peek().(string), "<") &&
 					!strings.Contains(node.Peek().(string), "=") {

@@ -1,12 +1,12 @@
 package query
 
 import (
+	"errors"
 	"fmt"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/check"
-	"github.com/pkg/errors"
 )
 
 type AndQuery struct {
@@ -40,7 +40,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
-			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in queries[%d]", int64(target), curIdx))
+			return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(target), curIdx, err.Error()))
 		}
 		if cur != target {
 			lastIdx = curIdx
@@ -54,7 +54,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			curIdx = (curIdx + 1) % len(aq.queries)
 			target, err = aq.queries[curIdx].Next()
 			if err != nil {
-				return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in queries[%d]", int64(target), curIdx))
+				return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(target), curIdx, err.Error()))
 			}
 		}
 	}
@@ -65,14 +65,14 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	curIdx, lastIdx := aq.curIdx, aq.curIdx
 	res, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
-		return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in queries[%d]", int64(res), curIdx))
+		return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(res), curIdx, err.Error()))
 	}
 
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(res)
 		if err != nil {
-			return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in queries[%d]", int64(res), curIdx))
+			return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(res), curIdx, err.Error()))
 		}
 		if cur != res {
 			lastIdx = curIdx
@@ -86,7 +86,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			curIdx = (curIdx + 1) % len(aq.queries)
 			res, err = aq.queries[curIdx].Next()
 			if err != nil {
-				return 0, errors.Wrap(err, fmt.Sprintf("not find [%d] in queries[%d]", int64(res), curIdx))
+				return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(res), curIdx, err.Error()))
 			}
 		}
 	}
@@ -105,10 +105,7 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 			return 0, err
 		}
 		if tar != res {
-			if i == len(aq.queries)-1 {
-				return 0, errors.New("no suitable num")
-			}
-			continue
+			return 0, errors.New("no suitable num")
 		}
 	}
 	if aq.check(res) {

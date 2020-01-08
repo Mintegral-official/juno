@@ -66,7 +66,7 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 	if info.Price != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "Price",
-			IndexType: 2,
+			IndexType: 1,
 			Value:     *info.Price,
 			ValueType: document.FloatFieldType,
 		})
@@ -225,10 +225,10 @@ func main() {
 		query.NewOrQuery([]query.Query{
 			query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
 		}, nil),
-		query.NewOrQuery([]query.Query{
-			query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "4")),
-			query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "5")),
-		}, nil),
+		//query.NewOrQuery([]query.Query{
+		//	query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "4")),
+		//	query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "5")),
+		//}, nil),
 		query.NewAndQuery([]query.Query{
 			query.NewAndQuery([]query.Query{
 				query.NewTermQuery(storageIdx.Iterator("Price")),

@@ -69,10 +69,10 @@ func BenchmarkCampaignParser_Parse1(b *testing.B) {
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
 			}, nil),
-			query.NewOrQuery([]query.Query{
-				query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "4")),
-				query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "5")),
-			}, nil),
+			//query.NewOrQuery([]query.Query{
+			//	query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "4")),
+			//	query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "5")),
+			//}, nil),
 			query.NewAndQuery([]query.Query{
 				query.NewAndQuery([]query.Query{
 					query.NewTermQuery(storageIdx.Iterator("Price")),
@@ -88,25 +88,18 @@ func BenchmarkCampaignParser_Parse1(b *testing.B) {
 			nil,
 		)
 
-		r := search.NewSearcher()
-		r.Search(tIndex, q)
+		r1 := search.NewSearcher()
+		r1.Search(tIndex, q)
+		fmt.Println("+****************************+")
+		fmt.Println("res: ", len(r1.Docs), r1.Time)
 		//fmt.Println("+****************************+")
-		fmt.Println("res: ", len(r.Docs), r.Time)
+		//fmt.Println(r1.QueryDebug)
 		//fmt.Println("+****************************+")
-		//fmt.Println(r.QueryDebug)
-		//fmt.Println("+****************************+")
-		//fmt.Println(r.IndexDebug)
+		fmt.Println(r1.IndexDebug)
 		//fmt.Println("+****************************+")
 
-		//a := "AdvertiserId=457 | Platform=1 | (Price @ [2.3, 1.4, 3.65, 2.46, 2.5] & AdvertiserId # [647, 658, 670])"
-		//sq := query.NewSqlQuery(a)
-		//m := sq.LRD(tIndex)
-		//r = search.NewSearcher()
-		//r.Search(tIndex, m)
-		////fmt.Println(r.QueryDebug)
-		////fmt.Println(r.IndexDebug)
-		//fmt.Println("+****************************+")
-		//fmt.Println("res sql: ", len(r.Docs), r.Time)
+		tIndex.UnsetDebug()
+
 		a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
 		sq := query.NewSqlQuery(a)
 

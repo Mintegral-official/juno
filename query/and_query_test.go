@@ -101,6 +101,7 @@ func TestAndQuery_Next(t *testing.T) {
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 		So(a.DebugInfo(), ShouldNotBeNil)
+		//fmt.Println(a.DebugInfo())
 	})
 
 	Convey("Next1", t, func() {

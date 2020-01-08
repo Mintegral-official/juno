@@ -100,7 +100,7 @@ func TestNewIndex(t *testing.T) {
 			}
 			if1.Next()
 		}
-		So(c, ShouldEqual, 4)
+		So(c, ShouldEqual, 3)
 
 		if2 := index.invertedIndex.Iterator("field2", "2")
 		c = 0
@@ -150,7 +150,7 @@ func TestNewIndex(t *testing.T) {
 			}
 			if1.Next()
 		}
-		So(c, ShouldEqual, 4)
+		So(c, ShouldEqual, 2)
 
 		if2 := index.invertedIndex.Iterator("field2", "2")
 		c = 0
@@ -160,7 +160,7 @@ func TestNewIndex(t *testing.T) {
 			}
 			if2.Next()
 		}
-		So(c, ShouldEqual, 2)
+		So(c, ShouldEqual, 1)
 		sf1 := index.GetStorageIndex().Iterator("field1")
 		c = 0
 		for sf1.HasNext() {
@@ -344,7 +344,7 @@ func TestStorageIndexer_Add(t *testing.T) {
 			}
 			idx.Next()
 		}
-		So(c, ShouldEqual, 2)
+		So(c, ShouldEqual, 1)
 		sto := index.storageIndex.Iterator("f2")
 		So(sto.HasNext(), ShouldBeTrue)
 		c = 0
