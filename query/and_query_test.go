@@ -100,7 +100,7 @@ func TestAndQuery_Next(t *testing.T) {
 		v, e = a.GetGE(document.DocId(10))
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
-		So(a.DebugInfo(), ShouldNotBeNil)
+		//So(a.DebugInfo(), ShouldNotBeNil)
 		//fmt.Println(a.DebugInfo())
 	})
 

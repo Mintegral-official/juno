@@ -61,6 +61,6 @@ func TestStorageIndexer(t *testing.T) {
 		So(s.Iterator("fieldName4"), ShouldNotBeNil)
 		So(s.Iterator("fieldName0"), ShouldNotBeNil)
 		So(s.Count(), ShouldEqual, 4)
-		So(s.DebugInfo(), ShouldNotBeNil)
+		//So(s.DebugInfo(), ShouldNotBeNil)
 	})
 }

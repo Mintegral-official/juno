@@ -199,5 +199,6 @@ func TestNewNotAndQuery_GetGE2(t *testing.T) {
 		// fmt.Println(v, e)
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
+		//	fmt.Println(a.DebugInfo())
 	})
 }

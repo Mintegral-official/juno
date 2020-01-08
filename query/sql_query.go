@@ -48,7 +48,7 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 }
 
 func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
-	node, tmp := sq.exp2Tree().To(), 0
+	node := sq.exp2Tree().To()
 	for !sq.Stack.Empty() || !node.Empty() {
 		if !node.Empty() {
 			if node.Peek() != "&" && node.Peek() != "|" {
@@ -67,7 +67,7 @@ func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
 				}
 				if strings.Contains(node.Peek().(string), "!=") {
 					sq.Stack.Push(parseNE(node.Pop().(string), idx))
-					tmp=1
+					//	tmp=1
 				}
 				if strings.Contains(node.Peek().(string), "<") &&
 					!strings.Contains(node.Peek().(string), "=") {
@@ -84,12 +84,12 @@ func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
 					sq.Stack.Push(parseGE(node.Pop().(string), idx))
 				}
 			} else if node.Peek() == "&" {
-				if tmp == 1 {
-					sq.Stack.Push(NewNotAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
-					tmp = 0
-				} else {
-					sq.Stack.Push(NewAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
-				}
+				//	if tmp == 1 {
+				//		sq.Stack.Push(NewNotAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
+				//		tmp = 0
+				//	} else {
+				sq.Stack.Push(NewAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
+				//	}
 				node.Pop()
 			} else if node.Peek() == "|" {
 				sq.Stack.Push(NewOrQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))

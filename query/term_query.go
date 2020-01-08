@@ -1,11 +1,11 @@
 package query
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"strconv"
 )
 
 type TermQuery struct {
@@ -74,8 +74,8 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 }
 
 func (tq *TermQuery) DebugInfo() *debug.Debug {
-	tq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("next has been called: %d", tq.debugs.NextNum))
-	tq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("get has been called: %d", tq.debugs.GetNum))
-	tq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("current has been called: %d", tq.debugs.CurNum))
+	tq.debugs.DebugInfo.AddDebugMsg("next has been called: " + strconv.Itoa(tq.debugs.NextNum))
+	tq.debugs.DebugInfo.AddDebugMsg("get has been called: " + strconv.Itoa(tq.debugs.GetNum))
+	tq.debugs.DebugInfo.AddDebugMsg("current has been called: " + strconv.Itoa(tq.debugs.CurNum))
 	return tq.debugs.DebugInfo
 }

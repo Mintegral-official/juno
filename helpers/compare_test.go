@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
@@ -18,4 +19,13 @@ func TestFunc_Compare(t *testing.T) {
 		//fmt.Println(intCompare(c, d))
 		//fmt.Println(Compare(a, b))
 	})
+}
+
+func f(a interface{}) {
+	fmt.Printf("%v  %+v  %#v  %T\n", a, a, a, a)
+}
+
+func TestStringBuilder(t *testing.T) {
+	f(1)
+	f("2")
 }

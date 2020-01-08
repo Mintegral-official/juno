@@ -7,6 +7,8 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/check"
+	"strconv"
+	"strings"
 )
 
 type AndQuery struct {
@@ -16,9 +18,10 @@ type AndQuery struct {
 	debugs   *debug.Debugs
 }
 
-func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
-	aq := &AndQuery{
-		debugs: debug.NewDebugs(debug.NewDebug("AndQuery")),
+func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) *AndQuery {
+	aq := &AndQuery{}
+	if len(isDebug) != 0 && isDebug[0] == 1 {
+		aq.debugs = debug.NewDebugs(debug.NewDebug("AndQuery"))
 	}
 	if len(queries) == 0 {
 		return aq
@@ -29,7 +32,9 @@ func NewAndQuery(queries []Query, checkers []check.Checker) *AndQuery {
 }
 
 func (aq *AndQuery) Next() (document.DocId, error) {
-	aq.debugs.NextNum++
+	if aq.debugs != nil {
+		aq.debugs.NextNum++
+	}
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Next()
 	if err != nil {
@@ -40,7 +45,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(target), curIdx, err.Error()))
+			return 0, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 		}
 		if cur != target {
 			lastIdx = curIdx
@@ -50,29 +55,33 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			if aq.check(target) {
 				return target, nil
 			}
-			aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", target))
+			if aq.debugs != nil {
+				aq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
+			}
 			curIdx = (curIdx + 1) % len(aq.queries)
 			target, err = aq.queries[curIdx].Next()
 			if err != nil {
-				return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(target), curIdx, err.Error()))
+				return 0, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 			}
 		}
 	}
 }
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	aq.debugs.GetNum++
+	if aq.debugs != nil {
+		aq.debugs.GetNum++
+	}
 	curIdx, lastIdx := aq.curIdx, aq.curIdx
 	res, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(res), curIdx, err.Error()))
+		return 0, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
 	}
 
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(res)
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(res), curIdx, err.Error()))
+			return 0, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
 		}
 		if cur != res {
 			lastIdx = curIdx
@@ -82,18 +91,22 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			if aq.check(res) {
 				return res, nil
 			}
-			aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", res))
+			if aq.debugs != nil {
+				aq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + "has been filtered out")
+			}
 			curIdx = (curIdx + 1) % len(aq.queries)
 			res, err = aq.queries[curIdx].Next()
 			if err != nil {
-				return 0, errors.New(fmt.Sprintf("not find [%d] in queries[%d], err: %s", int64(res), curIdx, err.Error()))
+				return 0, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
 			}
 		}
 	}
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
-	aq.debugs.CurNum++
+	if aq.debugs != nil {
+		aq.debugs.CurNum++
+	}
 	res, err := aq.queries[0].Current()
 	if err != nil {
 		return 0, err
@@ -111,18 +124,23 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	if aq.check(res) {
 		return res, nil
 	}
-	aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", res))
-	return 0, errors.New(fmt.Sprintf("the result [%d] is filtered out", res))
+	if aq.debugs != nil {
+		aq.debugs.DebugInfo.AddDebugMsg(aq.StringBuilder(128, res))
+	}
+	return 0, errors.New(strconv.FormatInt(int64(res), 10) + "has been filtered out")
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {
-	aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("next has been called: %d", aq.debugs.NextNum))
-	aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("get has been called: %d", aq.debugs.GetNum))
-	aq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("current has been called: %d", aq.debugs.CurNum))
-	for i := 0; i < len(aq.queries); i++ {
-		aq.debugs.DebugInfo.AddDebug(aq.queries[i].DebugInfo())
+	if aq.debugs != nil {
+		aq.debugs.DebugInfo.AddDebugMsg("next has been called: " + strconv.Itoa(aq.debugs.NextNum))
+		aq.debugs.DebugInfo.AddDebugMsg("get has been called: " + strconv.Itoa(aq.debugs.GetNum))
+		aq.debugs.DebugInfo.AddDebugMsg("current has been called: " + strconv.Itoa(aq.debugs.CurNum))
+		for i := 0; i < len(aq.queries); i++ {
+			aq.debugs.DebugInfo.AddDebug(aq.queries[i].DebugInfo())
+		}
+		return aq.debugs.DebugInfo
 	}
-	return aq.debugs.DebugInfo
+	return nil
 }
 
 func (aq *AndQuery) check(id document.DocId) bool {
@@ -138,4 +156,13 @@ func (aq *AndQuery) check(id document.DocId) bool {
 		}
 	}
 	return true
+}
+
+func (aq *AndQuery) StringBuilder(cap int, value ...interface{}) string {
+	var b strings.Builder
+	b.Grow(cap)
+	_, _ = fmt.Fprintf(&b, "queries[%d] ", value[0])
+	_, _ = fmt.Fprintf(&b, "not found:[%d], ", value[1])
+	_, _ = fmt.Fprintf(&b, "reason:[%s]", value[2])
+	return b.String()
 }

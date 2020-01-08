@@ -184,6 +184,7 @@ func TestNewIndex(t *testing.T) {
 		So(index.DebugInfo(), ShouldNotBeNil)
 		So(index.GetDataType("field1"), ShouldEqual, 1)
 		So(index.GetDataType("field2"), ShouldEqual, 3)
+		//fmt.Println(index.DebugInfo())
 	})
 }
 

@@ -3,11 +3,11 @@ package query
 import (
 	"container/heap"
 	"errors"
-	"fmt"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/check"
+	"strconv"
 )
 
 type OrQuery struct {
@@ -16,9 +16,10 @@ type OrQuery struct {
 	debugs   *debug.Debugs
 }
 
-func NewOrQuery(queries []Query, checkers []check.Checker) *OrQuery {
-	oq := &OrQuery{
-		debugs: debug.NewDebugs(debug.NewDebug("OrQuery")),
+func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) *OrQuery {
+	oq := &OrQuery{}
+	if len(isDebug) != 0 && isDebug[0] == 1 {
+		oq.debugs = debug.NewDebugs(debug.NewDebug("OrQuery"))
 	}
 	if len(queries) == 0 {
 		return oq
@@ -36,13 +37,17 @@ func NewOrQuery(queries []Query, checkers []check.Checker) *OrQuery {
 }
 
 func (oq *OrQuery) Next() (document.DocId, error) {
-	oq.debugs.NextNum++
+	if oq.debugs != nil {
+		oq.debugs.NextNum++
+	}
 	for target, err := oq.Current(); err == nil; {
 		oq.next()
 		if oq.check(target) {
 			return target, nil
 		}
-		oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", target))
+		if oq.debugs != nil {
+			oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
+		}
 		target, err = oq.Current()
 	}
 	return 0, helpers.NoMoreData
@@ -67,21 +72,27 @@ func (oq *OrQuery) getGE(id document.DocId) {
 }
 
 func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
-	oq.debugs.GetNum++
+	if oq.debugs != nil {
+		oq.debugs.GetNum++
+	}
 	target, err := oq.Current()
 	for err == nil && target < id {
 		oq.getGE(id)
 		target, err = oq.Current()
 	}
 	for err == nil && !oq.check(target) {
-		oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", target))
+		if oq.debugs != nil {
+			oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
+		}
 		target, err = oq.Next()
 	}
 	return target, err
 }
 
 func (oq *OrQuery) Current() (document.DocId, error) {
-	oq.debugs.CurNum++
+	if oq.debugs != nil {
+		oq.debugs.CurNum++
+	}
 	top := oq.h.Top()
 	if top == nil {
 		return 0, helpers.NoMoreData
@@ -94,19 +105,24 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	if oq.check(res) {
 		return res, nil
 	}
-	oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("docID[%d] is filtered out", res))
-	return 0, errors.New(fmt.Sprintf("the result [%d] is filtered out", res))
+	if oq.debugs != nil {
+		oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + "has been filtered out")
+	}
+	return 0, errors.New(strconv.FormatInt(int64(res), 10) + "has been filtered out")
 
 }
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {
-	oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("next has been called: %d", oq.debugs.NextNum))
-	oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("get has been called: %d", oq.debugs.GetNum))
-	oq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("current has been called: %d", oq.debugs.CurNum))
-	for i := 0; i < oq.h.Len(); i++ {
-		oq.debugs.DebugInfo.AddDebug(oq.h[i].DebugInfo())
+	if oq.debugs != nil {
+		oq.debugs.DebugInfo.AddDebugMsg("next has been called: " + strconv.Itoa(oq.debugs.NextNum))
+		oq.debugs.DebugInfo.AddDebugMsg("get has been called: " + strconv.Itoa(oq.debugs.GetNum))
+		oq.debugs.DebugInfo.AddDebugMsg("current has been called: " + strconv.Itoa(oq.debugs.CurNum))
+		for i := 0; i < oq.h.Len(); i++ {
+			oq.debugs.DebugInfo.AddDebug(oq.h[i].DebugInfo())
+		}
+		return oq.debugs.DebugInfo
 	}
-	return oq.debugs.DebugInfo
+	return nil
 }
 
 func (oq *OrQuery) check(id document.DocId) bool {

@@ -14,11 +14,14 @@ type InvertedIndexer struct {
 	aDebug *debug.Debug
 }
 
-func NewInvertedIndexer() *InvertedIndexer {
-	return &InvertedIndexer{
-		data:   sync.Map{},
-		aDebug: debug.NewDebug("invert index"),
+func NewInvertedIndexer(isDebug ...int) *InvertedIndexer {
+	i := &InvertedIndexer{
+		data: sync.Map{},
 	}
+	if len(isDebug) != 0 && isDebug[0] == 1 {
+		i.aDebug = debug.NewDebug("invert index")
+	}
+	return i
 }
 
 func (i *InvertedIndexer) Count() int {
@@ -61,15 +64,22 @@ func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	var fieldName = name + "_" + value
 	if v, ok := i.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
-			i.aDebug.AddDebugMsg("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
+			if i.aDebug != nil {
+				i.aDebug.AddDebugMsg("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
+			}
 			return sl.Iterator()
 		}
 	}
-	i.aDebug.AddDebugMsg("index: " + fieldName + " is nil")
+	if i.aDebug != nil {
+		i.aDebug.AddDebugMsg("index: " + fieldName + " is nil")
+	}
 	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	return sl.Iterator()
 }
 
 func (i *InvertedIndexer) DebugInfo() *debug.Debug {
-	return i.aDebug
+	if i.aDebug != nil {
+		return i.aDebug
+	}
+	return nil
 }
