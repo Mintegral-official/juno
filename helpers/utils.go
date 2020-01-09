@@ -6,8 +6,17 @@ import (
 )
 
 func Compare(i, j interface{}) int {
+	if i == nil && j != nil {
+		return 1
+	}
+	if i != nil && j == nil {
+		return -1
+	}
+	if i == nil && j == nil {
+		return 0
+	}
 	switch i.(type) {
-	case int8, int16, int32, int64, int, *int8, *int16, *int32, *int64, *int:
+	case int8, int16, int32, int64, int, *int8, *int16, *int32, *int64, *int, document.DocId:
 		return intCompare(i, j)
 	case string, *string:
 		return stringCompare(i, j)

@@ -222,23 +222,27 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 	if v, ok := field.Value.([]string); ok {
 		for _, s := range v {
 			i.invertedIndex.Del(field.Name+"_"+s, id)
-			v, _ := i.GetCampaignMap().Get(DocId(id))
-			i.bitmap.Del(v.(document.DocId))
+			if v, ok := i.GetCampaignMap().Get(DocId(id)); ok {
+				i.bitmap.Del(v.(document.DocId))
+			}
 		}
 	} else if v, ok := field.Value.([]int64); ok {
 		for _, s := range v {
 			i.invertedIndex.Del(field.Name+"_"+fmt.Sprint(s), id)
-			v, _ := i.GetCampaignMap().Get(DocId(id))
-			i.bitmap.Del(v.(document.DocId))
+			if v, ok := i.GetCampaignMap().Get(DocId(id)); ok {
+				i.bitmap.Del(v.(document.DocId))
+			}
 		}
 	} else if v, ok := field.Value.(string); ok {
 		i.invertedIndex.Del(field.Name+"_"+v, id)
-		v, _ := i.GetCampaignMap().Get(DocId(id))
-		i.bitmap.Del(v.(document.DocId))
+		if v, ok := i.GetCampaignMap().Get(DocId(id)); ok {
+			i.bitmap.Del(v.(document.DocId))
+		}
 	} else if v, ok := field.Value.(int64); ok {
 		i.invertedIndex.Del(field.Name+"_"+fmt.Sprint(v), id)
-		v, _ := i.GetCampaignMap().Get(DocId(id))
-		i.bitmap.Del(v.(document.DocId))
+		if v, ok := i.GetCampaignMap().Get(DocId(id)); ok {
+			i.bitmap.Del(v.(document.DocId))
+		}
 	}
 }
 

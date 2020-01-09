@@ -10,13 +10,15 @@ type CheckerImpl struct {
 	si    datastruct.Iterator
 	value interface{}
 	op    operation.OP
+	e     operation.Operation
 }
 
-func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP) *CheckerImpl {
+func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e operation.Operation) *CheckerImpl {
 	return &CheckerImpl{
 		si:    si,
 		value: value,
 		op:    op,
+		e:     e,
 	}
 }
 
@@ -42,5 +44,5 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	if v == nil {
 		return false
 	}
-	return UtilCheck(v, c.op, c.value)
+	return UtilCheck(v, c.op, c.value, c.e)
 }

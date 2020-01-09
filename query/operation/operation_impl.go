@@ -40,3 +40,7 @@ func (ee *Operations) In(value []interface{}) bool {
 	}
 	return false
 }
+
+func (ee *Operations) SetValue(value interface{}) {
+	ee.FieldValue = value
+}

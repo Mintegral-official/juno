@@ -118,7 +118,7 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 			return 0, err
 		}
 		if tar != res {
-			return 0, errors.New("no suitable num")
+			return 0, nil
 		}
 	}
 	if aq.check(res) {
@@ -127,7 +127,7 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	if aq.debugs != nil {
 		aq.debugs.DebugInfo.AddDebugMsg(aq.StringBuilder(128, res))
 	}
-	return 0, errors.New(strconv.FormatInt(int64(res), 10) + "has been filtered out")
+	return 0, nil
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {

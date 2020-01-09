@@ -91,7 +91,7 @@ var doc3 = &document.DocInfo{
 
 func TestSqlQuery_LRD(t *testing.T) {
 	s := "field1>= 1 and   (field2 !=1 or ( field2 = 1 and field1=1)) | (field1 in [1,2] and field1 !in [2,3])"
-	sq := NewSqlQuery(s)
+	sq := NewSqlQuery(s, nil)
 	Convey("sql query", t, func() {
 		node := sq.exp2Tree()
 		n := node.To()
@@ -154,7 +154,7 @@ func BenchmarkNewAndQuery(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		sq := NewSqlQuery(s)
+		sq := NewSqlQuery(s, nil)
 		idx := index.NewIndex("index")
 		_ = idx.Add(doc1)
 		_ = idx.Add(doc2)
@@ -162,4 +162,3 @@ func BenchmarkNewAndQuery(b *testing.B) {
 		_ = sq.LRD(idx)
 	}
 }
-

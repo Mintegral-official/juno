@@ -74,7 +74,7 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 	if info.StartTime != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "StartTime",
-			IndexType: 1,
+			IndexType: 2,
 			Value:     int64(*info.StartTime),
 			ValueType: document.IntFieldType,
 		})
@@ -83,7 +83,7 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 	if info.EndTime != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "EndTime",
-			IndexType: 1,
+			IndexType: 2,
 			Value:     int64(*info.EndTime),
 			ValueType: document.IntFieldType,
 		})
@@ -101,7 +101,7 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 	if info.OsVersionMaxV2 != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "OsVersionMaxV2",
-			IndexType: 1,
+			IndexType: 2,
 			Value:     int64(*info.OsVersionMaxV2),
 			ValueType: document.IntFieldType,
 		})
@@ -110,7 +110,7 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 	if info.OsVersionMinV2 != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "OsVersionMinV2",
-			IndexType: 1,
+			IndexType: 2,
 			Value:     int64(*info.OsVersionMinV2),
 			ValueType: document.IntFieldType,
 		})
@@ -125,7 +125,7 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 
 	docInfo.Fields = append(docInfo.Fields, &document.Field{
 		Name:      "DeviceTypeV2",
-		IndexType: 0,
+		IndexType: 2,
 		Value:     info.DeviceTypeV2,
 		ValueType: document.SliceFieldType,
 	})
@@ -201,22 +201,20 @@ func main() {
 	// storage
 	storageIdx := tIndex.GetStorageIndex()
 
-	//q := query.NewOrQuery(
-	//	[]query.Query{
-	//		query.NewAndQuery(
-	//			[]query.Query{
-	//				query.NewTermQuery(storageIdx.Iterator("Price")),
-	//				query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-	//			},
-	//			[]check.Checker{
-	//				check.NewInChecker(storageIdx.Iterator("Price"), 2.3, 1.4, 3.65, 2.46, 2.5),
-	//				check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), 647, 658, 670),
-	//			},
-	//		),
-	//		query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
-	//		query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
-	//	}, nil,
-	//)
+	var p = []float64{2.3, 1.4, 3.65, 2.46, 2.5}
+	var pi = make([]interface{}, len(p))
+	for _, v := range p {
+		pi = append(pi, v)
+	}
+	var a0 = []int64{647, 658, 670}
+	var ai = make([]interface{}, len(a0))
+	for _, v := range a0 {
+		ai = append(ai, v)
+	}
+
+	var dev = []int64{4, 5}
+	var devi = make([]interface{}, len(dev))
+	devi = append(devi, dev)
 
 	q := query.NewOrQuery([]query.Query{
 		query.NewOrQuery([]query.Query{
@@ -225,21 +223,22 @@ func main() {
 		query.NewOrQuery([]query.Query{
 			query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
 		}, nil),
-		//query.NewOrQuery([]query.Query{
-		//	query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "4")),
-		//	query.NewTermQuery(invertIdx.Iterator("DeviceTypeV2", "5")),
-		//}, nil),
+		/* special example */
+		query.NewOrQuery([]query.Query{
+			query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
+		}, []check.Checker{
+			check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, &operation{}),
+		}),
 		query.NewAndQuery([]query.Query{
 			query.NewAndQuery([]query.Query{
 				query.NewTermQuery(storageIdx.Iterator("Price")),
 			}, []check.Checker{
-				check.NewInChecker(storageIdx.Iterator("Price"),
-					2.3, 1.4, 3.65, 2.46, 2.5),
+				check.NewInChecker(storageIdx.Iterator("Price"), pi, nil),
 			}),
 			query.NewAndQuery([]query.Query{
 				query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
 			}, []check.Checker{
-				check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), int64(647), int64(658), int64(670)),
+				check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), ai, nil),
 			})}, nil)},
 		nil,
 	)
@@ -251,19 +250,19 @@ func main() {
 	//fmt.Println("+****************************+")
 	//fmt.Println(r1.QueryDebug)
 	//fmt.Println("+****************************+")
-	fmt.Println(r1.IndexDebug)
+	//fmt.Println(r1.IndexDebug)
 	//fmt.Println("+****************************+")
 
 	tIndex.UnsetDebug()
 
 	a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
-	sq := query.NewSqlQuery(a)
+	sq := query.NewSqlQuery(a, nil)
 
 	m := sq.LRD(tIndex)
 	r2 := search.NewSearcher()
 	r2.Search(tIndex, m)
 	//fmt.Println(r2.QueryDebug)
-	fmt.Println(r2.IndexDebug)
+	//fmt.Println(r2.IndexDebug)
 	fmt.Println("+****************************+")
 	fmt.Println("res: ", len(r2.Docs), r2.Time)
 
@@ -273,4 +272,27 @@ func main() {
 	signal.Notify(c)
 	s := <-c
 	fmt.Println("退出信号", s)
+}
+
+type operation struct {
+	value interface{}
+}
+
+func (o *operation) Equal(value interface{}) bool {
+	// your logic
+	return true
+}
+
+func (o *operation) Less(value interface{}) bool {
+	// your logic
+	return true
+}
+
+func (o *operation) In(value []interface{}) bool {
+	// your logic
+	return true
+}
+
+func (o *operation) SetValue(value interface{}) {
+	o.value = value
 }

@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"github.com/Mintegral-official/juno/document"
 	"strings"
 )
 
@@ -43,6 +44,8 @@ var intCompare Func = func(a, b interface{}) int {
 		return byteFunc(a.(byte), b.(byte))
 	case *byte:
 		return bytePtrFunc(a.(*byte), b.(*byte))
+	case document.DocId:
+		return docIdFunc(a.(document.DocId), b.(document.DocId))
 	default:
 		panic(fmt.Sprintf("parameters[%T - %T] type wrong.", a, b))
 	}
@@ -154,4 +157,8 @@ func stringFunc(i, j string) int {
 
 func stringPtrFunc(i, j *string) int {
 	return strings.Compare(*i, *j)
+}
+
+func docIdFunc(i, j document.DocId) int {
+	return int(i - j)
 }

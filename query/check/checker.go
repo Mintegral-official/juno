@@ -9,21 +9,23 @@ type Checker interface {
 	Check(id document.DocId) bool
 }
 
-func UtilCheck(cValue interface{}, op operation.OP, value interface{}) bool {
-	o := operation.Operations{FieldValue: cValue}
+func UtilCheck(cValue interface{}, op operation.OP, value interface{}, e operation.Operation) bool {
+	if e == nil {
+		e = operation.NewOperations(cValue)
+	}
 	switch op {
 	case operation.EQ:
-		return o.Equal(value)
+		return e.Equal(value)
 	case operation.NE:
-		return !o.Equal(value)
+		return !e.Equal(value)
 	case operation.LE:
-		return o.Equal(value) || o.Less(value)
+		return e.Equal(value) || e.Less(value)
 	case operation.GE:
-		return !o.Less(value)
+		return !e.Less(value)
 	case operation.LT:
-		return o.Less(value)
+		return e.Less(value)
 	case operation.GT:
-		return !o.Equal(value) && !o.Less(value)
+		return !e.Equal(value) && !e.Less(value)
 	default:
 		return false
 	}

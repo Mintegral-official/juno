@@ -138,7 +138,7 @@ func (naq *NotAndQuery) Current() (document.DocId, error) {
 	if naq.debugs != nil {
 		naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + "has been filtered out")
 	}
-	return 0, errors.New(strconv.FormatInt(int64(res), 10) + "has been filtered out")
+	return 0, nil
 }
 
 func (naq *NotAndQuery) DebugInfo() *debug.Debug {

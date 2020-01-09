@@ -9,12 +9,14 @@ import (
 type NotChecker struct {
 	si    datastruct.Iterator
 	value []interface{}
+	e     operation.Operation
 }
 
-func NewNotChecker(si datastruct.Iterator, value ...interface{}) *NotChecker {
+func NewNotChecker(si datastruct.Iterator, value []interface{}, e operation.Operation) *NotChecker {
 	return &NotChecker{
 		si:    si,
 		value: value,
+		e:     e,
 	}
 }
 
@@ -40,6 +42,10 @@ func (nc *NotChecker) Check(id document.DocId) bool {
 	if v == nil {
 		return false
 	}
-	o := operation.Operations{FieldValue: v}
-	return !o.In(nc.value)
+	if nc.e == nil {
+		o := operation.Operations{FieldValue: v}
+		return !o.In(nc.value)
+	}
+	nc.e.SetValue(v)
+	return nc.e.In(nc.value)
 }

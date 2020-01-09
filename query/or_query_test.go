@@ -3,6 +3,8 @@ package query
 import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/query/check"
+	"github.com/Mintegral-official/juno/query/operation"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
@@ -10,10 +12,10 @@ import (
 func TestNewOrQuery_Next1(t *testing.T) {
 	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
-	sl.Add(document.DocId(1), [1]byte{})
-	sl.Add(document.DocId(3), [1]byte{})
-	sl.Add(document.DocId(6), [1]byte{})
-	sl.Add(document.DocId(10), [1]byte{})
+	sl.Add(document.DocId(1), 1)
+	sl.Add(document.DocId(3), 2)
+	sl.Add(document.DocId(6), 2)
+	sl.Add(document.DocId(10), 1)
 
 	//sl1 := datastruct.NewSkipList(datastruct.DEFAULT_MAX_LEVEL, helpers.DocIdFunc)
 	//
@@ -23,23 +25,30 @@ func TestNewOrQuery_Next1(t *testing.T) {
 	//sl1.Add(document.DocId(9), [1]byte{})
 
 	Convey("Next1", t, func() {
-		a := NewOrQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
+		a := NewOrQuery([]Query{NewTermQuery(sl.Iterator())}, []check.Checker{
+			check.NewChecker(sl.Iterator(), 1, operation.EQ, nil),
+		})
 		v, e := a.Next()
 		// fmt.Println(v, e)
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
-		v, e = a.Next()
+		//v, e = a.Next()
 		//fmt.Println(v, e)
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
-		v, e = a.Next()
-		// fmt.Println(v, e)
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
+		//So(v, ShouldEqual, 3)
+		//So(e, ShouldBeNil)
+		//v, e = a.Next()
+		//// fmt.Println(v, e)
+		//So(v, ShouldEqual, 6)
+		//So(e, ShouldBeNil)
 		v, e = a.Next()
 		// fmt.Println(v, e)
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
+
+		v, e = a.Next()
+		// fmt.Println(v, e)
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
 	})
 }
 
@@ -161,10 +170,10 @@ func TestNewOrQuery_Next2(t *testing.T) {
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
-		// fmt.Println(v, e)
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
+		//v, e = a.Next()
+		//// fmt.Println(v, e)
+		//So(v, ShouldEqual, 1)
+		//So(e, ShouldBeNil)
 
 		v, e = a.Next()
 		// fmt.Println(v, e)
@@ -186,10 +195,10 @@ func TestNewOrQuery_Next2(t *testing.T) {
 		So(v, ShouldEqual, 5)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
-		// fmt.Println(v, e)
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
+		//v, e = a.Next()
+		//// fmt.Println(v, e)
+		//So(v, ShouldEqual, 6)
+		//So(e, ShouldBeNil)
 
 		v, e = a.Next()
 		// fmt.Println(v, e)

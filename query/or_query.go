@@ -2,7 +2,6 @@ package query
 
 import (
 	"container/heap"
-	"errors"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -43,6 +42,13 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 	for target, err := oq.Current(); err == nil; {
 		oq.next()
 		if oq.check(target) {
+			for cur, err := oq.Current(); err == nil; {
+				if cur != target {
+					break
+				}
+				oq.next()
+				cur, err = oq.Current()
+			}
 			return target, nil
 		}
 		if oq.debugs != nil {
@@ -108,8 +114,7 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	if oq.debugs != nil {
 		oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + "has been filtered out")
 	}
-	return 0, errors.New(strconv.FormatInt(int64(res), 10) + "has been filtered out")
-
+	return 0, nil
 }
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {
