@@ -78,8 +78,5 @@ func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 }
 
 func (i *InvertedIndexer) DebugInfo() *debug.Debug {
-	if i.aDebug != nil {
-		return i.aDebug
-	}
-	return nil
+	return i.aDebug
 }

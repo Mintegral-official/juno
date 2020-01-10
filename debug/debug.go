@@ -12,7 +12,6 @@ func NewDebug(name string) *Debug {
 	return &Debug{
 		Name: name,
 		Msg:  []string{},
-	//	Node: []*Debug{},
 	}
 }
 

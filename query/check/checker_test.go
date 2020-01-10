@@ -37,7 +37,6 @@ func TestInChecker_Check(t *testing.T) {
 		So(a.Check(3), ShouldBeFalse)
 		So(a.Check(6), ShouldBeTrue)
 		So(a.Check(10), ShouldBeFalse)
-		//	So(a.Check(6), ShouldBeTrue)
 	})
 
 	Convey("or checker", t, func() {
@@ -53,8 +52,6 @@ func TestInChecker_Check(t *testing.T) {
 	})
 
 	Convey("in checker", t, func() {
-		//c := NewChecker(sl.Iterator(), 6, operation.EQ)
-		//d := NewChecker(sl.Iterator(), 10, operation.EQ)
 		var a = []int{1, 6, 3, 10}
 		c := make([]interface{}, len(a))
 		for _, v := range a {
@@ -68,8 +65,6 @@ func TestInChecker_Check(t *testing.T) {
 	})
 
 	Convey("not checker", t, func() {
-		//c := NewChecker(sl.Iterator(), 6, operation.NE)
-		//d := NewChecker(sl.Iterator(), 10, operation.NE)
 		var a = []int{1, 6, 3, 10}
 		c := make([]interface{}, len(a))
 		for _, v := range a {
@@ -83,7 +78,7 @@ func TestInChecker_Check(t *testing.T) {
 	})
 }
 
-func TestNewChecker(t *testing.T) {
+func TestNewInChecker(t *testing.T) {
 	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	sl.Add(1, []int{1, 2, 3})
 	sl.Add(3, []int{4, 5, 3})

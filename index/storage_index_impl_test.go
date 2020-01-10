@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestNewStorageIndexer(t *testing.T) {
+func TestNewStorageIndexerAdd(t *testing.T) {
 	Convey("Get", t, func() {
 		s := NewStorageIndexer()
 		So(s.Get("fieldName", 1), ShouldBeNil)
@@ -61,6 +61,5 @@ func TestStorageIndexer(t *testing.T) {
 		So(s.Iterator("fieldName4"), ShouldNotBeNil)
 		So(s.Iterator("fieldName0"), ShouldNotBeNil)
 		So(s.Count(), ShouldEqual, 4)
-		//So(s.DebugInfo(), ShouldNotBeNil)
 	})
 }

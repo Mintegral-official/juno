@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/search"
@@ -266,7 +265,7 @@ func main() {
 	fmt.Println("+****************************+")
 	fmt.Println("res: ", len(r2.Docs), r2.Time)
 
-	fmt.Println(helpers.SliceEqual(r1.Docs, r2.Docs))
+	fmt.Println(SliceEqual(r1.Docs, r2.Docs))
 
 	c := make(chan os.Signal)
 	signal.Notify(c)
@@ -295,4 +294,22 @@ func (o *operation) In(value []interface{}) bool {
 
 func (o *operation) SetValue(value interface{}) {
 	o.value = value
+}
+
+func SliceEqual(a, b []document.DocId) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	if (a == nil) != (b == nil) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
 }

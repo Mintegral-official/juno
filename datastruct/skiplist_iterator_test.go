@@ -1,10 +1,8 @@
 package datastruct
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/document"
 	. "github.com/smartystreets/goconvey/convey"
-	"reflect"
 	"testing"
 )
 
@@ -12,7 +10,6 @@ func TestNewSkipListIterator(t *testing.T) {
 	sl := NewSkipList(DefaultMaxLevel)
 	sl.Add(1, nil)
 	sl.Add(3, nil)
-	// slt := NewSkipListIterator(DEFAULT_MAX_LEVEL, helpers.IntCompare)
 	Convey("NewSkipListIterator", t, func() {
 		iter := sl.Iterator()
 
@@ -180,25 +177,4 @@ func BenchmarkNewSkipListIterator_Next(b *testing.B) {
 			s.Next()
 		}
 	}
-}
-
-//func BenchmarkNewSkipListIterator_Next_RunParallel(b *testing.B) {
-//	a, _ := NewSkipList(DefaultMaxLevel, helpers.IntCompare)
-//	add1(a)
-//	s := a.Iterator()
-//	b.ResetTimer()
-//	b.ReportAllocs()
-//	b.RunParallel(func(pb *testing.PB) {
-//		for pb.Next() {
-//			for s.HasNext() {
-//				s.Next()
-//			}
-//		}
-//	})
-//}
-
-func TestNewBitMap2(t *testing.T) {
-	var a int8 = 1
-	var b byte = 1
-	fmt.Println(reflect.TypeOf(a) == reflect.TypeOf(b))
 }

@@ -20,7 +20,7 @@ type AndQuery struct {
 
 func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) *AndQuery {
 	aq := &AndQuery{}
-	if len(isDebug) != 0 && isDebug[0] == 1 {
+	if len(isDebug) == 1 && isDebug[0] == 1 {
 		aq.debugs = debug.NewDebugs(debug.NewDebug("AndQuery"))
 	}
 	if len(queries) == 0 {

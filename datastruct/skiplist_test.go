@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	"unsafe"
 )
 
 var arr []int
@@ -18,7 +17,6 @@ func GenerateRandomNumber(start int, end int, count int) []int {
 	if end < start || (end-start) < count {
 		return []int{0}
 	}
-
 	//存放结果的slice
 	nums := []int{}
 	i := 0
@@ -49,12 +47,10 @@ func init() {
 	t := time.Now()
 	arr = GenerateRandomNumber(0, 1500000000, 200000)
 	fmt.Println(time.Since(t))
-
 	fmt.Println(len(arr))
-
-	var sl SkipList
-	var el Element
-	fmt.Printf("Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
+	//var sl SkipList
+	//var el Element
+	//fmt.Printf("Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
 }
 
 func TestNewSkipList(t *testing.T) {
@@ -82,7 +78,6 @@ func TestSkipList_Add_Del_Len(t *testing.T) {
 }
 
 func TestSkipList_Get(t *testing.T) {
-	//fmt.Println(s.findGE(-1, true, s.previousNodeCache))
 	s := NewSkipList(DefaultMaxLevel)
 	var arr []int
 	arr = GenerateRandomNumber(0, 1500000000, 100)
@@ -90,10 +85,8 @@ func TestSkipList_Get(t *testing.T) {
 		s.Add(document.DocId(arr[i]), nil)
 	}
 	Convey("findGE & findLT", t, func() {
-		// 找到 ==  返回 true
 		_, ok := s.findGE(document.DocId(arr[99]), true, s.previousNodeCache)
 		So(ok, ShouldBeTrue)
-		// 找到 > 返回false
 		_, ok = s.findGE(0, true, s.previousNodeCache)
 		So(ok, ShouldBeFalse)
 		_, ok = s.findLT(document.DocId(arr[99]))
@@ -196,9 +189,3 @@ func BenchmarkSkipList_GetRunParallel(b *testing.B) {
 		}
 	})
 }
-
-//func TestNewBitMap2(t *testing.T) {
-//	var a = make(map[int]int)
-//	a[1] = 1
-//	fmt.Println(len(a))
-//}

@@ -25,7 +25,7 @@ func TestNewBitMap(t *testing.T) {
 }
 
 func TestNewBitMap3(t *testing.T) {
-	Convey("NewBitMap", t, func() {
+	Convey("bitmap exist", t, func() {
 		bm := NewBitMap()
 		bm.Set(10)
 		So(bm.IsExist(10), ShouldBeTrue)

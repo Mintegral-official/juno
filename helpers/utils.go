@@ -16,7 +16,8 @@ func Compare(i, j interface{}) int {
 		return 0
 	}
 	switch i.(type) {
-	case int8, int16, int32, int64, int, *int8, *int16, *int32, *int64, *int, document.DocId:
+	case int8, int16, int32, int64, int, *int8, *int16, *int32, *int, *int64, uint8, uint,
+		uint16, uint32, uint64, *uint8, *uint16, *uint32, *uint, *uint64, document.DocId:
 		return intCompare(i, j)
 	case string, *string:
 		return stringCompare(i, j)
@@ -25,15 +26,6 @@ func Compare(i, j interface{}) int {
 	default:
 		panic(fmt.Sprintf("parameters[%T - %T] type wrong.", i, j))
 	}
-}
-
-func In(target int, arr []int) bool {
-	for _, v := range arr {
-		if target == v {
-			return true
-		}
-	}
-	return false
 }
 
 func Merge(arr1, arr2 []document.DocId) []document.DocId {
@@ -65,22 +57,4 @@ func Merge(arr1, arr2 []document.DocId) []document.DocId {
 		res = append(res, arr1[j])
 	}
 	return res
-}
-
-func SliceEqual(a, b []document.DocId) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	if (a == nil) != (b == nil) {
-		return false
-	}
-
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-
-	return true
 }

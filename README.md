@@ -38,11 +38,11 @@
 #### index接口
 ```go
 type Index interface {
-    Add(docInfo *document.DocInfo) error  // 新增文档 TODO
-    Del(docInfo *document.DocInfo) error  // 删除文档 TODO
+    Add(docInfo *document.DocInfo) error  // 新增文档 
+    Del(docInfo *document.DocInfo) error  // 删除文档 
     GetDataType(fieldName string) document.FieldType  // 获取field类型
-    Dump(filename string) error  // 将索引Dump到磁盘
-    Load(filename string) error  // 从磁盘加载索引
+    Dump(filename string) error  // 将索引Dump到磁盘 TODO
+    Load(filename string) error  // 从磁盘加载索引 TODO
     DebugInfo() *debug.Debug  // 调试信息
 }
 ```
@@ -328,7 +328,7 @@ type SqlQuery struct {
     Expression *Expression            // 表达式解析
     e          operation.Operation    // 是否需要自定义的表达式
 }
-
+func NewSqlQuery(str string, e operation.Operation) *SqlQuery {}  // 创建sql query对象
 func (sq *SqlQuery) LRD(idx *index.Indexer) Query {}  // 构建query查询表达式
 ```
 

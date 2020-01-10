@@ -51,7 +51,6 @@ func TestInvertedIndexer(t *testing.T) {
 		So(s.Iterator("fieldName", "0"), ShouldNotBeNil)
 		c := 0
 		for a.HasNext() {
-			// fmt.Println(a.Current())
 			a.Next()
 			c++
 		}
@@ -64,6 +63,5 @@ func TestInvertedIndexer(t *testing.T) {
 				So(v1.Len(), ShouldEqual, 1)
 			}
 		}
-		//So(s.DebugInfo(), ShouldNotBeNil)
 	})
 }

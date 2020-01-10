@@ -17,7 +17,7 @@ type OrQuery struct {
 
 func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) *OrQuery {
 	oq := &OrQuery{}
-	if len(isDebug) != 0 && isDebug[0] == 1 {
+	if len(isDebug) == 1 && isDebug[0] == 1 {
 		oq.debugs = debug.NewDebugs(debug.NewDebug("OrQuery"))
 	}
 	if len(queries) == 0 {

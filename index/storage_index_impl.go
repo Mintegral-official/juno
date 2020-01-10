@@ -90,8 +90,5 @@ func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 }
 
 func (s *StorageIndexer) DebugInfo() *debug.Debug {
-	if s.aDebug != nil {
-		return s.aDebug
-	}
-	return nil
+	return s.aDebug
 }

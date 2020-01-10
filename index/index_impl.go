@@ -36,7 +36,6 @@ func NewIndex(name string, isDebug ...int) *Indexer {
 		count:           1,
 		name:            name,
 		logger:          logrus.New(),
-		aDebug:          debug.NewDebug(name),
 	}
 	if len(isDebug) != 0 && isDebug[0] == 1 {
 		i.aDebug = debug.NewDebug(name)
@@ -150,16 +149,6 @@ func (i *Indexer) Load(filename string) error {
 	return nil
 }
 
-func (i *Indexer) DebugInfo() *debug.Debug {
-	if i.aDebug != nil {
-		i.aDebug.AddDebugMsg("invert index count: " + strconv.Itoa(i.invertedIndex.Count()))
-		i.aDebug.AddDebugMsg("storage index count: " + strconv.Itoa(i.storageIndex.Count()))
-		i.aDebug.AddDebug(i.invertedIndex.DebugInfo(), i.storageIndex.DebugInfo())
-		return i.aDebug
-	}
-	return nil
-}
-
 func (i *Indexer) GetDataType(fieldName string) document.FieldType {
 	if t, ok := i.kvType.Get(concurrent_map.StrKey(fieldName)); ok {
 		return t.(document.FieldType)
@@ -248,6 +237,16 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 
 func (i *Indexer) storageDel(id document.DocId, field *document.Field) {
 	i.storageIndex.Del(field.Name, id)
+}
+
+func (i *Indexer) DebugInfo() *debug.Debug {
+	if i.aDebug != nil {
+		i.aDebug.AddDebugMsg("invert index count: " + strconv.Itoa(i.invertedIndex.Count()))
+		i.aDebug.AddDebugMsg("storage index count: " + strconv.Itoa(i.storageIndex.Count()))
+		i.aDebug.AddDebug(i.invertedIndex.DebugInfo(), i.storageIndex.DebugInfo())
+		return i.aDebug
+	}
+	return nil
 }
 
 func (i *Indexer) StringBuilder(cap int, value ...interface{}) string {
