@@ -49,7 +49,9 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 				oq.next()
 				cur, err = oq.Current()
 			}
-			return target, nil
+			if target != 0 {
+				return target, nil
+			}
 		}
 		if oq.debugs != nil {
 			oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")

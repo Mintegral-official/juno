@@ -40,7 +40,7 @@ func (naq *NotAndQuery) Next() (document.DocId, error) {
 		}
 		if len(naq.queries) == 1 {
 			_, _ = naq.queries[0].Next()
-			if naq.check(target) {
+			if target != 0 && naq.check(target) {
 				return target, nil
 			}
 			if naq.debugs != nil {
@@ -61,7 +61,9 @@ func (naq *NotAndQuery) Next() (document.DocId, error) {
 					}
 					_, _ = naq.queries[0].Next()
 				}
-				return target, nil
+				if target != 0 {
+					return target, nil
+				}
 			}
 		}
 		target, err = naq.queries[0].Next()

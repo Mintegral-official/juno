@@ -52,7 +52,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			target = cur
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
-			if aq.check(target) {
+			if target != 0 && aq.check(target) {
 				return target, nil
 			}
 			if aq.debugs != nil {
