@@ -75,57 +75,58 @@ func BenchmarkSliceEqual(b *testing.B) {
 	devi = append(devi, dev)
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		q := query.NewOrQuery([]query.Query{
-			query.NewOrQuery([]query.Query{
-				query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
-			}, nil),
-			query.NewOrQuery([]query.Query{
-				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
-			}, nil),
-			/* special example */
-			query.NewOrQuery([]query.Query{
-				query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
-			}, []check.Checker{
-				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, &operation{}),
-			}),
-			query.NewAndQuery([]query.Query{
-				query.NewAndQuery([]query.Query{
-					query.NewTermQuery(storageIdx.Iterator("Price")),
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			q := query.NewOrQuery([]query.Query{
+				query.NewOrQuery([]query.Query{
+					query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
+				}, nil),
+				query.NewOrQuery([]query.Query{
+					query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
+				}, nil),
+				/* special example */
+				query.NewOrQuery([]query.Query{
+					query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
 				}, []check.Checker{
-					check.NewInChecker(storageIdx.Iterator("Price"), pi, nil),
+					check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, &operation{}),
 				}),
 				query.NewAndQuery([]query.Query{
-					query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-				}, []check.Checker{
-					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), ai, nil),
-				})}, nil)},
-			nil,
-		)
+					query.NewAndQuery([]query.Query{
+						query.NewTermQuery(storageIdx.Iterator("Price")),
+					}, []check.Checker{
+						check.NewInChecker(storageIdx.Iterator("Price"), pi, nil),
+					}),
+					query.NewAndQuery([]query.Query{
+						query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+					}, []check.Checker{
+						check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), ai, nil),
+					})}, nil)},
+				nil,
+			)
 
-		r1 := search.NewSearcher()
-		r1.Search(tIndex, q)
-		fmt.Println("+****************************+")
-		fmt.Println("res: ", len(r1.Docs), r1.Time)
-		//fmt.Println("+****************************+")
-		//fmt.Println(r1.QueryDebug)
-		//fmt.Println("+****************************+")
-		//fmt.Println(r1.IndexDebug)
-		//fmt.Println("+****************************+")
+			r1 := search.NewSearcher()
+			r1.Search(tIndex, q)
+			fmt.Println("+****************************+")
+			fmt.Println("res: ", len(r1.Docs), r1.Time)
+			//fmt.Println("+****************************+")
+			//fmt.Println(r1.QueryDebug)
+			//fmt.Println("+****************************+")
+			//fmt.Println(r1.IndexDebug)
+			//fmt.Println("+****************************+")
 
-		tIndex.UnsetDebug()
+			tIndex.UnsetDebug()
 
-		a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
-		sq := query.NewSqlQuery(a, nil)
+			a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
+			sq := query.NewSqlQuery(a, nil)
 
-		m := sq.LRD(tIndex)
-		r2 := search.NewSearcher()
-		r2.Search(tIndex, m)
-		//fmt.Println(r2.QueryDebug)
-		//fmt.Println(r2.IndexDebug)
-		fmt.Println("+****************************+")
-		fmt.Println("res: ", len(r2.Docs), r2.Time)
-
-	}
+			m := sq.LRD(tIndex)
+			r2 := search.NewSearcher()
+			r2.Search(tIndex, m)
+			//fmt.Println(r2.QueryDebug)
+			//fmt.Println(r2.IndexDebug)
+			fmt.Println("+****************************+")
+			fmt.Println("res: ", len(r2.Docs), r2.Time)
+		}
+	})
 	b.StopTimer()
 }

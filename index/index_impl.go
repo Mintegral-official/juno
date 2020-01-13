@@ -30,8 +30,8 @@ func NewIndex(name string, isDebug ...int) *Indexer {
 	i := &Indexer{
 		invertedIndex:   NewInvertedIndexer(),
 		storageIndex:    NewStorageIndexer(),
-		campaignMapping: concurrent_map.CreateConcurrentMap(64),
-		kvType:          concurrent_map.CreateConcurrentMap(64),
+		campaignMapping: concurrent_map.CreateConcurrentMap(128),
+		kvType:          concurrent_map.CreateConcurrentMap(128),
 		bitmap:          datastruct.NewBitMap(),
 		count:           1,
 		name:            name,
@@ -215,7 +215,7 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 		}
 	} else if v, ok := field.Value.([]int64); ok {
 		for _, s := range v {
-			i.invertedIndex.Del(field.Name+"_"+fmt.Sprint(s), id)
+			i.invertedIndex.Del(field.Name+"_"+strconv.FormatInt(s, 10), id)
 			if v, ok := i.GetCampaignMap().Get(DocId(id)); ok {
 				i.bitmap.Del(v.(document.DocId))
 			}
@@ -226,7 +226,7 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 			i.bitmap.Del(v.(document.DocId))
 		}
 	} else if v, ok := field.Value.(int64); ok {
-		i.invertedIndex.Del(field.Name+"_"+fmt.Sprint(v), id)
+		i.invertedIndex.Del(field.Name+"_"+strconv.FormatInt(v, 10), id)
 		if v, ok := i.GetCampaignMap().Get(DocId(id)); ok {
 			i.bitmap.Del(v.(document.DocId))
 		}
