@@ -30,8 +30,8 @@ func NewIndex(name string, isDebug ...int) *Indexer {
 	i := &Indexer{
 		invertedIndex:   NewInvertedIndexer(),
 		storageIndex:    NewStorageIndexer(),
-		campaignMapping: concurrent_map.CreateConcurrentMap(199),
-		kvType:          concurrent_map.CreateConcurrentMap(199),
+		campaignMapping: concurrent_map.CreateConcurrentMap(64),
+		kvType:          concurrent_map.CreateConcurrentMap(64),
 		bitmap:          datastruct.NewBitMap(),
 		count:           1,
 		name:            name,
@@ -69,49 +69,47 @@ func (i *Indexer) UnsetDebug() {
 
 func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 	if doc == nil {
-		return helpers.DocumentError
+		err = helpers.DocumentError
+		return
 	}
 	for _, field := range doc.Fields {
 		switch field.IndexType {
 		case document.InvertedIndexType:
-			err = i.invertAdd(doc.Id, field)
-			if err != nil {
+			if err = i.invertAdd(doc.Id, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
 				}
-				return err
+				return
 			}
 		case document.StorageIndexType:
-			err = i.storageAdd(doc.Id, field)
-			if err != nil {
+			if err = i.storageAdd(doc.Id, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "storage", doc.Id, field.Name, field.Value, err.Error()))
 				}
-				return err
+				return
 			}
 			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
 		case document.BothIndexType:
-			err = i.invertAdd(doc.Id, field)
-			if err != nil {
+			if err = i.invertAdd(doc.Id, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
 				}
-				return err
+				return
 			}
-			err = i.storageAdd(doc.Id, field)
-			if err != nil {
+			if err = i.storageAdd(doc.Id, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "storage", doc.Id, field.Name, field.Value, err.Error()))
 				}
-				return err
+				return
 			}
 			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
 		default:
 			i.WarnStatus(field.Name, field.Value, "type is wrong")
-			return errors.New("the add doc type is wrong or nil ")
+			err = errors.New("the add doc type is wrong or nil ")
+			return
 		}
 	}
-	return nil
+	return err
 }
 
 func (i *Indexer) Del(doc *document.DocInfo) {

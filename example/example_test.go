@@ -76,7 +76,6 @@ func BenchmarkSliceEqual(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-
 		q := query.NewOrQuery([]query.Query{
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
@@ -126,8 +125,6 @@ func BenchmarkSliceEqual(b *testing.B) {
 		//fmt.Println(r2.IndexDebug)
 		fmt.Println("+****************************+")
 		fmt.Println("res: ", len(r2.Docs), r2.Time)
-
-		fmt.Println(SliceEqual(r1.Docs, r2.Docs))
 
 	}
 	b.StopTimer()

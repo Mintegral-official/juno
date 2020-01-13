@@ -23,20 +23,14 @@ func newNode(key document.DocId, value interface{}, level int) *Element {
 }
 
 func (e *Element) setNext(n int, x *Element) {
-	if e == nil {
-		return
-	}
-	if n < 0 || n > len(e.next) {
+	if e == nil || n < 0 || n > len(e.next) {
 		return
 	}
 	e.next[n] = unsafe.Pointer(x)
 }
 
 func (e *Element) Next(n int) *Element {
-	if e == nil {
-		return nil
-	}
-	if n < 0 || n > len(e.next) {
+	if e == nil || n < 0 || n > len(e.next) {
 		return nil
 	}
 	return (*Element)(e.next[n])
@@ -56,15 +50,14 @@ func (e *Element) Value() interface{} {
 	return e.value
 }
 
-func ElementCopy(element *Element) *Element {
+func ElementCopy(element *Element) (e *Element) {
 	if element == nil {
 		return nil
 	}
-	var e = newNode(0, nil, len(element.next))
-	e.key = element.key
-	e.value = element.value
+	e = newNode(0, nil, len(element.next))
+	e.key, e.value = element.key, element.value
 	for i, v := range element.next {
 		e.next[i] = v
 	}
-	return e
+	return
 }

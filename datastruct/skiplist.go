@@ -33,8 +33,7 @@ func NewSkipList(level int) *SkipList {
 }
 
 func (sl *SkipList) Add(key document.DocId, value interface{}) {
-	prev := sl.previousNodeCache
-	if m, ok := sl.findGE(key, true, prev); ok && m.key == key {
+	if m, ok := sl.findGE(key, true, sl.previousNodeCache); ok && m.key == key {
 		h := len(m.next)
 		x := newNode(key, value, h)
 		for i, n := range sl.previousNodeCache[:h] {
@@ -54,27 +53,23 @@ func (sl *SkipList) Add(key document.DocId, value interface{}) {
 }
 
 func (sl *SkipList) Del(key document.DocId) {
-	prev := sl.previousNodeCache
-	if x, ok := sl.findGE(key, true, prev); ok {
-		h := len(x.next)
-		for i, n := range sl.previousNodeCache[:h] {
+	if x, ok := sl.findGE(key, true, sl.previousNodeCache); ok {
+		for i, n := range sl.previousNodeCache[:len(x.next)] {
 			if n.Next(i) != nil {
 				n.setNext(i, n.Next(i).Next(i))
 			}
 		}
+		sl.length--
 	}
-	sl.length--
 }
 
 func (sl *SkipList) Contains(key document.DocId) bool {
-	prev := sl.previousNodeCache
-	_, ok := sl.findGE(key, true, prev)
+	_, ok := sl.findGE(key, true, sl.previousNodeCache)
 	return ok
 }
 
 func (sl *SkipList) Get(key document.DocId) (*Element, error) {
-	prev := sl.previousNodeCache
-	if x, ok := sl.findGE(key, true, prev); ok {
+	if x, ok := sl.findGE(key, true, sl.previousNodeCache); ok {
 		return x, nil
 	}
 	return nil, helpers.ElementNotfound
@@ -85,8 +80,7 @@ func (sl *SkipList) Len() int {
 }
 
 func (sl *SkipList) findGE(key document.DocId, flag bool, element [DefaultMaxLevel]*Element) (*Element, bool) {
-	x, h := sl.header, sl.level-1
-	for h >= 0 {
+	for x, h := sl.header, sl.level-1; h >= 0; {
 		if x == nil {
 			return nil, false
 		}
@@ -113,8 +107,7 @@ func (sl *SkipList) findGE(key document.DocId, flag bool, element [DefaultMaxLev
 }
 
 func (sl *SkipList) findLT(key document.DocId) (*Element, bool) {
-	x, h := sl.header, sl.level-1
-	for h >= 0 {
+	for x, h := sl.header, sl.level-1; h >= 0; {
 		next := x.Next(h)
 		if next == nil || next.key >= key {
 			if h == 0 {
@@ -143,6 +136,5 @@ func (sl *SkipList) randLevel() int {
 }
 
 func (sl *SkipList) Iterator() *SkipListIterator {
-	x := ElementCopy(sl.header)
-	return NewSkipListIterator(x)
+	return NewSkipListIterator(ElementCopy(sl.header))
 }
