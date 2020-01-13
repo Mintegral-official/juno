@@ -6,30 +6,31 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
-	"unsafe"
 )
 
 func TestAndQuery(t *testing.T) {
 	a := NewAndQuery(nil, nil)
-	fmt.Println(a)
+	Convey("and query", t, func() {
+		So(a, ShouldNotBeNil)
+	})
 }
 
-func TestAndQuery_Next(t *testing.T) {
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+func TestAndQuery_GetGE(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), [1]byte{})
 	sl.Add(document.DocId(3), [1]byte{})
 	sl.Add(document.DocId(6), [1]byte{})
 	sl.Add(document.DocId(10), [1]byte{})
 
-	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl1.Add(document.DocId(1), [1]byte{})
 	sl1.Add(document.DocId(4), [1]byte{})
 	sl1.Add(document.DocId(6), [1]byte{})
 	sl1.Add(document.DocId(9), [1]byte{})
 
-	Convey("GetGE1", t, func() {
+	Convey("and query get1", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 
 		v, e := a.GetGE(document.DocId(1))
@@ -61,7 +62,7 @@ func TestAndQuery_Next(t *testing.T) {
 		So(e, ShouldBeNil)
 	})
 
-	Convey("GetGE", t, func() {
+	Convey("and query get2", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		v, e := a.GetGE(document.DocId(1))
 		So(v, ShouldEqual, 1)
@@ -99,59 +100,70 @@ func TestAndQuery_Next(t *testing.T) {
 		v, e = a.GetGE(document.DocId(10))
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
-		fmt.Println(a.String())
 	})
 
-	Convey("Next1", t, func() {
+}
+
+func TestAndQuery_Next(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(1), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	Convey("and query next1", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 		v, e := a.Current()
-		//fmt.Println(v, e)
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
 		v, e = a.Next()
-		// fmt.Println(v, e)
 		So(v, ShouldEqual, 3)
 		So(e, ShouldBeNil)
 
 		v, e = a.Next()
-		// fmt.Println(v, e)
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
 
 		v, e = a.Next()
-		// fmt.Println(v, e)
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
 	})
 
-	Convey("Next2", t, func() {
+	Convey("and query next2", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		v, e := a.Current()
-		// fmt.Println(v, e)
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
 		v, e = a.Next()
-		// fmt.Println(v, e)
-		//	v, e = a.Current()
-		//	fmt.Println(v, e)
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
 
 	})
 }
 
-func f(a, b interface{}) bool {
-	aa, bb := unsafe.Pointer(&a), unsafe.Pointer(&b)
-	//fmt.Println(*(*float64)(aa))
-	//fmt.Println(*(*float64)(bb))
-	return *(*float64)(aa) == *(*float64)(bb)
-}
-
 func TestAndQuery_Current(t *testing.T) {
-    fmt.Println(f(1.1, 1.1))
-    fmt.Println(f(1.1, 1.2))
-    fmt.Println(f(1, 1))
-    fmt.Println(f(2, 1))
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	Convey("and query current", t, func() {
+		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
+		v, e := a.Current()
+		So(v, ShouldEqual, 1)
+		So(e, ShouldBeNil)
+
+	})
 }

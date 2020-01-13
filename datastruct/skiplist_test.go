@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	"unsafe"
 )
 
 var arr []int
@@ -18,7 +17,6 @@ func GenerateRandomNumber(start int, end int, count int) []int {
 	if end < start || (end-start) < count {
 		return []int{0}
 	}
-
 	//存放结果的slice
 	nums := []int{}
 	i := 0
@@ -49,24 +47,21 @@ func init() {
 	t := time.Now()
 	arr = GenerateRandomNumber(0, 1500000000, 200000)
 	fmt.Println(time.Since(t))
-
 	fmt.Println(len(arr))
-
-	var sl SkipList
-	var el Element
-	fmt.Printf("Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
+	//var sl SkipList
+	//var el Element
+	//fmt.Printf("Structure sizes: SkipList is %v, Element is %v bytes\n", unsafe.Sizeof(sl), unsafe.Sizeof(el))
 }
 
 func TestNewSkipList(t *testing.T) {
 	Convey("NewSKipList", t, func() {
-		s, err := NewSkipList(DefaultMaxLevel)
+		s := NewSkipList(DefaultMaxLevel)
 		So(s, ShouldNotBeNil)
-		So(err, ShouldBeNil)
 	})
 }
 
 func TestSkipList_Add_Del_Len(t *testing.T) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	var arr []int
 	arr = GenerateRandomNumber(0, 1500000000, 100)
 	for i := 0; i < 100; i++ {
@@ -83,18 +78,15 @@ func TestSkipList_Add_Del_Len(t *testing.T) {
 }
 
 func TestSkipList_Get(t *testing.T) {
-	//fmt.Println(s.findGE(-1, true, s.previousNodeCache))
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	var arr []int
 	arr = GenerateRandomNumber(0, 1500000000, 100)
 	for i := 0; i < 100; i++ {
 		s.Add(document.DocId(arr[i]), nil)
 	}
 	Convey("findGE & findLT", t, func() {
-		// 找到 ==  返回 true
 		_, ok := s.findGE(document.DocId(arr[99]), true, s.previousNodeCache)
 		So(ok, ShouldBeTrue)
-		// 找到 > 返回false
 		_, ok = s.findGE(0, true, s.previousNodeCache)
 		So(ok, ShouldBeFalse)
 		_, ok = s.findLT(document.DocId(arr[99]))
@@ -117,7 +109,7 @@ func get(s *SkipList, arr []int) {
 }
 
 func BenchmarkNewSkipList_Add(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		add(s, arr)
@@ -125,7 +117,7 @@ func BenchmarkNewSkipList_Add(b *testing.B) {
 }
 
 func BenchmarkSkipList_FindGE(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -137,7 +129,7 @@ func BenchmarkSkipList_FindGE(b *testing.B) {
 }
 
 func BenchmarkSkipList_FindGE_RunParallel(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -151,7 +143,7 @@ func BenchmarkSkipList_FindGE_RunParallel(b *testing.B) {
 }
 
 func BenchmarkNewSkipList_FindLT(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -163,7 +155,7 @@ func BenchmarkNewSkipList_FindLT(b *testing.B) {
 }
 
 func BenchmarkNewSkipList_FindLT_RunParallel(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -177,7 +169,7 @@ func BenchmarkNewSkipList_FindLT_RunParallel(b *testing.B) {
 }
 
 func BenchmarkSkipList_Get(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -187,7 +179,7 @@ func BenchmarkSkipList_Get(b *testing.B) {
 }
 
 func BenchmarkSkipList_GetRunParallel(b *testing.B) {
-	s, _ := NewSkipList(DefaultMaxLevel)
+	s := NewSkipList(DefaultMaxLevel)
 	add(s, arr)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -197,9 +189,3 @@ func BenchmarkSkipList_GetRunParallel(b *testing.B) {
 		}
 	})
 }
-
-//func TestNewBitMap2(t *testing.T) {
-//	var a = make(map[int]int)
-//	a[1] = 1
-//	fmt.Println(len(a))
-//}

@@ -20,7 +20,7 @@ type SkipList struct {
 	previousNodeCache [DefaultMaxLevel]*Element
 }
 
-func NewSkipList(level int) (*SkipList, error) {
+func NewSkipList(level int) *SkipList {
 	if level < 0 || level > DefaultMaxLevel {
 		level = DefaultMaxLevel
 	}
@@ -29,7 +29,7 @@ func NewSkipList(level int) (*SkipList, error) {
 		level:      level,
 		length:     0,
 		header:     newNode(0, nil, level),
-	}, nil
+	}
 }
 
 func (sl *SkipList) Add(key document.DocId, value interface{}) {

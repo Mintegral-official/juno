@@ -1,18 +1,18 @@
 package search
 
 import (
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
-	//	cmap "github.com/easierway/concurrent_map"
 	"time"
 )
 
 type Searcher struct {
 	Docs       []document.DocId
 	Time       time.Duration
-	IndexDebug string
-	QueryDebug string
+	IndexDebug *debug.Debug
+	QueryDebug *debug.Debug
 }
 
 func NewSearcher() *Searcher {
@@ -26,16 +26,21 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 		panic("the query should not be nil")
 		return
 	}
+	var (
+		v  interface{}
+		ok bool
+	)
 	now := time.Now()
 	id, err := query.Next()
 	for err == nil {
-		if v, ok := iIndexer.GetCampaignMap().Load(id); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
+		v, ok = iIndexer.GetCampaignMap().Get(index.DocId(id))
+		if ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
 			continue
 		}
 		s.Docs = append(s.Docs, id)
 		id, err = query.Next()
 	}
 	s.Time = time.Since(now)
-	s.IndexDebug = iIndexer.String()
-	s.QueryDebug = query.String()
+	s.IndexDebug = iIndexer.DebugInfo()
+	s.QueryDebug = query.DebugInfo()
 }

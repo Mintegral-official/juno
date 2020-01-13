@@ -2,9 +2,11 @@ package query
 
 import (
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
+	"strconv"
 	"strings"
 )
 
@@ -12,13 +14,15 @@ type SqlQuery struct {
 	Node       *datastruct.TreeNode
 	Stack      *datastruct.Stack
 	Expression *Expression
+	e          operation.Operation
 }
 
-func NewSqlQuery(str string) *SqlQuery {
+func NewSqlQuery(str string, e operation.Operation) *SqlQuery {
 	return &SqlQuery{
 		Node:       &datastruct.TreeNode{},
 		Stack:      datastruct.NewStack(),
 		Expression: NewExpression(str),
+		e:          e,
 	}
 }
 
@@ -45,36 +49,49 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 	return sq.Stack.Pop().(*datastruct.TreeNode)
 }
 
-func (sq *SqlQuery) LRD(impl *index.Indexer) Query {
-	node, tmp := sq.exp2Tree().To(), 0
+func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
+	node := sq.exp2Tree().To()
 	for !sq.Stack.Empty() || !node.Empty() {
 		if !node.Empty() {
 			if node.Peek() != "&" && node.Peek() != "|" {
 				if strings.Contains(node.Peek().(string), "@") {
-					sq.Stack.Push(parseIn(node.Pop().(string), impl))
-				} else if strings.Contains(node.Peek().(string), "#") {
-					sq.Stack.Push(parseNotIn(node.Pop().(string), impl))
-					tmp = 1
-				} else if strings.Contains(node.Peek().(string), "=") {
-					sq.Stack.Push(parseEq(node.Pop().(string), impl))
-				} else if strings.Contains(node.Peek().(string), "!=") {
-					sq.Stack.Push(parseNE(node.Pop().(string), impl))
-				} else if strings.Contains(node.Peek().(string), "<") {
-					sq.Stack.Push(parseLT(node.Pop().(string), impl))
-				} else if strings.Contains(node.Peek().(string), "<=") {
-					sq.Stack.Push(parseLE(node.Pop().(string), impl))
-				} else if strings.Contains(node.Peek().(string), ">") {
-					sq.Stack.Push(parseGT(node.Pop().(string), impl))
-				} else if strings.Contains(node.Peek().(string), ">=") {
-					sq.Stack.Push(parseGE(node.Pop().(string), impl))
+					sq.Stack.Push(sq.parseIn(node.Pop().(string), idx))
+				}
+				if strings.Contains(node.Peek().(string), "#") {
+					sq.Stack.Push(sq.parseNotIn(node.Pop().(string), idx))
+					//tmp = 1
+				}
+				if strings.Contains(node.Peek().(string), "=") &&
+					!strings.Contains(node.Peek().(string), ">") &&
+					!strings.Contains(node.Peek().(string), "<") &&
+					!strings.Contains(node.Peek().(string), "!") {
+					sq.Stack.Push(sq.parseEQ(node.Pop().(string), idx))
+				}
+				if strings.Contains(node.Peek().(string), "!=") {
+					sq.Stack.Push(sq.parseNE(node.Pop().(string), idx))
+					//	tmp=1
+				}
+				if strings.Contains(node.Peek().(string), "<") &&
+					!strings.Contains(node.Peek().(string), "=") {
+					sq.Stack.Push(sq.parseLT(node.Pop().(string), idx))
+				}
+				if strings.Contains(node.Peek().(string), "<=") {
+					sq.Stack.Push(sq.parseLE(node.Pop().(string), idx))
+				}
+				if strings.Contains(node.Peek().(string), ">") &&
+					!strings.Contains(node.Peek().(string), "=") {
+					sq.Stack.Push(sq.parseGT(node.Pop().(string), idx))
+				}
+				if strings.Contains(node.Peek().(string), ">=") {
+					sq.Stack.Push(sq.parseGE(node.Pop().(string), idx))
 				}
 			} else if node.Peek() == "&" {
-				if tmp == 1 {
-					sq.Stack.Push(NewNotAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
-					tmp = 0
-				} else {
-					sq.Stack.Push(NewAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
-				}
+				//	if tmp == 1 {
+				//		sq.Stack.Push(NewNotAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
+				//		tmp = 0
+				//	} else {
+				sq.Stack.Push(NewAndQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
+				//	}
 				node.Pop()
 			} else if node.Peek() == "|" {
 				sq.Stack.Push(NewOrQuery([]Query{sq.Stack.Pop().(Query), sq.Stack.Pop().(Query)}, nil))
@@ -87,72 +104,126 @@ func (sq *SqlQuery) LRD(impl *index.Indexer) Query {
 	return sq.Stack.Pop().(Query)
 }
 
-func parseIn(str string, impl *index.Indexer) Query {
-	strSlice, invert := strings.Split(str, "@"), impl.GetInvertedIndex()
-	values := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
-	var querys []Query
-	for _, v := range values {
-		querys = append(querys, NewTermQuery(invert.Iterator(strSlice[0], v)))
-	}
-	return NewOrQuery(querys, nil)
+func (sq *SqlQuery) parseIn(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "@"), idx.GetStorageIndex()
+	s := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
+	var (
+		value = changeType(idx, strSlice[0], s...)
+		c     = make([]check.Checker, 1)
+	)
+	c = append(c, check.NewInChecker(storageIdx.Iterator(strSlice[0]), value, sq.e))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseNotIn(str string, impl *index.Indexer) Query {
-	strSlice, invert := strings.Split(str, "#"), impl.GetInvertedIndex()
-	values := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
-	var querys []Query
-	for _, v := range values {
-		querys = append(querys, NewTermQuery(invert.Iterator(strSlice[0], v)))
-	}
-	return NewOrQuery(querys, nil)
+func (sq *SqlQuery) parseNotIn(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "#"), idx.GetStorageIndex()
+	s := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
+	var (
+		value = changeType(idx, strSlice[0], s...)
+		c     = make([]check.Checker, 1)
+	)
+	c = append(c, check.NewNotChecker(storageIdx.Iterator(strSlice[0]), value, sq.e))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+
 }
 
-func parseEq(str string, impl *index.Indexer) Query {
-	strSlice, invert := strings.Split(str, "="), impl.GetInvertedIndex()
+func (sq *SqlQuery) parseEQ(str string, idx *index.Indexer) Query {
+	strSlice, invert := strings.Split(str, "="), idx.GetInvertedIndex()
 	return NewTermQuery(invert.Iterator(strSlice[0], strSlice[1]))
 }
 
-func parseNE(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, "!="), impl.GetStorageIndex()
-	return NewAndQuery([]Query{
-		NewTermQuery(storageIdx.Iterator(strSlice[0])),
-	}, []check.Checker{
-		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.NE),
-	}, )
+func (sq *SqlQuery) parseNE(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "!="), idx.GetStorageIndex()
+	var (
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
+	)
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.NE, sq.e))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseLT(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, "<"), impl.GetStorageIndex()
-	return NewAndQuery([]Query{
-		NewTermQuery(storageIdx.Iterator(strSlice[0])),
-	}, []check.Checker{
-		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.LT),
-	}, )
+func (sq *SqlQuery) parseLT(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "<"), idx.GetStorageIndex()
+	var (
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
+	)
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LT, sq.e))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseLE(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, "<="), impl.GetStorageIndex()
-	return NewAndQuery([]Query{
-		NewTermQuery(storageIdx.Iterator(strSlice[0])),
-	}, []check.Checker{
-		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.LE),
-	}, )
+func (sq *SqlQuery) parseLE(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, "<="), idx.GetStorageIndex()
+	var (
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
+	)
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LE, sq.e))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseGT(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, ">"), impl.GetStorageIndex()
-	return NewAndQuery([]Query{
-		NewTermQuery(storageIdx.Iterator(strSlice[0])),
-	}, []check.Checker{
-		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.GT),
-	}, )
+func (sq *SqlQuery) parseGT(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, ">"), idx.GetStorageIndex()
+	var (
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
+	)
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GT, sq.e))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
-func parseGE(str string, impl *index.Indexer) Query {
-	strSlice, storageIdx := strings.Split(str, ">="), impl.GetStorageIndex()
-	return NewAndQuery([]Query{
-		NewTermQuery(storageIdx.Iterator(strSlice[0])),
-	}, []check.Checker{
-		check.NewInChecker(storageIdx.Iterator(strSlice[0]), strSlice[1], operation.GE),
-	}, )
+func (sq *SqlQuery) parseGE(str string, idx *index.Indexer) Query {
+	strSlice, storageIdx := strings.Split(str, ">="), idx.GetStorageIndex()
+	var (
+		value = changeType(idx, strSlice[0], strSlice[1])
+		c     = make([]check.Checker, 1)
+	)
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GE, sq.e))
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+}
+
+func changeType(idx *index.Indexer, name string, value ...string) (res []interface{}) {
+	switch typ := idx.GetDataType(name); typ {
+	case document.BoolFieldType:
+		for _, v := range value {
+			if b, err := strconv.ParseBool(v); err == nil {
+				res = append(res, b)
+			} else {
+				panic("the value type is not bool.")
+			}
+		}
+		return res
+	case document.IntFieldType:
+		for _, v := range value {
+			if b, err := strconv.ParseInt(v, 10, 64); err == nil {
+				res = append(res, b)
+			} else {
+				panic("the value type is not int.")
+			}
+		}
+		return res
+	case document.FloatFieldType:
+		for _, v := range value {
+			if b, err := strconv.ParseFloat(v, 64); err == nil {
+				res = append(res, b)
+			} else {
+				panic("the value type is not float.")
+			}
+		}
+		return res
+	case document.StringFieldType:
+		for _, v := range value {
+			res = append(res, v)
+		}
+		return res
+	case document.SliceFieldType:
+		fallthrough
+	case document.SelfDefinedFieldType:
+		fallthrough
+	default:
+		for _, v := range value {
+			res = append(res, v)
+		}
+		return res
+	}
 }

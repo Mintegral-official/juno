@@ -9,12 +9,14 @@ import (
 type InChecker struct {
 	si    datastruct.Iterator
 	value []interface{}
+	e     operation.Operation
 }
 
-func NewInChecker(si datastruct.Iterator, value ...interface{}) *InChecker {
+func NewInChecker(si datastruct.Iterator, value []interface{}, e operation.Operation) *InChecker {
 	return &InChecker{
 		si:    si,
 		value: value,
+		e:     e,
 	}
 }
 
@@ -22,7 +24,7 @@ func (i *InChecker) Check(id document.DocId) bool {
 	if i == nil {
 		return true
 	}
-	iter := i.si
+	var iter = i.si
 	v := iter.Current().(*datastruct.Element).Value()
 	if v == nil {
 		return false
@@ -40,6 +42,10 @@ func (i *InChecker) Check(id document.DocId) bool {
 	if v == nil {
 		return false
 	}
-	o := operation.Operations{FieldValue: v}
-	return o.In(i.value)
+	if i.e == nil {
+		o := operation.Operations{FieldValue: v}
+		return o.In(i.value)
+	}
+	i.e.SetValue(v)
+	return i.e.In(i.value)
 }

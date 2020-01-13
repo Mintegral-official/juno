@@ -1,24 +1,25 @@
 package query
 
 import (
-	"encoding/json"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"strconv"
 )
 
 type TermQuery struct {
 	iterator datastruct.Iterator
-	aDebug   *debug.Debug
+	debugs   *debug.Debugs
 }
 
-func NewTermQuery(iter datastruct.Iterator) *TermQuery {
-	tq := &TermQuery{
-		aDebug: debug.NewDebug("TermQuery"),
+func NewTermQuery(iter datastruct.Iterator, isDebug ...int) *TermQuery {
+	tq := &TermQuery{}
+	if len(isDebug) == 1 && isDebug[0] == 1 {
+		tq.debugs = debug.NewDebugs(debug.NewDebug("TermQuery"))
 	}
 	if iter == nil {
-		tq.aDebug.AddDebug("the iterator is nil")
+		tq.debugs.DebugInfo.AddDebugMsg("the iterator is nil")
 		return tq
 	}
 	tq.iterator = iter
@@ -26,8 +27,10 @@ func NewTermQuery(iter datastruct.Iterator) *TermQuery {
 }
 
 func (tq *TermQuery) Next() (document.DocId, error) {
-
-	if tq.iterator == nil {
+	if tq.debugs != nil {
+		tq.debugs.NextNum++
+	}
+	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
 
@@ -43,14 +46,16 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 }
 
 func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
-
-	if tq.iterator == nil {
+	if tq.debugs != nil {
+		tq.debugs.GetNum++
+	}
+	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
 
-	if v := tq.iterator.GetGE(id); v != nil {
-		v, ok := v.(*datastruct.Element)
-		if !ok || v == nil || v.Key() == 0 {
+	if element := tq.iterator.GetGE(id); element != nil {
+		v, ok := element.(*datastruct.Element)
+		if !ok || v.Key() == 0 {
 			return 0, helpers.ElementNotfound
 		}
 		return v.Key(), nil
@@ -59,12 +64,15 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (tq *TermQuery) Current() (document.DocId, error) {
-	if tq.iterator == nil {
+	if tq.debugs != nil {
+		tq.debugs.CurNum++
+	}
+	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
-	if v := tq.iterator.Current(); v != nil {
-		v, ok := v.(*datastruct.Element)
-		if !ok || v == nil || v.Key() == 0 {
+	if element := tq.iterator.Current(); element != nil {
+		v, ok := element.(*datastruct.Element)
+		if !ok || v.Key() == 0 {
 			return 0, helpers.ElementNotfound
 		}
 		return v.Key(), nil
@@ -72,10 +80,12 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 	return 0, helpers.ElementNotfound
 }
 
-func (tq *TermQuery) String() string {
-	if res, err := json.Marshal(tq.aDebug); err == nil {
-		return string(res)
-	} else {
-		return err.Error()
+func (tq *TermQuery) DebugInfo() *debug.Debug {
+	if tq.debugs != nil {
+		tq.debugs.DebugInfo.AddDebugMsg("next has been called: " + strconv.Itoa(tq.debugs.NextNum))
+		tq.debugs.DebugInfo.AddDebugMsg("get has been called: " + strconv.Itoa(tq.debugs.GetNum))
+		tq.debugs.DebugInfo.AddDebugMsg("current has been called: " + strconv.Itoa(tq.debugs.CurNum))
+		return tq.debugs.DebugInfo
 	}
+	return nil
 }

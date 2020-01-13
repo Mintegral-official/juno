@@ -73,7 +73,6 @@ func (mib *MongoIndexBuilder) GetIndex() *index.Indexer {
 }
 
 func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
-	// TODO  修改 case -> select
 	mib.start = time.Now().UnixNano()
 	err := mib.base(name)
 	mib.end = time.Now().UnixNano()
@@ -105,27 +104,14 @@ func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
 					mib.InfoStatus("base load success", mib.end-mib.start)
 				}
 			case <-inc:
-				select {
-				case <-base:
-					mib.start = time.Now().UnixNano()
-					err := mib.base(name)
-					mib.end = time.Now().UnixNano()
-					base = time.After(time.Duration(mib.ops.BaseInterval) * time.Second)
-					if err != nil {
-						mib.WarnStatus("base load failed: "+err.Error(), mib.end-mib.start)
-					} else {
-						mib.InfoStatus("base load success", mib.end-mib.start)
-					}
-				default:
-					mib.start = time.Now().UnixNano()
-					err := mib.inc(ctx)
-					mib.end = time.Now().UnixNano()
-					inc = time.After(time.Duration(mib.ops.IncInterval) * time.Second)
-					if err != nil {
-						mib.WarnStatus("inc failed: "+err.Error(), mib.end-mib.start)
-					} else {
-						mib.InfoStatus("inc success", mib.end-mib.start)
-					}
+				mib.start = time.Now().UnixNano()
+				err := mib.inc(ctx)
+				mib.end = time.Now().UnixNano()
+				inc = time.After(time.Duration(mib.ops.IncInterval)*time.Second + time.Nanosecond)
+				if err != nil {
+					mib.WarnStatus("inc failed: "+err.Error(), mib.end-mib.start)
+				} else {
+					mib.InfoStatus("inc success", mib.end-mib.start)
 				}
 			}
 		}
@@ -208,8 +194,9 @@ func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {
 
 func (mib *MongoIndexBuilder) InfoStatus(s string, t int64) {
 	if mib.ops.Logger != nil {
-		mib.ops.Logger.Infof("mongo_[%s]:[%s], totalNum:[%d], errorNum:[%d], load time:[%dms]",
-			mib.innerIndex.GetName(), s, mib.totalNum, mib.errorNum, t/1e6)
+		mib.ops.Logger.Infof("mongo_[%s]:[%s], totalNum:[%d], errorNum:[%d], "+
+			"invert index:[%d], storage index:[%d], load time:[%dms]", mib.innerIndex.GetName(), s, mib.totalNum,
+			mib.errorNum, mib.innerIndex.GetInvertedIndex().Count(), mib.innerIndex.GetStorageIndex().Count(), t/1e6)
 	}
 }
 

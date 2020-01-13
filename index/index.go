@@ -1,6 +1,7 @@
 package index
 
 import (
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 )
 
@@ -10,5 +11,5 @@ type Index interface {
 	GetDataType(fieldName string) document.FieldType
 	Dump(filename string) error
 	Load(filename string) error
-	String() string
+	DebugInfo() *debug.Debug
 }

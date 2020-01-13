@@ -27,6 +27,7 @@ type CampaignInfo struct {
 	OsVersionMaxV2 *int     `bson:"osVersionMaxV2,omitempty" json:"osVersionMaxV2,omitempty"`
 	StartTime      *int     `bson:"startTime,omitempty" json:"startTime,omitempty"`
 	EndTime        *int     `bson:"endTime,omitempty" json:"endTime,omitempty"`
+	DeviceTypeV2   []int64  `bson:"deviceTypeV2,omitempty" json:"deviceTypeV2,omitempty"`
 	Uptime         int64    `bson:"updated,omitempty"`
 }
 
@@ -49,36 +50,41 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "AdvertiserId",
 			IndexType: 2,
-			Value:     *info.AdvertiserId,
+			Value:     int64(*info.AdvertiserId),
+			ValueType: document.IntFieldType,
 		})
 	}
 	if info.Platform != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "Platform",
 			IndexType: 2,
-			Value:     *info.Platform,
+			Value:     int64(*info.Platform),
+			ValueType: document.IntFieldType,
 		})
 	}
 	if info.Price != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "Price",
-			IndexType: 2,
+			IndexType: 1,
 			Value:     *info.Price,
+			ValueType: document.FloatFieldType,
 		})
 	}
 	if info.StartTime != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "StartTime",
-			IndexType: 1,
-			Value:     *info.StartTime,
+			IndexType: 2,
+			Value:     int64(*info.StartTime),
+			ValueType: document.IntFieldType,
 		})
 	}
 
 	if info.EndTime != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "EndTime",
-			IndexType: 1,
-			Value:     *info.EndTime,
+			IndexType: 2,
+			Value:     int64(*info.EndTime),
+			ValueType: document.IntFieldType,
 		})
 	}
 
@@ -86,25 +92,42 @@ func MakeInfo(info *CampaignInfo) *document.DocInfo {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "CampaignType",
 			IndexType: 1,
-			Value:     *info.CampaignType,
+			Value:     int64(*info.CampaignType),
+			ValueType: document.IntFieldType,
 		})
 	}
 
 	if info.OsVersionMaxV2 != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "OsVersionMaxV2",
-			IndexType: 1,
-			Value:     *info.OsVersionMaxV2,
+			IndexType: 2,
+			Value:     int64(*info.OsVersionMaxV2),
+			ValueType: document.IntFieldType,
 		})
 	}
 
 	if info.OsVersionMinV2 != nil {
 		docInfo.Fields = append(docInfo.Fields, &document.Field{
 			Name:      "OsVersionMinV2",
-			IndexType: 1,
-			Value:     *info.OsVersionMinV2,
+			IndexType: 2,
+			Value:     int64(*info.OsVersionMinV2),
+			ValueType: document.IntFieldType,
 		})
 	}
+
+	docInfo.Fields = append(docInfo.Fields, &document.Field{
+		Name:      "PackageName",
+		IndexType: 1,
+		Value:     info.PackageName,
+		ValueType: document.StringFieldType,
+	})
+
+	docInfo.Fields = append(docInfo.Fields, &document.Field{
+		Name:      "DeviceTypeV2",
+		IndexType: 2,
+		Value:     info.DeviceTypeV2,
+		ValueType: document.SliceFieldType,
+	})
 
 	return docInfo
 }
@@ -177,45 +200,117 @@ func main() {
 	// storage
 	storageIdx := tIndex.GetStorageIndex()
 
-	q := query.NewOrQuery(
-		[]query.Query{
-			query.NewTermQuery(invertIdx.Iterator("AdvertiserId", int32(457))),
-			query.NewTermQuery(invertIdx.Iterator("Platform", int32(1))),
-			query.NewAndQuery(
-				[]query.Query{
-					query.NewTermQuery(storageIdx.Iterator("Price")),
-					query.NewTermQuery(storageIdx.Iterator("Price")),
-				},
-				[]check.Checker{
-					check.NewInChecker(storageIdx.Iterator("Price"), []float64{20.0, 1.4, 3.6, 5.7, 2.5}),
-					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), []int32{647, 658, 670}),
-				},
-			),
-		}, nil,
-	)
+	var p = []float64{2.3, 1.4, 3.65, 2.46, 2.5}
+	var pi = make([]interface{}, len(p))
+	for _, v := range p {
+		pi = append(pi, v)
+	}
+	var a0 = []int64{647, 658, 670}
+	var ai = make([]interface{}, len(a0))
+	for _, v := range a0 {
+		ai = append(ai, v)
+	}
 
-	r := search.NewSearcher()
-	r.Search(tIndex, q)
-	fmt.Println("+****************************+")
-	fmt.Println("res: ", len(r.Docs), r.Time)
-	//fmt.Println("+****************************+")
-	//fmt.Println(r.QueryDebug)
-	//fmt.Println("+****************************+")
-	//fmt.Println(r.IndexDebug)
-	//fmt.Println("+****************************+")
+	var dev = []int64{4, 5}
+	var devi = make([]interface{}, len(dev))
+	devi = append(devi, dev)
+	for i := 0; i < 10; i++ {
+		q := query.NewOrQuery([]query.Query{
+			query.NewOrQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
+			}, nil),
+			query.NewOrQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
+			}, nil),
+			/* special example */
+			query.NewOrQuery([]query.Query{
+				query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
+			}, []check.Checker{
+				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, &operation{}),
+			}),
+			query.NewAndQuery([]query.Query{
+				query.NewAndQuery([]query.Query{
+					query.NewTermQuery(storageIdx.Iterator("Price")),
+				}, []check.Checker{
+					check.NewInChecker(storageIdx.Iterator("Price"), pi, nil),
+				}),
+				query.NewAndQuery([]query.Query{
+					query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+				}, []check.Checker{
+					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), ai, nil),
+				})}, nil)},
+			nil,
+		)
 
-	a := "AdvertiserId=457 | Platform=1 | (Price @ [20.0, 1.4, 3.6, 5.7, 2.5] & Price >= 1.4)"
-	sq := query.NewSqlQuery(a)
-	m := sq.LRD(tIndex)
-	r = search.NewSearcher()
-	r.Search(tIndex, m)
-	fmt.Println(r.QueryDebug)
-	fmt.Println(r.IndexDebug)
-	fmt.Println("+****************************+")
-	fmt.Println("res: ", len(r.Docs), r.Time)
+		r1 := search.NewSearcher()
+		r1.Search(tIndex, q)
+		fmt.Println("+****************************+")
+		fmt.Println("res: ", len(r1.Docs), r1.Time)
+		//fmt.Println("+****************************+")
+		//fmt.Println(r1.QueryDebug)
+		//fmt.Println("+****************************+")
+		//fmt.Println(r1.IndexDebug)
+		//fmt.Println("+****************************+")
+
+		tIndex.UnsetDebug()
+
+		a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
+		sq := query.NewSqlQuery(a, nil)
+
+		m := sq.LRD(tIndex)
+		r2 := search.NewSearcher()
+		r2.Search(tIndex, m)
+		//fmt.Println(r2.QueryDebug)
+		//fmt.Println(r2.IndexDebug)
+		fmt.Println("+****************************+")
+		fmt.Println("res: ", len(r2.Docs), r2.Time)
+
+		fmt.Println(SliceEqual(r1.Docs, r2.Docs))
+	}
 
 	c := make(chan os.Signal)
 	signal.Notify(c)
 	s := <-c
 	fmt.Println("退出信号", s)
+}
+
+type operation struct {
+	value interface{}
+}
+
+func (o *operation) Equal(value interface{}) bool {
+	// your logic
+	return true
+}
+
+func (o *operation) Less(value interface{}) bool {
+	// your logic
+	return true
+}
+
+func (o *operation) In(value []interface{}) bool {
+	// your logic
+	return true
+}
+
+func (o *operation) SetValue(value interface{}) {
+	o.value = value
+}
+
+func SliceEqual(a, b []document.DocId) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	if (a == nil) != (b == nil) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
 }

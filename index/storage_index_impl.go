@@ -1,7 +1,6 @@
 package index
 
 import (
-	"encoding/json"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -15,11 +14,14 @@ type StorageIndexer struct {
 	aDebug *debug.Debug
 }
 
-func NewStorageIndexer() *StorageIndexer {
-	return &StorageIndexer{
-		data:   sync.Map{},
-		aDebug: debug.NewDebug("storage index"),
+func NewStorageIndexer(isDebug ...int) *StorageIndexer {
+	s := &StorageIndexer{
+		data: sync.Map{},
 	}
+	if len(isDebug) != 0 && isDebug[0] == 1 {
+		s.aDebug = debug.NewDebug("storage index")
+	}
+	return s
 }
 
 func (s *StorageIndexer) Count() int {
@@ -53,10 +55,7 @@ func (s *StorageIndexer) Add(fieldName string, id document.DocId, value interfac
 			return helpers.ParseError
 		}
 	} else {
-		sl, err := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-		if err != nil {
-			return err
-		}
+		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		sl.Add(id, value)
 		s.data.Store(fieldName, sl)
 	}
@@ -77,19 +76,19 @@ func (s *StorageIndexer) Del(fieldName string, id document.DocId) bool {
 func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 	if v, ok := s.data.Load(fieldName); ok {
 		if sl, ok := v.(*datastruct.SkipList); ok {
-			s.aDebug.AddDebug("index: " + fieldName + " len: " + strconv.Itoa(sl.Len()))
+			if s.aDebug != nil {
+				s.aDebug.AddDebugMsg("index: " + fieldName + " len: " + strconv.Itoa(sl.Len()))
+			}
 			return sl.Iterator()
 		}
 	}
-	s.aDebug.AddDebug("index: " + fieldName + " is nil")
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+	if s.aDebug != nil {
+		s.aDebug.AddDebugMsg("index: " + fieldName + " is nil")
+	}
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	return sl.Iterator()
 }
 
-func (s *StorageIndexer) String() string {
-	if res, err := json.Marshal(s.aDebug); err == nil {
-		return string(res)
-	} else {
-		return err.Error()
-	}
+func (s *StorageIndexer) DebugInfo() *debug.Debug {
+	return s.aDebug
 }

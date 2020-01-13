@@ -7,7 +7,7 @@ import (
 
 func TestNewOperations(t *testing.T) {
 	i := make([]interface{}, 0)
-	Convey("Equal", t, func() {
+	Convey("operation interface test", t, func() {
 		impl := NewOperations(10)
 		So(impl.Equal(10), ShouldBeTrue)
 		So(impl.Equal(11), ShouldBeFalse)
