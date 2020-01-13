@@ -100,7 +100,7 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			}
 			cur, err := naq.queries[i].GetGE(target)
 			if (target != cur || err != nil) && i == len(naq.queries)-1 {
-				if naq.check(target) {
+				if target != 0 && naq.check(target) {
 					return target, nil
 				}
 				if naq.debugs != nil {

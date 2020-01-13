@@ -41,7 +41,7 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 	}
 	for target, err := oq.Current(); err == nil; {
 		oq.next()
-		if oq.check(target) {
+		if target != 0 && oq.check(target) {
 			for cur, err := oq.Current(); err == nil; {
 				if cur != target {
 					break
@@ -49,9 +49,7 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 				oq.next()
 				cur, err = oq.Current()
 			}
-			if target != 0 {
-				return target, nil
-			}
+			return target, nil
 		}
 		if oq.debugs != nil {
 			oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
@@ -88,7 +86,7 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 		oq.getGE(id)
 		target, err = oq.Current()
 	}
-	for err == nil && !oq.check(target) {
+	for err == nil && (target == 0 || !oq.check(target)) {
 		if oq.debugs != nil {
 			oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
 		}

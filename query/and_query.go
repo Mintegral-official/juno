@@ -88,7 +88,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			res = cur
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
-			if aq.check(res) {
+			if res != 0 && aq.check(res) {
 				return res, nil
 			}
 			if aq.debugs != nil {
