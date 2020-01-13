@@ -169,7 +169,7 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 		}
 	} else if v, ok := field.Value.([]int64); ok {
 		for _, s := range v {
-			if err = i.invertedIndex.Add(field.Name+"_"+fmt.Sprint(s), id); err != nil {
+			if err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(s, 10), id); err != nil {
 				i.WarnStatus(field.Name, s, err.Error())
 				return err
 			}
@@ -186,7 +186,7 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 		i.bitmap.Set(i.count)
 		i.count++
 	} else if v, ok := field.Value.(int64); ok {
-		if err = i.invertedIndex.Add(field.Name+"_"+fmt.Sprint(v), id); err != nil {
+		if err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(v, 10), id); err != nil {
 			i.WarnStatus(field.Name, v, err.Error())
 			return err
 		}
