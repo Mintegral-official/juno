@@ -34,48 +34,56 @@ func (s *StorageIndexer) Count() int {
 }
 
 func (s *StorageIndexer) Get(fieldName string, id document.DocId) interface{} {
-	if v, ok := s.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			if res, err := sl.Get(id); err == nil {
-				return res
-			}
-			return helpers.DocumentError
-		} else {
-			return helpers.ParseError
-		}
+	v, ok := s.data.Load(fieldName)
+	if !ok {
+		return nil
 	}
-	return nil
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		return helpers.ParseError
+	}
+	res, err := sl.Get(id)
+	if err == nil {
+		return res
+	}
+	return helpers.DocumentError
 }
 
 func (s *StorageIndexer) Add(fieldName string, id document.DocId, value interface{}) error {
-	if v, ok := s.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Add(id, value)
-		} else {
-			return helpers.ParseError
-		}
-	} else {
+	v, ok := s.data.Load(fieldName)
+	if !ok {
 		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		sl.Add(id, value)
 		s.data.Store(fieldName, sl)
+		return nil
 	}
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		return helpers.ParseError
+	}
+	sl.Add(id, value)
 	return nil
 }
 
 func (s *StorageIndexer) Del(fieldName string, id document.DocId) bool {
-	if v, ok := s.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Del(id)
-			s.data.Store(fieldName, sl)
-			return true
-		}
+	v, ok := s.data.Load(fieldName)
+	if !ok {
+		return false
+	}
+	sl, ok := v.(*datastruct.SkipList)
+	if ok {
+		sl.Del(id)
+		s.data.Store(fieldName, sl)
+		return true
 	}
 	return false
 }
 
 func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
-	if v, ok := s.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
+	v, ok := s.data.Load(fieldName)
+	if ok {
+		sl, ok := v.(*datastruct.SkipList)
+		if ok {
 			if s.aDebug != nil {
 				s.aDebug.AddDebugMsg("index: " + fieldName + " len: " + strconv.Itoa(sl.Len()))
 			}

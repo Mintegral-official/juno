@@ -34,36 +34,41 @@ func (i *InvertedIndexer) Count() int {
 }
 
 func (i *InvertedIndexer) Add(fieldName string, id document.DocId) error {
-	if v, ok := i.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Add(id, nil)
-		} else {
-			return helpers.ParseError
-		}
-	} else {
+	v, ok := i.data.Load(fieldName)
+	if !ok {
 		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		sl.Add(id, nil)
 		i.data.Store(fieldName, sl)
+		return nil
 	}
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		return helpers.ParseError
+	}
+	sl.Add(id, nil)
 	return nil
 }
 
 func (i *InvertedIndexer) Del(fieldName string, id document.DocId) bool {
-
-	if v, ok := i.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Del(id)
-			i.data.Store(fieldName, sl)
-			return true
-		}
+	v, ok := i.data.Load(fieldName)
+	if !ok {
+		return false
+	}
+	sl, ok := v.(*datastruct.SkipList)
+	if ok {
+		sl.Del(id)
+		i.data.Store(fieldName, sl)
+		return true
 	}
 	return false
 }
 
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	var fieldName = name + "_" + value
-	if v, ok := i.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
+	v, ok := i.data.Load(fieldName)
+	if ok {
+		sl, ok := v.(*datastruct.SkipList)
+		if ok {
 			if i.aDebug != nil {
 				i.aDebug.AddDebugMsg("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
 			}

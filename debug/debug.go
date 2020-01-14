@@ -28,7 +28,8 @@ func (d *Debug) AddDebugMsg(msg ...string) {
 }
 
 func (d *Debug) String() string {
-	if res, err := json.Marshal(d); err == nil {
+	res, err := json.Marshal(d)
+	if err == nil {
 		return string(res)
 	} else {
 		return err.Error()

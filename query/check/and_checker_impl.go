@@ -22,6 +22,9 @@ func (a *AndChecker) Check(id document.DocId) bool {
 		return true
 	}
 	for _, cValue := range a.c {
+		if cValue == nil {
+			continue
+		}
 		if !cValue.Check(id) {
 			return false
 		}

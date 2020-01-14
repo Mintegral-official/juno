@@ -34,13 +34,17 @@ func (si *SkipListIterator) Next() {
 }
 
 func (si *SkipListIterator) GetLE(key document.DocId) interface{} {
+	if si.Element == nil {
+		return nil
+	}
 	for i := len(si.Element.next) - 1; i >= 0; {
 		next := si.Element.Next(i)
 		if next == nil {
 			i--
 			continue
 		}
-		if cmp := int(key - next.key); cmp == 0 {
+		cmp := int(key - next.key)
+		if cmp == 0 {
 			for ; i >= 0; i-- {
 				si.Element.next[i] = next.next[i]
 			}
@@ -56,8 +60,10 @@ func (si *SkipListIterator) GetLE(key document.DocId) interface{} {
 }
 
 func (si *SkipListIterator) GetGE(key document.DocId) interface{} {
-	if e := si.GetLE(key).(*Element); e != nil {
-		if c := int(key - e.key); c > 0 {
+	e := si.GetLE(key)
+	if e != nil {
+		element := e.(*Element)
+		if int(key-element.key) > 0 {
 			si.Next()
 		}
 		return si.Element

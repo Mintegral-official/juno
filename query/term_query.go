@@ -35,7 +35,8 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 	}
 
 	tq.iterator.Next()
-	if element := tq.iterator.Current(); element != nil {
+	element := tq.iterator.Current()
+	if element != nil {
 		v, ok := element.(*datastruct.Element)
 		if !ok || v == nil || v.Key() == 0 {
 			return 0, helpers.ElementNotfound
@@ -53,7 +54,8 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 		return 0, helpers.DocumentError
 	}
 
-	if element := tq.iterator.GetGE(id); element != nil {
+	element := tq.iterator.GetGE(id)
+	if element != nil {
 		v, ok := element.(*datastruct.Element)
 		if !ok || v.Key() == 0 {
 			return 0, helpers.ElementNotfound
@@ -70,7 +72,8 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
-	if element := tq.iterator.Current(); element != nil {
+	element := tq.iterator.Current()
+	if element != nil {
 		v, ok := element.(*datastruct.Element)
 		if !ok || v.Key() == 0 {
 			return 0, helpers.ElementNotfound

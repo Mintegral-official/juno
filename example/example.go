@@ -242,8 +242,10 @@ func main() {
 			nil,
 		)
 
+		tquery := time.Now()
 		r1 := search.NewSearcher()
 		r1.Search(tIndex, q)
+		fmt.Println("query: ", time.Since(tquery))
 		fmt.Println("+****************************+")
 		fmt.Println("res: ", len(r1.Docs), r1.Time)
 		//fmt.Println("+****************************+")
@@ -255,11 +257,15 @@ func main() {
 		tIndex.UnsetDebug()
 
 		a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
-		sq := query.NewSqlQuery(a, nil)
 
+		tsql := time.Now()
+		sq := query.NewSqlQuery(a, nil)
 		m := sq.LRD(tIndex)
+		fmt.Println("sql parse: ", time.Since(tsql))
 		r2 := search.NewSearcher()
 		r2.Search(tIndex, m)
+		fmt.Println("sql: ", time.Since(tsql))
+
 		//fmt.Println(r2.QueryDebug)
 		//fmt.Println(r2.IndexDebug)
 		fmt.Println("+****************************+")
