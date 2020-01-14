@@ -5,6 +5,6 @@ import "github.com/Mintegral-official/juno/document"
 type Iterator interface {
 	HasNext() bool
 	Next()
-	Current() interface{}
-	GetGE(id document.DocId) interface{}
+	Current() *Element
+	GetGE(id document.DocId) *Element
 }

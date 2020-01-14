@@ -24,22 +24,13 @@ func (nc *NotChecker) Check(id document.DocId) bool {
 	if nc == nil {
 		return true
 	}
-	iter := nc.si
-	v := iter.Current().(*datastruct.Element).Value()
-	if v == nil {
-		return false
-	}
 
-	element := iter.GetGE(id)
+	element := nc.si.GetGE(id)
 	if element == nil {
 		return false
 	}
-	key := element.(*datastruct.Element).Key()
-	if key != id {
-		return false
-	}
-	v = iter.Current().(*datastruct.Element).Value()
-	if v == nil {
+	key, v := element.Key(), element.Value()
+	if key != id || v == nil {
 		return false
 	}
 	if nc.e == nil {

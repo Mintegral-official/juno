@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var Char = []rune{
+var char = []rune{
 	'a', 'v', '=', 'X', 'c', 'R', 'B', '5', 'e', 'C', '[', 'h', '@', 'n', 'W', '<', '9', 'l',
 	'u', 'L', 'w', 'Q', 'b', 'y', '4', 'm', 'z', 'A', '6', '!', 's', 'r', '8', 'E', 'o', 'F',
 	'Y', 'P', 'd', 'H', 'S', 'f', 'T', 'U', 'q', 'G', '2', 'p', 'x', 'V', '0', 'k', 't', 'Z',
@@ -19,7 +19,7 @@ type Expression struct {
 }
 
 func NewExpression(str string) *Expression {
-	return &Expression{str: str}
+	return &Expression{str: str,}
 }
 
 func (e *Expression) GetStr() string {
@@ -89,7 +89,7 @@ func (e *Expression) ToPostfix(exp []string) []string {
 						result = e.appendStr(result, s.Pop().(string))
 					}
 				} else {
-					for s.Len() > 0 && s.Peek() != "(" && e.getSignstr(str)-e.getSignstr(s.Peek().(string)) <= 0 {
+					for s.Len() > 0 && s.Peek() != "(" && e.getSigns(str)-e.getSigns(s.Peek().(string)) <= 0 {
 						result = e.appendStr(result, s.Pop().(string))
 					}
 					s.Push(str)
@@ -112,7 +112,7 @@ func (e *Expression) appendStr(slice []string, str string) []string {
 	return append(slice, str)
 }
 
-func (e *Expression) getSignstr(str string) int {
+func (e *Expression) getSigns(str string) int {
 	if str == "(" || str == ")" {
 		return 2
 	} else if str == "&" || str == "|" {
@@ -122,7 +122,7 @@ func (e *Expression) getSignstr(str string) int {
 }
 
 func (e *Expression) isDigitOrChar(r rune) bool {
-	for _, v := range Char {
+	for _, v := range char {
 		if v == r {
 			return true
 		}

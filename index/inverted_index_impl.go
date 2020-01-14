@@ -14,8 +14,8 @@ type InvertedIndexer struct {
 	aDebug *debug.Debug
 }
 
-func NewInvertedIndexer(isDebug ...int) *InvertedIndexer {
-	i := &InvertedIndexer{
+func NewInvertedIndexer(isDebug ...int) (i *InvertedIndexer) {
+	i = &InvertedIndexer{
 		data: sync.Map{},
 	}
 	if len(isDebug) != 0 && isDebug[0] == 1 {
@@ -24,8 +24,8 @@ func NewInvertedIndexer(isDebug ...int) *InvertedIndexer {
 	return i
 }
 
-func (i *InvertedIndexer) Count() int {
-	var count = 0
+func (i *InvertedIndexer) Count() (count int) {
+	count = 0
 	i.data.Range(func(key, value interface{}) bool {
 		count++
 		return true
@@ -33,34 +33,35 @@ func (i *InvertedIndexer) Count() int {
 	return count
 }
 
-func (i *InvertedIndexer) Add(fieldName string, id document.DocId) error {
+func (i *InvertedIndexer) Add(fieldName string, id document.DocId) (err error) {
 	v, ok := i.data.Load(fieldName)
 	if !ok {
 		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		sl.Add(id, nil)
 		i.data.Store(fieldName, sl)
-		return nil
+		return err
 	}
 	sl, ok := v.(*datastruct.SkipList)
 	if !ok {
-		return helpers.ParseError
+		err = helpers.ParseError
+		return err
 	}
 	sl.Add(id, nil)
-	return nil
+	return err
 }
 
-func (i *InvertedIndexer) Del(fieldName string, id document.DocId) bool {
+func (i *InvertedIndexer) Del(fieldName string, id document.DocId) (ok bool) {
 	v, ok := i.data.Load(fieldName)
 	if !ok {
-		return false
+		return ok
 	}
 	sl, ok := v.(*datastruct.SkipList)
 	if ok {
 		sl.Del(id)
 		i.data.Store(fieldName, sl)
-		return true
+		return ok
 	}
-	return false
+	return ok
 }
 
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {

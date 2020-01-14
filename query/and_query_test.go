@@ -249,6 +249,10 @@ func BenchmarkAndQuery_Next(b *testing.B) {
 			},
 		),
 		NewTermQuery(a.Iterator()),
+		NewTermQuery(a.Iterator()),
+		NewTermQuery(a.Iterator()),
+		NewTermQuery(a.Iterator()),
+		NewTermQuery(a.Iterator()),
 		NewOrQuery([]Query{
 			NewTermQuery(a.Iterator()),
 		}, []check.Checker{

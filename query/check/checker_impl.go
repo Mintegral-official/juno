@@ -26,22 +26,12 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	if c == nil {
 		return true
 	}
-	iter := c.si
-	v := iter.Current().(*datastruct.Element).Value()
-	if v == nil {
-		return false
-	}
-
-	element := iter.GetGE(id)
+	element := c.si.GetGE(id)
 	if element == nil {
 		return false
 	}
-	key := element.(*datastruct.Element).Key()
-	if key != id {
-		return false
-	}
-	v = iter.Current().(*datastruct.Element).Value()
-	if v == nil {
+	key, v := element.Key(), element.Value()
+	if key != id || v == nil {
 		return false
 	}
 	return UtilCheck(v, c.op, c.value, c.e)

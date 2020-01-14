@@ -24,22 +24,12 @@ func (i *InChecker) Check(id document.DocId) bool {
 	if i == nil {
 		return true
 	}
-	var iter = i.si
-	v := iter.Current().(*datastruct.Element).Value()
-	if v == nil {
-		return false
-	}
-
-	element := iter.GetGE(id)
+	element := i.si.GetGE(id)
 	if element == nil {
 		return false
 	}
-	key := element.(*datastruct.Element).Key()
-	if key != id {
-		return false
-	}
-	v = iter.Current().(*datastruct.Element).Value()
-	if v == nil {
+	key, v := element.Key(), element.Value()
+	if key != id || v == nil {
 		return false
 	}
 	if i.e == nil {

@@ -33,7 +33,7 @@ func (si *SkipListIterator) Next() {
 	si.Element.key, si.Element.value = next.key, next.value
 }
 
-func (si *SkipListIterator) GetLE(key document.DocId) interface{} {
+func (si *SkipListIterator) GetLE(key document.DocId) *Element {
 	if si.Element == nil {
 		return nil
 	}
@@ -59,11 +59,10 @@ func (si *SkipListIterator) GetLE(key document.DocId) interface{} {
 	return si.Element
 }
 
-func (si *SkipListIterator) GetGE(key document.DocId) interface{} {
+func (si *SkipListIterator) GetGE(key document.DocId) *Element {
 	e := si.GetLE(key)
 	if e != nil {
-		element := e.(*Element)
-		if int(key-element.key) > 0 {
+		if int(key-e.key) > 0 {
 			si.Next()
 		}
 		return si.Element
@@ -71,6 +70,6 @@ func (si *SkipListIterator) GetGE(key document.DocId) interface{} {
 	return nil
 }
 
-func (si *SkipListIterator) Current() interface{} {
+func (si *SkipListIterator) Current() *Element {
 	return si.Element
 }

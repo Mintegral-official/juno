@@ -13,13 +13,13 @@ func TestNewSkipListIterator(t *testing.T) {
 	Convey("NewSkipListIterator", t, func() {
 		iter := sl.Iterator()
 
-		v := iter.Current().(*Element)
+		v := iter.Current()
 		So(v, ShouldNotBeNil)
 		So(v.Key(), ShouldEqual, 1)
 
 		So(iter.HasNext(), ShouldBeTrue)
 		iter.Next()
-		v = iter.Current().(*Element)
+		v = iter.Current()
 		So(v, ShouldNotBeNil)
 		So(v.Key(), ShouldEqual, 3)
 
@@ -41,49 +41,49 @@ func TestSkipListIterator_Iterator(t *testing.T) {
 	Convey("Next", t, func() {
 		iter := s.Iterator()
 		So(iter.HasNext(), ShouldBeTrue)
-		v := iter.Current().(*Element)
+		v := iter.Current()
 		So(v, ShouldNotBeNil)
 		So(v.Key(), ShouldEqual, 0)
 
 		iter.Next()
 		elem := iter.Current()
 		So(elem, ShouldNotBeNil)
-		So(elem.(*Element), ShouldNotBeNil)
-		So(elem.(*Element).Key(), ShouldEqual, 1)
+		So(elem, ShouldNotBeNil)
+		So(elem.Key(), ShouldEqual, 1)
 
-		v = iter.GetGE(5).(*Element)
+		v = iter.GetGE(5)
 		So(v, ShouldNotBeNil)
 		So(v.Key(), ShouldEqual, 5)
 		elem = iter.Current()
 		So(elem, ShouldNotBeNil)
-		So(elem.(*Element), ShouldNotBeNil)
-		So(elem.(*Element).Key(), ShouldEqual, 5)
+		So(elem, ShouldNotBeNil)
+		So(elem.Key(), ShouldEqual, 5)
 
 		iter.Next()
 		elem = iter.Current()
 		So(elem, ShouldNotBeNil)
-		So(elem.(*Element), ShouldNotBeNil)
-		So(elem.(*Element).Key(), ShouldEqual, 6)
+		So(elem, ShouldNotBeNil)
+		So(elem.Key(), ShouldEqual, 6)
 
-		v = iter.GetGE(102).(*Element)
+		v = iter.GetGE(102)
 		So(v, ShouldNotBeNil)
 		So(v.Key(), ShouldEqual, 104)
 		elem = iter.Current()
 		So(elem, ShouldNotBeNil)
-		So(elem.(*Element), ShouldNotBeNil)
-		So(elem.(*Element).Key(), ShouldEqual, 104)
+		So(elem, ShouldNotBeNil)
+		So(elem.Key(), ShouldEqual, 104)
 		So(iter.HasNext(), ShouldBeTrue)
 
-		v = iter.GetGE(147).(*Element)
+		v = iter.GetGE(147)
 		So(v, ShouldNotBeNil)
 		So(v.Key(), ShouldEqual, 149)
 		elem = iter.Current()
 		So(elem, ShouldNotBeNil)
-		So(elem.(*Element), ShouldNotBeNil)
-		So(elem.(*Element).Key(), ShouldEqual, 149)
+		So(elem, ShouldNotBeNil)
+		So(elem.Key(), ShouldEqual, 149)
 		So(iter.HasNext(), ShouldBeTrue)
 
-		v = iter.GetGE(160).(*Element)
+		v = iter.GetGE(160)
 		So(v, ShouldBeNil)
 		elem = iter.Current()
 		So(elem, ShouldBeNil)
@@ -100,13 +100,13 @@ func TestSkipListIterator_GetGE(t *testing.T) {
 
 	Convey("getGE", t, func() {
 		v := a.GetGE(99)
-		So(v.(*Element).key, ShouldEqual, 99)
+		So(v.key, ShouldEqual, 99)
 
 		v = a.GetGE(99)
-		So(v.(*Element).key, ShouldEqual, 99)
+		So(v.key, ShouldEqual, 99)
 
 		v = a.GetGE(99)
-		So(v.(*Element).key, ShouldEqual, 99)
+		So(v.key, ShouldEqual, 99)
 	})
 }
 
@@ -130,16 +130,16 @@ func TestSkipListIterator_First(t *testing.T) {
 	s := a.Iterator()
 	Convey("del", t, func() {
 		v := s.GetGE(10)
-		So(v.(*Element).key, ShouldEqual, 10)
+		So(v.key, ShouldEqual, 10)
 		v = s.GetGE(324)
-		So(v.(*Element).key, ShouldEqual, 324)
+		So(v.key, ShouldEqual, 324)
 		a.Del(10)
 		a.Del(324)
 		So(a.Len(), ShouldEqual, 998)
 		v = s.GetGE(10)
-		So(v.(*Element).key, ShouldEqual, 324)
+		So(v.key, ShouldEqual, 324)
 		v = s.GetGE(324)
-		So(v.(*Element).key, ShouldEqual, 324)
+		So(v.key, ShouldEqual, 324)
 	})
 
 }

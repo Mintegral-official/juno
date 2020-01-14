@@ -27,7 +27,7 @@ func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error)
 		return nil, helpers.MongoCfgError
 	}
 
-	mongoIndexBuilder := &MongoIndexBuilder{
+	mib := &MongoIndexBuilder{
 		ops:        ops,
 		innerIndex: nil,
 	}
@@ -41,31 +41,31 @@ func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error)
 	client, err := mongo.Connect(ctx, opt)
 
 	if err != nil {
-		if mongoIndexBuilder.ops.Logger != nil {
-			mongoIndexBuilder.ops.Logger.Warnf("mongo connect failed: [%s]", err.Error())
+		if mib.ops.Logger != nil {
+			mib.ops.Logger.Warnf("mongo connect failed: [%s]", err.Error())
 		}
 		return nil, helpers.ConnectError
 	}
 
-	mongoIndexBuilder.client = client
-	mongoIndexBuilder.findOpt = options.MergeFindOptions(ops.FindOpt)
+	mib.client = client
+	mib.findOpt = options.MergeFindOptions(ops.FindOpt)
 	d := time.Duration(ops.ReadTimeout) * time.Microsecond
-	mongoIndexBuilder.findOpt.MaxTime = &d
+	mib.findOpt.MaxTime = &d
 
 	if err = client.Ping(ctx, readpref.Primary()); err != nil {
-		if mongoIndexBuilder.ops.Logger != nil {
-			mongoIndexBuilder.ops.Logger.Warnf("mongo ping failed: [%s]", err.Error())
+		if mib.ops.Logger != nil {
+			mib.ops.Logger.Warnf("mongo ping failed: [%s]", err.Error())
 		}
 		return nil, helpers.PingError
 	}
-	mongoIndexBuilder.collection = client.Database(ops.DB).Collection(ops.Collection)
-	if mongoIndexBuilder.collection == nil {
-		if mongoIndexBuilder.ops.Logger != nil {
-			mongoIndexBuilder.ops.Logger.Warnf("mongo database[%s] collection[%s] not found", ops.DB, ops.Collection)
+	mib.collection = client.Database(ops.DB).Collection(ops.Collection)
+	if mib.collection == nil {
+		if mib.ops.Logger != nil {
+			mib.ops.Logger.Warnf("mongo database[%s] collection[%s] not found", ops.DB, ops.Collection)
 		}
 		return nil, helpers.CollectionNotFound
 	}
-	return mongoIndexBuilder, nil
+	return mib, nil
 }
 
 func (mib *MongoIndexBuilder) GetIndex() *index.Indexer {
@@ -119,7 +119,7 @@ func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
 	return nil
 }
 
-func (mib *MongoIndexBuilder) base(name string) error {
+func (mib *MongoIndexBuilder) base(name string) (err error) {
 	mib.totalNum, mib.errorNum = 0, 0
 	if mib.ops.OnBeforeBase != nil {
 		mib.ops.BaseQuery = mib.ops.OnBeforeBase(mib.ops.UserData)
@@ -147,10 +147,10 @@ func (mib *MongoIndexBuilder) base(name string) error {
 		_ = baseIndex.Add(r.Value)
 	}
 	mib.innerIndex = baseIndex
-	return nil
+	return
 }
 
-func (mib *MongoIndexBuilder) inc(ctx context.Context) error {
+func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 
 	if mib.ops.OnBeforeInc != nil {
 		mib.ops.IncQuery = mib.ops.OnBeforeInc(mib.ops.UserData)
@@ -185,7 +185,7 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) error {
 			mib.totalNum--
 		}
 	}
-	return nil
+	return
 }
 
 func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {

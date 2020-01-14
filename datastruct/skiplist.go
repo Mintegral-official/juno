@@ -65,15 +65,15 @@ func (sl *SkipList) Del(key document.DocId) {
 	}
 }
 
-func (sl *SkipList) Contains(key document.DocId) bool {
-	_, ok := sl.findGE(key, true, sl.previousNodeCache)
+func (sl *SkipList) Contains(key document.DocId) (ok bool) {
+	_, ok = sl.findGE(key, true, sl.previousNodeCache)
 	return ok
 }
 
-func (sl *SkipList) Get(key document.DocId) (*Element, error) {
+func (sl *SkipList) Get(key document.DocId) (x *Element, err error) {
 	x, ok := sl.findGE(key, true, sl.previousNodeCache)
 	if ok {
-		return x, nil
+		return x, err
 	}
 	return nil, helpers.ElementNotfound
 }
