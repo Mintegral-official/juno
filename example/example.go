@@ -7,6 +7,7 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
+	"github.com/Mintegral-official/juno/query/operation"
 	"github.com/Mintegral-official/juno/search"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -206,29 +207,54 @@ func main() {
 
 	for i := 0; i < 10; i++ {
 		q := query.NewOrQuery([]query.Query{
+			// ==
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(invertIdx.Iterator("Platform", "1")),
 			}, nil),
+			// ==
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
 			}, nil),
 			/* special example */
+			// [campaign] <-> [condition]
+			// or in , one in
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
 			}, []check.Checker{
-				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), dev, &operation{}, false),
+				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), dev, &myOperation{}, false),
 			}),
+			// or not
+			query.NewOrQuery([]query.Query{
+				query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
+			}, []check.Checker{
+				check.NewNotChecker(storageIdx.Iterator("DeviceTypeV2"), dev, &myOperation{}, false),
+			}),
+			// and
 			query.NewAndQuery([]query.Query{
+				// in
 				query.NewAndQuery([]query.Query{
 					query.NewTermQuery(storageIdx.Iterator("Price")),
 				}, []check.Checker{
 					check.NewInChecker(storageIdx.Iterator("Price"), p, nil, false),
 				}),
+				// not in
 				query.NewAndQuery([]query.Query{
 					query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
 				}, []check.Checker{
 					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), a0, nil, false),
-				})}, nil)},
+				})}, nil),
+			// !=
+			query.NewNotAndQuery([]query.Query{
+				query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
+			}, nil),
+			// !=
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+			}, []check.Checker{
+				check.NewChecker(storageIdx.Iterator("AdvertiserId"), 457, operation.NE, nil, false),
+			}),
+		},
 			nil,
 		)
 
@@ -270,26 +296,26 @@ func main() {
 	fmt.Println("退出信号", s)
 }
 
-type operation struct {
+type myOperation struct {
 	value interface{}
 }
 
-func (o *operation) Equal(value interface{}) bool {
+func (o *myOperation) Equal(value interface{}) bool {
 	// your logic
 	return true
 }
 
-func (o *operation) Less(value interface{}) bool {
+func (o *myOperation) Less(value interface{}) bool {
 	// your logic
 	return true
 }
 
-func (o *operation) In(value interface{}) bool {
+func (o *myOperation) In(value interface{}) bool {
 	// your logic
 	return true
 }
 
-func (o *operation) SetValue(value interface{}) {
+func (o *myOperation) SetValue(value interface{}) {
 	o.value = value
 }
 
