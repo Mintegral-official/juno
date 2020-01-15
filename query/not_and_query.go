@@ -16,8 +16,8 @@ type NotAndQuery struct {
 	debugs   *debug.Debugs
 }
 
-func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) *NotAndQuery {
-	naq := &NotAndQuery{}
+func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (naq *NotAndQuery) {
+	naq = &NotAndQuery{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
 		naq.debugs = debug.NewDebugs(debug.NewDebug("NotAndQuery"))
 	}

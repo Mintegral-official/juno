@@ -13,8 +13,8 @@ type TermQuery struct {
 	debugs   *debug.Debugs
 }
 
-func NewTermQuery(iter datastruct.Iterator, isDebug ...int) *TermQuery {
-	tq := &TermQuery{}
+func NewTermQuery(iter datastruct.Iterator, isDebug ...int) (tq *TermQuery) {
+	tq = &TermQuery{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
 		tq.debugs = debug.NewDebugs(debug.NewDebug("TermQuery"))
 	}
@@ -35,14 +35,11 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 	}
 
 	tq.iterator.Next()
-	if element := tq.iterator.Current(); element != nil {
-		v, ok := element.(*datastruct.Element)
-		if !ok || v == nil || v.Key() == 0 {
-			return 0, helpers.ElementNotfound
-		}
-		return v.Key(), nil
+	element := tq.iterator.Current()
+	if element == nil || element.Key() == 0 {
+		return 0, helpers.ElementNotfound
 	}
-	return 0, helpers.ElementNotfound
+	return element.Key(), nil
 }
 
 func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
@@ -53,14 +50,11 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 		return 0, helpers.DocumentError
 	}
 
-	if element := tq.iterator.GetGE(id); element != nil {
-		v, ok := element.(*datastruct.Element)
-		if !ok || v.Key() == 0 {
-			return 0, helpers.ElementNotfound
-		}
-		return v.Key(), nil
+	element := tq.iterator.GetGE(id)
+	if element == nil || element.Key() == 0 {
+		return 0, helpers.ElementNotfound
 	}
-	return 0, helpers.ElementNotfound
+	return element.Key(), nil
 }
 
 func (tq *TermQuery) Current() (document.DocId, error) {
@@ -70,14 +64,11 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
-	if element := tq.iterator.Current(); element != nil {
-		v, ok := element.(*datastruct.Element)
-		if !ok || v.Key() == 0 {
-			return 0, helpers.ElementNotfound
-		}
-		return v.Key(), nil
+	element := tq.iterator.Current()
+	if element == nil || element.Key() == 0 {
+		return 0, helpers.ElementNotfound
 	}
-	return 0, helpers.ElementNotfound
+	return element.Key(), nil
 }
 
 func (tq *TermQuery) DebugInfo() *debug.Debug {

@@ -14,8 +14,8 @@ type InvertedIndexer struct {
 	aDebug *debug.Debug
 }
 
-func NewInvertedIndexer(isDebug ...int) *InvertedIndexer {
-	i := &InvertedIndexer{
+func NewInvertedIndexer(isDebug ...int) (i *InvertedIndexer) {
+	i = &InvertedIndexer{
 		data: sync.Map{},
 	}
 	if len(isDebug) != 0 && isDebug[0] == 1 {
@@ -24,8 +24,8 @@ func NewInvertedIndexer(isDebug ...int) *InvertedIndexer {
 	return i
 }
 
-func (i *InvertedIndexer) Count() int {
-	var count = 0
+func (i *InvertedIndexer) Count() (count int) {
+	count = 0
 	i.data.Range(func(key, value interface{}) bool {
 		count++
 		return true
@@ -33,37 +33,41 @@ func (i *InvertedIndexer) Count() int {
 	return count
 }
 
-func (i *InvertedIndexer) Add(fieldName string, id document.DocId) error {
-	if v, ok := i.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Add(id, nil)
-		} else {
-			return helpers.ParseError
-		}
-	} else {
+func (i *InvertedIndexer) Add(fieldName string, id document.DocId) (err error) {
+	v, ok := i.data.Load(fieldName)
+	if !ok {
 		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		sl.Add(id, nil)
 		i.data.Store(fieldName, sl)
+		return err
 	}
-	return nil
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		err = helpers.ParseError
+		return err
+	}
+	sl.Add(id, nil)
+	return err
 }
 
-func (i *InvertedIndexer) Del(fieldName string, id document.DocId) bool {
-
-	if v, ok := i.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Del(id)
-			i.data.Store(fieldName, sl)
-			return true
-		}
+func (i *InvertedIndexer) Del(fieldName string, id document.DocId) (ok bool) {
+	v, ok := i.data.Load(fieldName)
+	if !ok {
+		return ok
 	}
-	return false
+	if sl, ok := v.(*datastruct.SkipList); ok {
+		sl.Del(id)
+		i.data.Store(fieldName, sl)
+		return ok
+	}
+	return ok
 }
 
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	var fieldName = name + "_" + value
 	if v, ok := i.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
+		sl, ok := v.(*datastruct.SkipList)
+		if ok {
 			if i.aDebug != nil {
 				i.aDebug.AddDebugMsg("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
 			}

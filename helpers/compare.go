@@ -22,44 +22,44 @@ var intCompare Func = func(a, b interface{}) int {
 	switch b.(type) {
 	case int8:
 		return int8Func(a.(int8), b.(int8))
-	case *int8:
-		return int8Func(*(a.(*int8)), *(b.(*int8)))
+	//case *int8:
+	//	return int8Func(*(a.(*int8)), *(b.(*int8)))
 	case int16:
 		return int16Func(a.(int16), b.(int16))
-	case *int16:
-		return int16Func(*(a.(*int16)), *(b.(*int16)))
+	//case *int16:
+	//	return int16Func(*(a.(*int16)), *(b.(*int16)))
 	case int:
 		return intFunc(a.(int), b.(int))
-	case *int:
-		return intFunc(*(a.(*int)), *(b.(*int)))
+	//case *int:
+	//	return intFunc(*(a.(*int)), *(b.(*int)))
 	case int32:
 		return int32Func(a.(int32), b.(int32))
-	case *int32:
-		return int32Func(*(a.(*int32)), *(b.(*int32)))
+	//case *int32:
+	//	return int32Func(*(a.(*int32)), *(b.(*int32)))
 	case int64:
 		return int64Func(a.(int64), b.(int64))
-	case *int64:
-		return int64Func(*(a.(*int64)), *(b.(*int64)))
+	//case *int64:
+	//	return int64Func(*(a.(*int64)), *(b.(*int64)))
 	case byte:
 		return byteFunc(a.(byte), b.(byte))
-	case *byte:
-		return byteFunc(*(a.(*byte)), *(b.(*byte)))
+	//case *byte:
+	//	return byteFunc(*(a.(*byte)), *(b.(*byte)))
 	case uint16:
 		return uint16Func(a.(uint16), b.(uint16))
-	case *uint16:
-		return uint16Func(*(a.(*uint16)), *(b.(*uint16)))
+	//case *uint16:
+	//	return uint16Func(*(a.(*uint16)), *(b.(*uint16)))
 	case uint32:
 		return uint32Func(a.(uint32), b.(uint32))
-	case *uint32:
-		return uint32Func(*(a.(*uint32)), *(b.(*uint32)))
+	//case *uint32:
+	//	return uint32Func(*(a.(*uint32)), *(b.(*uint32)))
 	case uint:
 		return uintFunc(a.(uint), b.(uint))
-	case *uint:
-		return uintFunc(*(a.(*uint)), *(b.(*uint)))
+	//case *uint:
+	//	return uintFunc(*(a.(*uint)), *(b.(*uint)))
 	case uint64:
 		return uint64Func(a.(uint64), b.(uint64))
-	case *uint64:
-		return uint64Func(*(a.(*uint64)), *(b.(*uint64)))
+	//case *uint64:
+	//	return uint64Func(*(a.(*uint64)), *(b.(*uint64)))
 	case document.DocId:
 		return docIdFunc(a.(document.DocId), b.(document.DocId))
 	default:
@@ -71,12 +71,12 @@ var floatCompare Func = func(a, b interface{}) int {
 	switch b.(type) {
 	case float32:
 		return float32Func(a.(float32), b.(float32))
-	case *float32:
-		return float32Func(*(a.(*float32)), *(b.(*float32)))
+	//case *float32:
+	//	return float32Func(*(a.(*float32)), *(b.(*float32)))
 	case float64:
 		return float64Func(a.(float64), b.(float64))
-	case *float64:
-		return float64Func(*(a.(*float64)), *(b.(*float64)))
+	//case *float64:
+	//	return float64Func(*(a.(*float64)), *(b.(*float64)))
 	default:
 		panic(fmt.Sprintf("parameters[%v[%T] - %v[%T]] type wrong.", a, a, b, b))
 	}
@@ -86,8 +86,8 @@ var stringCompare Func = func(a, b interface{}) int {
 	switch b.(type) {
 	case string:
 		return stringFunc(a.(string), b.(string))
-	case *string:
-		return stringFunc(*(a.(*string)), *(b.(*string)))
+	//case *string:
+	//	return stringFunc(*(a.(*string)), *(b.(*string)))
 	default:
 		panic(fmt.Sprintf("parameters[%v[%T] - %v[%T]] type wrong.", a, a, b, b))
 	}

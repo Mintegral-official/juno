@@ -26,15 +26,10 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 		panic("the query should not be nil")
 		return
 	}
-	var (
-		v  interface{}
-		ok bool
-	)
 	now := time.Now()
 	id, err := query.Next()
 	for err == nil {
-		v, ok = iIndexer.GetCampaignMap().Get(index.DocId(id))
-		if ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
+		if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
 			continue
 		}
 		s.Docs = append(s.Docs, id)

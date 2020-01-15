@@ -18,8 +18,8 @@ type AndQuery struct {
 	debugs   *debug.Debugs
 }
 
-func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) *AndQuery {
-	aq := &AndQuery{}
+func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq *AndQuery) {
+	aq = &AndQuery{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
 		aq.debugs = debug.NewDebugs(debug.NewDebug("AndQuery"))
 	}

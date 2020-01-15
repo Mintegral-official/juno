@@ -6,22 +6,12 @@ import (
 )
 
 func Compare(i, j interface{}) int {
-	if i == nil && j != nil {
-		return 1
-	}
-	if i != nil && j == nil {
-		return -1
-	}
-	if i == nil && j == nil {
-		return 0
-	}
 	switch i.(type) {
-	case int8, int16, int32, int64, int, *int8, *int16, *int32, *int, *int64, uint8, uint,
-		uint16, uint32, uint64, *uint8, *uint16, *uint32, *uint, *uint64, document.DocId:
+	case int8, int16, int32, int64, int, uint8, uint, uint16, uint32, uint64, document.DocId:
 		return intCompare(i, j)
-	case string, *string:
+	case string:
 		return stringCompare(i, j)
-	case float32, *float32, float64, *float64:
+	case float32, float64:
 		return floatCompare(i, j)
 	default:
 		panic(fmt.Sprintf("parameters[%T - %T] type wrong.", i, j))

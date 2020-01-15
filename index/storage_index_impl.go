@@ -14,8 +14,8 @@ type StorageIndexer struct {
 	aDebug *debug.Debug
 }
 
-func NewStorageIndexer(isDebug ...int) *StorageIndexer {
-	s := &StorageIndexer{
+func NewStorageIndexer(isDebug ...int) (s *StorageIndexer) {
+	s = &StorageIndexer{
 		data: sync.Map{},
 	}
 	if len(isDebug) != 0 && isDebug[0] == 1 {
@@ -24,8 +24,8 @@ func NewStorageIndexer(isDebug ...int) *StorageIndexer {
 	return s
 }
 
-func (s *StorageIndexer) Count() int {
-	var count = 0
+func (s *StorageIndexer) Count() (count int) {
+	count = 0
 	s.data.Range(func(key, value interface{}) bool {
 		count++
 		return true
@@ -34,48 +34,54 @@ func (s *StorageIndexer) Count() int {
 }
 
 func (s *StorageIndexer) Get(fieldName string, id document.DocId) interface{} {
-	if v, ok := s.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			if res, err := sl.Get(id); err == nil {
-				return res
-			}
-			return helpers.DocumentError
-		} else {
-			return helpers.ParseError
-		}
+	v, ok := s.data.Load(fieldName)
+	if !ok {
+		return nil
 	}
-	return nil
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		return helpers.ParseError
+	}
+	if res, err := sl.Get(id); err == nil {
+		return res
+	}
+	return helpers.DocumentError
 }
 
-func (s *StorageIndexer) Add(fieldName string, id document.DocId, value interface{}) error {
-	if v, ok := s.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Add(id, value)
-		} else {
-			return helpers.ParseError
-		}
-	} else {
+func (s *StorageIndexer) Add(fieldName string, id document.DocId, value interface{}) (err error) {
+	v, ok := s.data.Load(fieldName)
+	if !ok {
 		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		sl.Add(id, value)
 		s.data.Store(fieldName, sl)
+		return err
 	}
-	return nil
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		err = helpers.ParseError
+		return
+	}
+	sl.Add(id, value)
+	return err
 }
 
-func (s *StorageIndexer) Del(fieldName string, id document.DocId) bool {
-	if v, ok := s.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Del(id)
-			s.data.Store(fieldName, sl)
-			return true
-		}
+func (s *StorageIndexer) Del(fieldName string, id document.DocId) (ok bool) {
+	v, ok := s.data.Load(fieldName)
+	if !ok {
+		return ok
 	}
-	return false
+	if sl, ok := v.(*datastruct.SkipList); ok {
+		sl.Del(id)
+		s.data.Store(fieldName, sl)
+		return ok
+	}
+	return ok
 }
 
 func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 	if v, ok := s.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
+		sl, ok := v.(*datastruct.SkipList)
+		if ok {
 			if s.aDebug != nil {
 				s.aDebug.AddDebugMsg("index: " + fieldName + " len: " + strconv.Itoa(sl.Len()))
 			}

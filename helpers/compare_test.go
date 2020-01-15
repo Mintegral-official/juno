@@ -14,6 +14,6 @@ func TestFunc_Compare(t *testing.T) {
 		So(intCompare(int(*a), int(*b)), ShouldEqual, 1)
 		So(intCompare(*a, *b), ShouldEqual, 1)
 		So(intCompare(c, d), ShouldEqual, 1)
-		So(Compare(a, b), ShouldEqual, 1)
+		So(Compare(*a, *b), ShouldEqual, 1)
 	})
 }

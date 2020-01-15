@@ -2,7 +2,6 @@ package index
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
@@ -236,7 +235,7 @@ func TestStorageIndexer_Add(t *testing.T) {
 		So(sto.HasNext(), ShouldBeTrue)
 		c = 0
 		for sto.HasNext() {
-			if sto.Current().(*datastruct.Element).Value() != nil {
+			if sto.Current().Value() != nil {
 				c++
 			}
 			sto.Next()

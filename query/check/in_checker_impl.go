@@ -7,16 +7,18 @@ import (
 )
 
 type InChecker struct {
-	si    datastruct.Iterator
-	value []interface{}
-	e     operation.Operation
+	si       datastruct.Iterator
+	value    interface{}
+	e        operation.Operation
+	transfer bool
 }
 
-func NewInChecker(si datastruct.Iterator, value []interface{}, e operation.Operation) *InChecker {
+func NewInChecker(si datastruct.Iterator, value interface{}, e operation.Operation, transfer bool) *InChecker {
 	return &InChecker{
-		si:    si,
-		value: value,
-		e:     e,
+		si:       si,
+		value:    value,
+		e:        e,
+		transfer: transfer,
 	}
 }
 
@@ -24,27 +26,25 @@ func (i *InChecker) Check(id document.DocId) bool {
 	if i == nil {
 		return true
 	}
-	var iter = i.si
-	v := iter.Current().(*datastruct.Element).Value()
-	if v == nil {
-		return false
-	}
-
-	element := iter.GetGE(id)
+	element := i.si.GetGE(id)
 	if element == nil {
 		return false
 	}
-	key := element.(*datastruct.Element).Key()
-	if key != id {
-		return false
-	}
-	v = iter.Current().(*datastruct.Element).Value()
-	if v == nil {
+	key, v := element.Key(), element.Value()
+	if key != id || v == nil {
 		return false
 	}
 	if i.e == nil {
+		if i.transfer {
+			o := operation.Operations{FieldValue: i.value}
+			return o.In(v)
+		}
 		o := operation.Operations{FieldValue: v}
 		return o.In(i.value)
+	}
+	if i.transfer {
+		i.e.SetValue(i.value)
+		return i.e.In(v)
 	}
 	i.e.SetValue(v)
 	return i.e.In(i.value)

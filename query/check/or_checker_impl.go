@@ -22,6 +22,9 @@ func (o *OrChecker) Check(id document.DocId) bool {
 		return true
 	}
 	for _, cValue := range o.c {
+		if cValue == nil {
+			continue
+		}
 		if cValue.Check(id) {
 			return true
 		}
