@@ -16,15 +16,17 @@ type SqlQuery struct {
 	Stack      *datastruct.Stack
 	Expression *Expression
 	e          operation.Operation
+	transfer   bool
 	debugs     *debug.Debugs
 }
 
-func NewSqlQuery(str string, e operation.Operation, isDebug ...int) (s *SqlQuery) {
+func NewSqlQuery(str string, e operation.Operation, transfer bool, isDebug ...int) (s *SqlQuery) {
 	s = &SqlQuery{
 		Node:       &datastruct.TreeNode{},
 		Stack:      datastruct.NewStack(),
 		Expression: NewExpression(str),
 		e:          e,
+		transfer:   transfer,
 	}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
 		s.debugs = debug.NewDebugs(debug.NewDebug("SqlQuery"))
@@ -120,7 +122,7 @@ func (sq *SqlQuery) parseIn(str string, idx *index.Indexer) Query {
 		value = changeType(idx, strSlice[0], s...)
 		c     = make([]check.Checker, 1)
 	)
-	c = append(c, check.NewInChecker(storageIdx.Iterator(strSlice[0]), value, sq.e))
+	c = append(c, check.NewInChecker(storageIdx.Iterator(strSlice[0]), value, sq.e, sq.transfer))
 	if sq.debugs != nil {
 		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
 	}
@@ -134,7 +136,7 @@ func (sq *SqlQuery) parseNotIn(str string, idx *index.Indexer) Query {
 		value = changeType(idx, strSlice[0], s...)
 		c     = make([]check.Checker, 1)
 	)
-	c = append(c, check.NewNotChecker(storageIdx.Iterator(strSlice[0]), value, sq.e))
+	c = append(c, check.NewNotChecker(storageIdx.Iterator(strSlice[0]), value, sq.e, sq.transfer))
 	if sq.debugs != nil {
 		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
 	}
@@ -155,7 +157,7 @@ func (sq *SqlQuery) parseNE(str string, idx *index.Indexer) Query {
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
-	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.NE, sq.e))
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.NE, sq.e, sq.transfer))
 	if sq.debugs != nil {
 		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
 	}
@@ -168,7 +170,7 @@ func (sq *SqlQuery) parseLT(str string, idx *index.Indexer) Query {
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
-	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LT, sq.e))
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LT, sq.e, sq.transfer))
 	if sq.debugs != nil {
 		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
 	}
@@ -181,7 +183,7 @@ func (sq *SqlQuery) parseLE(str string, idx *index.Indexer) Query {
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
-	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LE, sq.e))
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LE, sq.e, sq.transfer))
 	if sq.debugs != nil {
 		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
 	}
@@ -194,7 +196,7 @@ func (sq *SqlQuery) parseGT(str string, idx *index.Indexer) Query {
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
-	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GT, sq.e))
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GT, sq.e, sq.transfer))
 	if sq.debugs != nil {
 		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
 	}
@@ -207,7 +209,7 @@ func (sq *SqlQuery) parseGE(str string, idx *index.Indexer) Query {
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
-	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GE, sq.e))
+	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GE, sq.e, sq.transfer))
 	if sq.debugs != nil {
 		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
 	}

@@ -19,7 +19,7 @@ func TestNewOrQuery_Next1(t *testing.T) {
 
 	Convey("or query next1", t, func() {
 		a := NewOrQuery([]Query{NewTermQuery(sl.Iterator())}, []check.Checker{
-			check.NewChecker(sl.Iterator(), 1, operation.EQ, nil),
+			check.NewChecker(sl.Iterator(), 1, operation.EQ, nil, false),
 		})
 
 		v, e := a.Next()

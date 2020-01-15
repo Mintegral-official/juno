@@ -201,19 +201,9 @@ func main() {
 	storageIdx := tIndex.GetStorageIndex()
 
 	var p = []float64{2.3, 1.4, 3.65, 2.46, 2.5}
-	var pi = make([]interface{}, len(p))
-	for _, v := range p {
-		pi = append(pi, v)
-	}
 	var a0 = []int64{647, 658, 670}
-	var ai = make([]interface{}, len(a0))
-	for _, v := range a0 {
-		ai = append(ai, v)
-	}
-
 	var dev = []int64{4, 5}
-	var devi = make([]interface{}, len(dev))
-	devi = append(devi, dev)
+
 	for i := 0; i < 10; i++ {
 		q := query.NewOrQuery([]query.Query{
 			query.NewOrQuery([]query.Query{
@@ -226,18 +216,18 @@ func main() {
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
 			}, []check.Checker{
-				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, &operation{}),
+				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), dev, &operation{}, false),
 			}),
 			query.NewAndQuery([]query.Query{
 				query.NewAndQuery([]query.Query{
 					query.NewTermQuery(storageIdx.Iterator("Price")),
 				}, []check.Checker{
-					check.NewInChecker(storageIdx.Iterator("Price"), pi, nil),
+					check.NewInChecker(storageIdx.Iterator("Price"), p, nil, false),
 				}),
 				query.NewAndQuery([]query.Query{
 					query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
 				}, []check.Checker{
-					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), ai, nil),
+					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), a0, nil, false),
 				})}, nil)},
 			nil,
 		)
@@ -259,7 +249,7 @@ func main() {
 		a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
 
 		tsql := time.Now()
-		sq := query.NewSqlQuery(a, nil)
+		sq := query.NewSqlQuery(a, nil, false)
 		m := sq.LRD(tIndex)
 		fmt.Println("sql parse: ", time.Since(tsql))
 		r2 := search.NewSearcher()
@@ -294,7 +284,7 @@ func (o *operation) Less(value interface{}) bool {
 	return true
 }
 
-func (o *operation) In(value []interface{}) bool {
+func (o *operation) In(value interface{}) bool {
 	// your logic
 	return true
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewOperations(t *testing.T) {
-	i := make([]interface{}, 0)
+	i := make([]int, 0)
 	Convey("operation interface test", t, func() {
 		impl := NewOperations(10)
 		So(impl.Equal(10), ShouldBeTrue)
@@ -40,7 +40,7 @@ func TestNewOperations(t *testing.T) {
 		So(impl.Less(11) && impl.Equal(10), ShouldBeTrue)
 		So(impl.Less(10) && impl.Equal(10), ShouldBeFalse)
 		So(impl.Less(11) && impl.Less(100), ShouldBeTrue)
-		i = make([]interface{}, 0)
+		i = make([]int, 0)
 		i = append(i, 1)
 		i = append(i, 2)
 		i = append(i, 10)
@@ -51,7 +51,7 @@ func TestNewOperations(t *testing.T) {
 		impl = NewOperations(10)
 		So(impl.Less(11) || impl.Equal(10), ShouldBeTrue)
 		So(impl.Less(10) || impl.Equal(10), ShouldBeTrue)
-		i = make([]interface{}, 0)
+		i = make([]int, 0)
 		i = append(i, 1)
 		i = append(i, 2)
 		i = append(i, 10)
@@ -59,7 +59,7 @@ func TestNewOperations(t *testing.T) {
 		So(impl.In(i), ShouldBeTrue)
 
 		impl = NewOperations(10)
-		i = make([]interface{}, 0)
+		i = make([]int, 0)
 		i = append(i, 1)
 		i = append(i, 2)
 		i = append(i, 16)
@@ -67,7 +67,7 @@ func TestNewOperations(t *testing.T) {
 		So(!impl.Less(9) && ! impl.Equal(1), ShouldBeTrue)
 
 		impl = NewOperations(10)
-		i = make([]interface{}, 0)
+		i = make([]int, 0)
 		i = append(i, 1)
 		i = append(i, 10)
 		i = append(i, 16)

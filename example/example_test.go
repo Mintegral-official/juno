@@ -87,18 +87,18 @@ func BenchmarkSliceEqual(b *testing.B) {
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
 			}, []check.Checker{
-				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, &operation{}),
+				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, &operation{}, false),
 			}),
 			query.NewAndQuery([]query.Query{
 				query.NewAndQuery([]query.Query{
 					query.NewTermQuery(storageIdx.Iterator("Price")),
 				}, []check.Checker{
-					check.NewInChecker(storageIdx.Iterator("Price"), pi, nil),
+					check.NewInChecker(storageIdx.Iterator("Price"), pi, nil, false),
 				}),
 				query.NewAndQuery([]query.Query{
 					query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
 				}, []check.Checker{
-					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), ai, nil),
+					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), ai, nil, false),
 				})}, nil)},
 			nil,
 		)
@@ -118,7 +118,7 @@ func BenchmarkSliceEqual(b *testing.B) {
 		tIndex.UnsetDebug()
 
 		a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
-		sq := query.NewSqlQuery(a, nil)
+		sq := query.NewSqlQuery(a, nil, false)
 
 		tsql := time.Now()
 		m := sq.LRD(tIndex)

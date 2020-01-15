@@ -7,18 +7,20 @@ import (
 )
 
 type CheckerImpl struct {
-	si    datastruct.Iterator
-	value interface{}
-	op    operation.OP
-	e     operation.Operation
+	si       datastruct.Iterator
+	value    interface{}
+	op       operation.OP
+	e        operation.Operation
+	transfer bool
 }
 
-func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e operation.Operation) *CheckerImpl {
+func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e operation.Operation, transfer bool) *CheckerImpl {
 	return &CheckerImpl{
-		si:    si,
-		value: value,
-		op:    op,
-		e:     e,
+		si:       si,
+		value:    value,
+		op:       op,
+		e:        e,
+		transfer: transfer,
 	}
 }
 
@@ -33,6 +35,9 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	key, v := element.Key(), element.Value()
 	if key != id || v == nil {
 		return false
+	}
+	if c.transfer {
+		return UtilCheck(c.value, c.op, v, c.e)
 	}
 	return UtilCheck(v, c.op, c.value, c.e)
 }

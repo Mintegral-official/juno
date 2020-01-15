@@ -245,7 +245,7 @@ func BenchmarkAndQuery_Next(b *testing.B) {
 				NewTermQuery(a.Iterator()),
 			},
 			[]check.Checker{
-				check.NewInChecker(a.Iterator(), r, nil),
+				check.NewInChecker(a.Iterator(), r, nil, false),
 			},
 		),
 		NewTermQuery(a.Iterator()),
@@ -256,13 +256,13 @@ func BenchmarkAndQuery_Next(b *testing.B) {
 		NewOrQuery([]Query{
 			NewTermQuery(a.Iterator()),
 		}, []check.Checker{
-			check.NewChecker(a.Iterator(), 1, operation.GE, nil),
-			check.NewChecker(a.Iterator(), 39, operation.LT, nil),
-			check.NewChecker(a.Iterator(), 10, operation.EQ, nil),
-			check.NewChecker(a.Iterator(), 49, operation.NE, nil),
+			check.NewChecker(a.Iterator(), 1, operation.GE, nil, false),
+			check.NewChecker(a.Iterator(), 39, operation.LT, nil, false),
+			check.NewChecker(a.Iterator(), 10, operation.EQ, nil, false),
+			check.NewChecker(a.Iterator(), 49, operation.NE, nil, false),
 		}),
 	}, []check.Checker{
-		check.NewInChecker(a.Iterator(), r1, nil),
+		check.NewInChecker(a.Iterator(), r1, nil, false),
 	}, )
 	c := 0
 	b.ResetTimer()

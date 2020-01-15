@@ -23,14 +23,14 @@ func TestInChecker_Check(t *testing.T) {
 	sl1.Add(9, 1)
 
 	Convey("checker", t, func() {
-		c := NewChecker(sl.Iterator(), 10, operation.EQ, nil)
+		c := NewChecker(sl.Iterator(), 10, operation.EQ, nil, false)
 		So(c.Check(3), ShouldBeFalse)
 		So(c.Check(10), ShouldBeTrue)
 	})
 
 	Convey("and checker", t, func() {
-		c := NewChecker(sl.Iterator(), 3, operation.GE, nil)
-		d := NewChecker(sl1.Iterator(), 10, operation.LT, nil)
+		c := NewChecker(sl.Iterator(), 3, operation.GE, nil, false)
+		d := NewChecker(sl1.Iterator(), 10, operation.LT, nil, false)
 		a := NewAndChecker([]Checker{
 			c, d,
 		})
@@ -40,8 +40,8 @@ func TestInChecker_Check(t *testing.T) {
 	})
 
 	Convey("or checker", t, func() {
-		c := NewChecker(sl.Iterator(), 6, operation.EQ, nil)
-		d := NewChecker(sl1.Iterator(), 10, operation.EQ, nil)
+		c := NewChecker(sl.Iterator(), 6, operation.EQ, nil, false)
+		d := NewChecker(sl1.Iterator(), 10, operation.EQ, nil, false)
 		o := NewOrChecker([]Checker{
 			c, d,
 		})
@@ -53,11 +53,11 @@ func TestInChecker_Check(t *testing.T) {
 
 	Convey("in checker", t, func() {
 		var a = []int{1, 6, 3, 10}
-		c := make([]interface{}, len(a))
+		c := make([]int, len(a))
 		for _, v := range a {
 			c = append(c, v)
 		}
-		o := NewInChecker(sl.Iterator(), c, nil)
+		o := NewInChecker(sl.Iterator(), c, nil, false)
 		So(o.Check(3), ShouldBeTrue)
 		So(o.Check(6), ShouldBeFalse)
 		So(o.Check(10), ShouldBeTrue)
@@ -66,11 +66,11 @@ func TestInChecker_Check(t *testing.T) {
 
 	Convey("not checker", t, func() {
 		var a = []int{1, 6, 3, 10}
-		c := make([]interface{}, len(a))
+		c := make([]int, len(a))
 		for _, v := range a {
 			c = append(c, v)
 		}
-		o := NewNotChecker(sl.Iterator(), c, nil)
+		o := NewNotChecker(sl.Iterator(), c, nil, false)
 		So(o.Check(3), ShouldBeFalse)
 		So(o.Check(6), ShouldBeTrue)
 		So(o.Check(10), ShouldBeFalse)
@@ -88,7 +88,7 @@ func TestNewInChecker(t *testing.T) {
 		var a = []int{1, 6, 3, 10}
 		c := make([]interface{}, 1)
 		c = append(c, a)
-		o := NewInChecker(sl.Iterator(), c, &myOperation{value: c})
+		o := NewInChecker(sl.Iterator(), c, &myOperation{value: c}, false)
 		So(o.Check(3), ShouldBeTrue)
 		So(o.Check(6), ShouldBeTrue)
 		So(o.Check(10), ShouldBeTrue)
@@ -106,7 +106,7 @@ func (o *myOperation) Equal(value interface{}) bool {
 func (o *myOperation) Less(value interface{}) bool {
 	return true
 }
-func (o *myOperation) In(value []interface{}) bool {
+func (o *myOperation) In(value interface{}) bool {
 	return true
 }
 

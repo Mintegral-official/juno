@@ -12,6 +12,8 @@ type Checker interface {
 func UtilCheck(cValue interface{}, op operation.OP, value interface{}, e operation.Operation) bool {
 	if e == nil {
 		e = operation.NewOperations(cValue)
+	} else {
+		e.SetValue(cValue)
 	}
 	switch op {
 	case operation.EQ:
