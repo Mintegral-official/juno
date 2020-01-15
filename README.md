@@ -139,7 +139,7 @@ type StorageIndex interface {
 
 支持 =, >=, >, <=,<, !=, range(暂不支持), in, !in
 
-查询语法支持三种格式  string,  json, go stuct
+查询语法支持三种格式  string,  json, go struct
 
 ```json
 {
@@ -327,8 +327,9 @@ type SqlQuery struct {
     Stack      *datastruct.Stack      // 在后续遍历时用过迭代的方式，所以选用stack
     Expression *Expression            // 表达式解析
     e          operation.Operation    // 是否需要自定义的表达式
+    transfer   bool                   // 是否需要转换  campaign <-> condition Operation对象中的value既可以是campaign 也可以是condition
 }
-func NewSqlQuery(str string, e operation.Operation) *SqlQuery {}  // 创建sql query对象
+func NewSqlQuery(str string, e operation.Operation, transfer bool) *SqlQuery {}  // 创建sql query对象
 func (sq *SqlQuery) LRD(idx *index.Indexer) Query {}  // 构建query查询表达式
 ```
 
@@ -336,19 +337,21 @@ func (sq *SqlQuery) LRD(idx *index.Indexer) Query {}  // 构建query查询表达
 
 1. = != > < >= <=
 ```go
-func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e operation.Operation) *CheckerImpl {}
+func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e operation.Operation, transfer bool) *CheckerImpl {}
 ```
 si : 要进行操作的storageIdx
 value : 过滤条件
 op : 操作符
 e : 如有特殊的过滤逻辑，可自定义Operation接口实现
+transfer: campaign <-> condition Operation对象中的value既可以是campaign 也可以是condition
 2. in
 ```go
-func NewInChecker(si datastruct.Iterator, value []interface{}, e operation.Operation) *InChecker {}
+func NewInChecker(si datastruct.Iterator, value interface{}, e operation.Operation, transfer bool) *InChecker {}
 ```
 si : 要进行操作的storageIdx
-value : 过滤条件
+value : 过滤条件 只支持[]int []int32 []int64 []float32 []float64 []string 其他类型可以通过自定义Operation实现
 e : 支持复杂的In操作  eg：两个slice的包含、交集关系等
+transfer: campaign <-> condition Operation对象中的value既可以是campaign 也可以是condition
 3. !in 和in操作类似
 4. and or
 ```go
@@ -376,7 +379,7 @@ func (o *operation) Less(value interface{}) bool {
     return true
 }
 
-func (o *operation) In(value []interface{}) bool {
+func (o *operation) In(value interface{}) bool {
     // your logic
     return true
 }
