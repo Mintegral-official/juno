@@ -55,8 +55,7 @@ func (i *InvertedIndexer) Del(fieldName string, id document.DocId) (ok bool) {
 	if !ok {
 		return ok
 	}
-	sl, ok := v.(*datastruct.SkipList)
-	if ok {
+	if sl, ok := v.(*datastruct.SkipList); ok {
 		sl.Del(id)
 		i.data.Store(fieldName, sl)
 		return ok
@@ -66,8 +65,7 @@ func (i *InvertedIndexer) Del(fieldName string, id document.DocId) (ok bool) {
 
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	var fieldName = name + "_" + value
-	v, ok := i.data.Load(fieldName)
-	if ok {
+	if v, ok := i.data.Load(fieldName); ok {
 		sl, ok := v.(*datastruct.SkipList)
 		if ok {
 			if i.aDebug != nil {

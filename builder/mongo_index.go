@@ -147,7 +147,7 @@ func (mib *MongoIndexBuilder) base(name string) (err error) {
 		_ = baseIndex.Add(r.Value)
 	}
 	mib.innerIndex = baseIndex
-	return
+	return err
 }
 
 func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
@@ -185,7 +185,7 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 			mib.totalNum--
 		}
 	}
-	return
+	return err
 }
 
 func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {

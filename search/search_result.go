@@ -29,8 +29,7 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	now := time.Now()
 	id, err := query.Next()
 	for err == nil {
-		v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id))
-		if ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
+		if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
 			continue
 		}
 		s.Docs = append(s.Docs, id)

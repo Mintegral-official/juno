@@ -69,51 +69,45 @@ func (i *Indexer) UnsetDebug() {
 
 func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 	if doc == nil {
-		err = helpers.DocumentError
-		return
+		return helpers.DocumentError
 	}
 	for _, field := range doc.Fields {
 		switch field.IndexType {
 		case document.InvertedIndexType:
-			err = i.invertAdd(doc.Id, field)
-			if err != nil {
+			if err = i.invertAdd(doc.Id, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
 				}
-				return
+				return err
 			}
 		case document.StorageIndexType:
-			err = i.storageAdd(doc.Id, field)
-			if err != nil {
+			if err = i.storageAdd(doc.Id, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "storage", doc.Id, field.Name, field.Value, err.Error()))
 				}
-				return
+				return err
 			}
 			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
 		case document.BothIndexType:
-			err = i.invertAdd(doc.Id, field)
-			if err != nil {
+			if err = i.invertAdd(doc.Id, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
 				}
-				return
+				return err
 			}
-			err = i.storageAdd(doc.Id, field)
-			if err != nil {
+			if err = i.storageAdd(doc.Id, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "storage", doc.Id, field.Name, field.Value, err.Error()))
 				}
-				return
+				return err
 			}
 			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
 		default:
 			i.WarnStatus(field.Name, field.Value, "type is wrong")
-			err = errors.New("the add doc type is wrong or nil ")
-			return
+			return errors.New("the add doc type is wrong or nil ")
 		}
 	}
-	return
+	return err
 }
 
 func (i *Indexer) Del(doc *document.DocInfo) {
@@ -152,8 +146,7 @@ func (i *Indexer) Load(filename string) error {
 }
 
 func (i *Indexer) GetDataType(fieldName string) document.FieldType {
-	t, ok := i.kvType.Get(concurrent_map.StrKey(fieldName))
-	if ok {
+	if t, ok := i.kvType.Get(concurrent_map.StrKey(fieldName)); ok {
 		return t.(document.FieldType)
 	}
 	return document.DefaultFieldType
@@ -164,8 +157,7 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 	case []string:
 		value, _ := field.Value.([]string)
 		for _, v := range value {
-			err = i.invertedIndex.Add(field.Name+"_"+v, id)
-			if err != nil {
+			if err = i.invertedIndex.Add(field.Name+"_"+v, id); err != nil {
 				i.WarnStatus(field.Name, v, err.Error())
 				return err
 			}
@@ -176,8 +168,7 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 	case []int64:
 		value, _ := field.Value.([]int64)
 		for _, v := range value {
-			err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(v, 10), id)
-			if err != nil {
+			if err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(v, 10), id); err != nil {
 				i.WarnStatus(field.Name, v, err.Error())
 				return err
 			}
@@ -187,20 +178,18 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 		}
 	case string:
 		value, _ := field.Value.(string)
-		err = i.invertedIndex.Add(field.Name+"_"+value, id)
-		if err != nil {
+		if err = i.invertedIndex.Add(field.Name+"_"+value, id); err != nil {
 			i.WarnStatus(field.Name, value, err.Error())
-			return
+			return err
 		}
 		i.campaignMapping.Set(DocId(id), i.count)
 		i.bitmap.Set(i.count)
 		i.count++
 	case int64:
 		value, _ := field.Value.(int64)
-		err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(value, 10), id)
-		if err != nil {
+		if err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(value, 10), id); err != nil {
 			i.WarnStatus(field.Name, value, err.Error())
-			return
+			return err
 		}
 		i.campaignMapping.Set(DocId(id), i.count)
 		i.bitmap.Set(i.count)
@@ -208,12 +197,11 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 	default:
 		return errors.New("the doc is nil or type is wrong")
 	}
-	return
+	return err
 }
 
 func (i *Indexer) storageAdd(id document.DocId, field *document.Field) (err error) {
-	err = i.storageIndex.Add(field.Name, id, field.Value)
-	if err != nil {
+	if err = i.storageIndex.Add(field.Name, id, field.Value); err != nil {
 		i.WarnStatus(field.Name, field.Value, err.Error())
 		return
 	}
@@ -226,8 +214,7 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 		value, _ := field.Value.([]string)
 		for _, v := range value {
 			i.invertedIndex.Del(field.Name+"_"+v, id)
-			docId, ok := i.campaignMapping.Get(DocId(id))
-			if ok {
+			if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
 				i.bitmap.Del(docId.(document.DocId))
 			}
 		}
@@ -235,23 +222,20 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 		value, _ := field.Value.([]int64)
 		for _, v := range value {
 			i.invertedIndex.Del(field.Name+"_"+strconv.FormatInt(v, 10), id)
-			docId, ok := i.campaignMapping.Get(DocId(id))
-			if ok {
+			if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
 				i.bitmap.Del(docId.(document.DocId))
 			}
 		}
 	case string:
 		value, _ := field.Value.(string)
 		i.invertedIndex.Del(field.Name+"_"+value, id)
-		docId, ok := i.campaignMapping.Get(DocId(id))
-		if ok {
+		if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
 			i.bitmap.Del(docId.(document.DocId))
 		}
 	case int64:
 		value, _ := field.Value.(int64)
 		i.invertedIndex.Del(field.Name+"_"+strconv.FormatInt(value, 10), id)
-		docId, ok := i.campaignMapping.Get(DocId(id))
-		if ok {
+		if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
 			i.bitmap.Del(docId.(document.DocId))
 		}
 	default:
@@ -262,8 +246,7 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 }
 
 func (i *Indexer) storageDel(id document.DocId, field *document.Field) {
-	ok := i.storageIndex.Del(field.Name, id)
-	if !ok {
+	if ok := i.storageIndex.Del(field.Name, id); !ok {
 		if i.aDebug != nil {
 			i.aDebug.AddDebugMsg(fmt.Sprintf("del [%v] - [%v] failed", id, field))
 		}

@@ -42,8 +42,7 @@ func (s *StorageIndexer) Get(fieldName string, id document.DocId) interface{} {
 	if !ok {
 		return helpers.ParseError
 	}
-	res, err := sl.Get(id)
-	if err == nil {
+	if res, err := sl.Get(id); err == nil {
 		return res
 	}
 	return helpers.DocumentError
@@ -71,8 +70,7 @@ func (s *StorageIndexer) Del(fieldName string, id document.DocId) (ok bool) {
 	if !ok {
 		return ok
 	}
-	sl, ok := v.(*datastruct.SkipList)
-	if ok {
+	if sl, ok := v.(*datastruct.SkipList); ok {
 		sl.Del(id)
 		s.data.Store(fieldName, sl)
 		return ok
@@ -81,8 +79,7 @@ func (s *StorageIndexer) Del(fieldName string, id document.DocId) (ok bool) {
 }
 
 func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
-	v, ok := s.data.Load(fieldName)
-	if ok {
+	if v, ok := s.data.Load(fieldName); ok {
 		sl, ok := v.(*datastruct.SkipList)
 		if ok {
 			if s.aDebug != nil {

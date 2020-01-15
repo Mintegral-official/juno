@@ -33,8 +33,7 @@ func NewSkipList(level int) *SkipList {
 }
 
 func (sl *SkipList) Add(key document.DocId, value interface{}) {
-	m, ok := sl.findGE(key, true, sl.previousNodeCache)
-	if ok && m.key == key {
+	if m, ok := sl.findGE(key, true, sl.previousNodeCache); ok && m.key == key {
 		h := len(m.next)
 		x := newNode(key, value, h)
 		for i, n := range sl.previousNodeCache[:h] {
@@ -54,8 +53,7 @@ func (sl *SkipList) Add(key document.DocId, value interface{}) {
 }
 
 func (sl *SkipList) Del(key document.DocId) {
-	x, ok := sl.findGE(key, true, sl.previousNodeCache)
-	if ok {
+	if x, ok := sl.findGE(key, true, sl.previousNodeCache); ok {
 		for i, n := range sl.previousNodeCache[:len(x.next)] {
 			if n.Next(i) != nil {
 				n.setNext(i, n.Next(i).Next(i))
@@ -71,8 +69,7 @@ func (sl *SkipList) Contains(key document.DocId) (ok bool) {
 }
 
 func (sl *SkipList) Get(key document.DocId) (x *Element, err error) {
-	x, ok := sl.findGE(key, true, sl.previousNodeCache)
-	if ok {
+	if x, ok := sl.findGE(key, true, sl.previousNodeCache); ok {
 		return x, err
 	}
 	return nil, helpers.ElementNotfound
@@ -83,8 +80,7 @@ func (sl *SkipList) Len() int {
 }
 
 func (sl *SkipList) findGE(key document.DocId, flag bool, element [DefaultMaxLevel]*Element) (*Element, bool) {
-	x, h := sl.header, sl.level-1
-	for h >= 0 {
+	for x, h := sl.header, sl.level-1; h >= 0; {
 		if x == nil {
 			return nil, false
 		}
@@ -111,8 +107,7 @@ func (sl *SkipList) findGE(key document.DocId, flag bool, element [DefaultMaxLev
 }
 
 func (sl *SkipList) findLT(key document.DocId) (*Element, bool) {
-	x, h := sl.header, sl.level-1
-	for h >= 0 {
+	for x, h := sl.header, sl.level-1; h >= 0; {
 		next := x.Next(h)
 		if next == nil || next.key >= key {
 			if h == 0 {
