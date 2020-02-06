@@ -45,8 +45,8 @@ func (nc *NotChecker) Check(id document.DocId) bool {
 	}
 	if nc.transfer {
 		nc.e.SetValue(nc.value)
-		return nc.e.In(v)
+		return !nc.e.In(v)
 	}
 	nc.e.SetValue(v)
-	return nc.e.In(nc.value)
+	return !nc.e.In(nc.value)
 }

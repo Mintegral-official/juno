@@ -254,6 +254,8 @@ func changeType(idx *index.Indexer, name string, value ...string) (res []interfa
 		fallthrough
 	case document.SelfDefinedFieldType:
 		fallthrough
+	case document.MapFieldType:
+		fallthrough
 	default:
 		for _, v := range value {
 			res = append(res, v)
