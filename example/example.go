@@ -298,7 +298,7 @@ func main() {
 
 	// 1. os: campaign.os == condition.Os
 	query.NewTermQuery(invertIdx.Iterator(campaign.Os, condition.Os))
-	//	2. country, city:  campaign.country == condition.Country  and campaign.citycode == conditon.CityCode) or country == "ALL"
+	//	2. country, city:  campaign.country == condition.Country  and campaign.CityCode == condition.CityCode) or country == "ALL"
 	query.NewOrQuery([]query.Query{
 		query.NewAndQuery([]query.Query{
 			query.NewTermQuery(invertIdx.Iterator(campaign.CountryCode, condition.Country)),
@@ -386,7 +386,6 @@ func main() {
 	//*****13. deviceType: condtion.DeviceType != 0 len(campaign.DeviceTypeV2) == 0 or
 	//(4 in campaign.DeviceTypeV2 and 5 in campaign.DeviceTypeV2) or conditon.DeviceType in campaign.DeviceTypeV2
 	query.NewOrQuery([]query.Query{
-		// TODO  len(campaign.DeviceTypeV2) == 0
 		query.NewTermQuery(invertIdx.Iterator(campaign.DeviceTypeV2), conditon.DeviceType),
 		query.NewAndQuery([]query.Query{
 			query.NewTermQuery(invertIdx.Iterator(campaign.DeviceTypeV2, 4)),
