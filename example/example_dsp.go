@@ -8,9 +8,11 @@ import (
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
+	"github.com/Mintegral-official/juno/search"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -132,9 +134,7 @@ func countryCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 
 // CType
 //condition.DevImpLimit  == true campaign.ctype != 1(cpa) and campaign.ctype != 5(cpe)}
-
 //condition.NeedSearchCpc  == false campaign.ctype != 2(cpc) and campaign.ctype != 3(cpm)
-
 //condition.TrafficType == "site" campaign.ctype != 1(cpa) and campaign.ctype != 5(cpe)
 func ctypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
@@ -296,9 +296,16 @@ func queryDsp() {
 	}
 	var appSubCategory = query.NewOrQuery(q3, nil)
 
-	//SubCategoryName TODO
+	//SubCategoryName
 	//condition.BSubCategoryName != nil condition.BSubCategoryName not in campaign.SubCategoryName 切片对切片
-
+	var subCategoryName query.Query
+	if condition.BSubCategoryName != nil {
+		var q []query.Query
+		for _, v := range condition.BSubCategoryName {
+			q = append(q, query.NewTermQuery(invertIdx.Iterator("SubCategoryName", v)))
+		}
+		subCategoryName = query.NewAndQuery(q, nil)
+	}
 	//ContentRating
 	//condition.Coppa==1 campaign.ContentRating <=12
 	var contentRating query.Query
@@ -398,15 +405,28 @@ func queryDsp() {
 	//iabCategory
 	//len(condition.Bcat) > 0
 	//len(campaign.IabCategory)==0 or campaign.IabCategory key 和value（slice) not in condition.Bcat
-	var q6 query.Query
+	var q7 []query.Query
 	if len(condition.Bcat) > 0 {
 		for k := range condition.Bcat {
-			q6 = append(q6, query.NewTermQuery(invertIdx.Iterator("IabCategory", k)))
+			q7 = append(q7, query.NewTermQuery(invertIdx.Iterator("IabCategory", k)))
 		}
 	}
 	var iabCategory = query.NewOrQuery(q6, nil)
 
-	//IabCategoryTag1 IabCategoryTag2 TODO
+	//IabCategoryTag1 IabCategoryTag2
+	var iabCategoryTag1, iabCategoryTag2 []query.Query
+	if len(condition.IabCategory) != 0 {
+		for _, v := range condition.IabCategory {
+			tmp := strings.Split(v, "-")
+			iabCategoryTag1 = append(iabCategoryTag1, query.NewTermQuery(invertIdx.Iterator("IabCategoryTag1", tmp[0])))
+			iabCategoryTag2 = append(iabCategoryTag2, query.NewTermQuery(invertIdx.Iterator("IabCategoryTag1", v)))
+		}
+	}
+
+	var iab = query.NewOrQuery([]query.Query{
+		query.NewOrQuery(iabCategoryTag1, nil),
+		query.NewAndQuery(iabCategoryTag2, nil),
+	}, nil)
 
 	//networkType len(campaign.networkType)>0 condition.NetworkType in campaign.NetworkType
 	var networkType = query.NewTermQuery(invertIdx.Iterator("NetworkType", strconv.Itoa(int(condition.NetworkType))))
@@ -439,19 +459,60 @@ func queryDsp() {
 	//advertiserId	len(condition.AdvertiserWhitelist) > 0 campaign.advertiser in condition.AdvertiserWhitelist
 	var blocklist, whitelist query.Query
 	if len(condition.AdvertiserBlocklist) > 0 {
-		blocklist = query.NewAndQuery([]query.Query{
-			query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-		}, []check.Checker{
-			check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), condition.AdvertiserBlocklist, nil, false),
-		})
+		var q []query.Query
+		for k := range condition.AdvertiserBlocklist {
+			q = append(q, query.NewTermQuery(invertIdx.Iterator("AdvertiserId", k)))
+		}
+		blocklist = query.NewOrQuery(q, nil)
 	}
 	if len(condition.AdvertiserWhitelist) > 0 {
-		whitelist = query.NewAndQuery([]query.Query{
-			query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-		}, []check.Checker{
-			check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), condition.AdvertiserWhitelist, nil, false),
-		})
+		var q []query.Query
+		for k := range condition.AdvertiserWhitelist {
+			q = append(q, query.NewTermQuery(invertIdx.Iterator("AdvertiserId", k)))
+		}
+		whitelist = query.NewOrQuery(q, nil)
 	}
-	var advertiserId = query.NewAndQuery([]query.Query{blocklist, whitelist}, nil)
+	var advertiserId = query.NewNotAndQuery([]query.Query{whitelist, blocklist}, nil)
 
+	resQuery := query.NewAndQuery([]query.Query{
+		query.NewNotAndQuery([]query.Query{
+			campaignIdQuery(tIndex, cond),
+			campaignTypeQuery(tIndex, cond),
+			ctypeQuery(tIndex, cond),
+			directQuery,
+			rtQuery,
+			industryIdQuery,
+			domainQuery,
+			deviceAndIpuaRetargetQuery,
+			appCategory,
+			appSubCategory,
+			subCategoryV2,
+			excludeInstalledApps,
+			packageName,
+			iabCategory,
+			subCategoryName,
+		}, nil),
+		osQuery(tIndex, cond),
+		countryCodeQuery(tIndex, cond),
+		iab,
+		contentRating,
+		installApps,
+		trafficType,
+		adType,
+		effective,
+		supportHttps,
+		gender,
+		devicelanguage,
+		adSchedule,
+		networkType,
+		deviceModel,
+		osv,
+		advertiserId,
+		endTime,
+	}, nil)
+
+	searcher := search.NewSearcher()
+	searcher.Search(tIndex, resQuery)
+	fmt.Println(searcher.Docs)
+	fmt.Println(searcher.Time)
 }
