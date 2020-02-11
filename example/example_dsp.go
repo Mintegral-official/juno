@@ -474,6 +474,43 @@ func queryDsp() {
 	}
 	var advertiserId = query.NewNotAndQuery([]query.Query{whitelist, blocklist}, nil)
 
+	//res := query.NewAndQuery([]query.Query{
+	//	query.NewNotAndQuery([]query.Query{
+	//		campaignIdQuery(tIndex, cond),
+	//		campaignTypeQuery(tIndex, cond),
+	//		ctypeQuery(tIndex, cond),
+	//		directQuery,
+	//		rtQuery,
+	//		industryIdQuery,
+	//		domainQuery,
+	//		deviceAndIpuaRetargetQuery,
+	//		appCategory,
+	//		appSubCategory,
+	//		subCategoryV2,
+	//		excludeInstalledApps,
+	//		packageName,
+	//		iabCategory,
+	//		subCategoryName,
+	//	}, nil),
+	//	osQuery(tIndex, cond),
+	//	countryCodeQuery(tIndex, cond),
+	//	iab,
+	//	//contentRating,
+	//	installApps,
+	//	trafficType,
+	//	adType,
+	//	effective,
+	//	supportHttps,
+	//	gender,
+	//	devicelanguage,
+	//	adSchedule,
+	//	networkType,
+	//	deviceModel,
+	//	//osv,
+	//	advertiserId,
+	//	//endTime,
+	//}, nil)
+
 	resQuery := query.NewAndQuery([]query.Query{
 		query.NewNotAndQuery([]query.Query{
 			campaignIdQuery(tIndex, cond),
@@ -495,7 +532,6 @@ func queryDsp() {
 		osQuery(tIndex, cond),
 		countryCodeQuery(tIndex, cond),
 		iab,
-		contentRating,
 		installApps,
 		trafficType,
 		adType,
@@ -506,10 +542,17 @@ func queryDsp() {
 		adSchedule,
 		networkType,
 		deviceModel,
-		osv,
 		advertiserId,
-		endTime,
-	}, nil)
+		query.NewTermQuery(storageIdx.Iterator("EndTime")),
+		query.NewTermQuery(storageIdx.Iterator("OsVersionMax")),
+		query.NewTermQuery(storageIdx.Iterator("OsVersionMin")),
+		query.NewTermQuery(storageIdx.Iterator("ContentRating")),
+	}, []check.Checker{
+		check.NewChecker(storageIdx.Iterator("OsVersionMin"), condition.osv, operation.LE, nil, false),
+		check.NewChecker(storageIdx.Iterator("OsVersionMax"), condition.osv, operation.GE, nil, false),
+		check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
+		check.NewChecker(storageIdx.Iterator("ContentRating"), 12, operation.LE, nil, false),
+	})
 
 	searcher := search.NewSearcher()
 	searcher.Search(tIndex, resQuery)
