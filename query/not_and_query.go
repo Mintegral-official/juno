@@ -33,6 +33,7 @@ func (naq *NotAndQuery) Next() (document.DocId, error) {
 	if naq.debugs != nil {
 		naq.debugs.NextNum++
 	}
+label:
 	for {
 		target, err := naq.queries[0].Current()
 		if err != nil {
@@ -49,6 +50,10 @@ func (naq *NotAndQuery) Next() (document.DocId, error) {
 		}
 		for i := 1; i < len(naq.queries); i++ {
 			cur, err := naq.queries[i].GetGE(target)
+			if target == cur {
+				_, _ = naq.queries[0].Next()
+				goto label
+			}
 			if (target != cur || err != nil) && i == len(naq.queries)-1 {
 				_, _ = naq.queries[0].Next()
 				for !naq.check(target) {

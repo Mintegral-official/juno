@@ -47,12 +47,17 @@ func TestNewNotAndQuery_Next2(t *testing.T) {
 	sl1.Add(document.DocId(6), [1]byte{})
 	sl1.Add(document.DocId(9), [1]byte{})
 
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+	sl2.Add(document.DocId(3), [1]byte{})
+
 	Convey("not and query next2", t, func() {
-		a := NewNotAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
+		a := NewNotAndQuery([]Query{
+			NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator()),
+		}, nil)
 		v, e := a.Next()
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
-		v, e = a.Next()
+		//So(v, ShouldEqual, 3)
+		//So(e, ShouldBeNil)
+		//v, e = a.Next()
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
 
