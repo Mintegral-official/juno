@@ -81,14 +81,20 @@ func campaignIdQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
 	var oq, naq []query.Query
 	if len(cond.WhiteOfferList) > 0 {
-		for wol := range cond.WhiteOfferList {
-			oq = append(oq, query.NewTermQuery(invertIdx.Iterator("CampaignId", wol)))
+		for k, v := range cond.WhiteOfferList {
+			if !v {
+				continue
+			}
+			oq = append(oq, query.NewTermQuery(invertIdx.Iterator("CampaignId", k)))
 		}
 	}
 	naq = append(naq, query.NewOrQuery(oq, nil))
 	if len(condition.BlackOfferList) > 0 {
-		for wol := range cond.BlackOfferList {
-			naq = append(naq, query.NewTermQuery(invertIdx.Iterator("CampaignId", wol)))
+		for k, v := range cond.BlackOfferList {
+			if !v {
+				continue
+			}
+			naq = append(naq, query.NewTermQuery(invertIdx.Iterator("CampaignId", k)))
 		}
 	}
 	return query.NewNotAndQuery(naq, nil)
@@ -223,7 +229,10 @@ func queryDsp() {
 	// len(condition.BlockIndustryIds) > 0 campaign.IndustryId not in condition.BlockIndustryIds
 	var q []query.Query
 	if len(condition.BlockIndustryIds) > 0 {
-		for k := range condition.BlockIndustryIds {
+		for k, v := range condition.BlockIndustryIds {
+			if !v {
+				continue
+			}
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("IndustryId", k)))
 		}
 	}
@@ -280,7 +289,10 @@ func queryDsp() {
 	// len(condition.BAppCategory)>0 campaign.AppCategory not in condition.BAppCategory
 	var q2 []query.Query
 	if len(condition.BAppCategory) > 0 {
-		for k := range condition.BAppCategory {
+		for k, v := range condition.BAppCategory {
+			if !v {
+				continue
+			}
 			q2 = append(q2, query.NewTermQuery(invertIdx.Iterator("AppCategory", k)))
 		}
 	}
@@ -290,7 +302,10 @@ func queryDsp() {
 	//len(condition.BAppSubCategory)>0 campaign.AppSubCategory not in condition.BAppSubCatetory
 	var q3 []query.Query
 	if len(condition.BAppSubCategory) > 0 {
-		for k := range condition.BAppSubCategory {
+		for k, v := range condition.BAppSubCategory {
+			if !v {
+				continue
+			}
 			q3 = append(q3, query.NewTermQuery(invertIdx.Iterator("AppSubCategory", k)))
 		}
 	}
@@ -460,14 +475,20 @@ func queryDsp() {
 	var blocklist, whitelist query.Query
 	if len(condition.AdvertiserBlocklist) > 0 {
 		var q []query.Query
-		for k := range condition.AdvertiserBlocklist {
+		for k, v := range condition.AdvertiserBlocklist {
+			if !v {
+				continue
+			}
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("AdvertiserId", k)))
 		}
 		blocklist = query.NewOrQuery(q, nil)
 	}
 	if len(condition.AdvertiserWhitelist) > 0 {
 		var q []query.Query
-		for k := range condition.AdvertiserWhitelist {
+		for k, v := range condition.AdvertiserWhitelist {
+			if !v {
+				continue
+			}
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("AdvertiserId", k)))
 		}
 		whitelist = query.NewOrQuery(q, nil)
