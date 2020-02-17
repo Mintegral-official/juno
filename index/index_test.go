@@ -235,7 +235,7 @@ func TestStorageIndexer_Add(t *testing.T) {
 		So(sto.HasNext(), ShouldBeTrue)
 		c = 0
 		for sto.HasNext() {
-			if sto.Current().Value() != nil {
+			if sto.Current().Value != nil {
 				c++
 			}
 			sto.Next()

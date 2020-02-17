@@ -63,6 +63,25 @@ func (i *InvertedIndexer) Del(fieldName string, id document.DocId) (ok bool) {
 	return ok
 }
 
+func (i *InvertedIndexer) Update(fieldName string, ids []document.DocId) {
+	v, ok := i.data.Load(fieldName)
+	if !ok {
+		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+		for _, id := range ids {
+			sl.Add(id, nil)
+		}
+		i.data.Store(fieldName, sl)
+		return
+	}
+	if sl, ok := v.(*datastruct.SkipList); ok {
+		sl = datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+		for _, id := range ids {
+			sl.Add(id, nil)
+		}
+		i.data.Store(fieldName, sl)
+	}
+}
+
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	var fieldName = name + "_" + value
 	if v, ok := i.data.Load(fieldName); ok {
