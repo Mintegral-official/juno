@@ -1,45 +1,5 @@
 package main
 
-import (
-	"context"
-	"fmt"
-	"github.com/Mintegral-official/juno/builder"
-	"github.com/Mintegral-official/juno/index"
-	"github.com/Mintegral-official/juno/query"
-	"github.com/Mintegral-official/juno/query/check"
-	"github.com/Mintegral-official/juno/query/operation"
-	"github.com/Mintegral-official/juno/search"
-	"github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson"
-	"strconv"
-	"strings"
-	"time"
-)
-
-type myOperations struct {
-	value interface{}
-}
-
-func (o *myOperations) Equal(value interface{}) bool {
-	// your logic
-	return true
-}
-
-func (o *myOperations) Less(value interface{}) bool {
-	// your logic
-	return true
-}
-
-func (o *myOperations) In(value interface{}) bool {
-	switch value.(type) {
-
-	}
-	return true
-}
-
-func (o *myOperations) SetValue(value interface{}) {
-	o.value = value
-}
 
 /**
 campaignId : both
@@ -74,6 +34,8 @@ endTime startTime: storage
 advertiserId: both
 */
 
+
+/*  *************query code*****************
 //  campaignId
 //  len(condition.WhiteOfferList) > 0 campaign.campaignId in condition.WhiteOfferList
 //  len(condition.BlackOfferList) > 0 campaign.campaignId not in condition.BlackOfferList
@@ -818,4 +780,6 @@ func queryDsp() {
 	searcher.Search(tIndex, resQuery)
 	fmt.Println(searcher.Docs)
 	fmt.Println(searcher.Time)
-}
+
+
+ */

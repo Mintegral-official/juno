@@ -99,6 +99,7 @@ type InvertedIndexer struct {
 type InvertedIndex interface {
     Add(fieldName string, id document.DocId) error   // 新增
     Del(fieldName string, id document.DocId) bool    // 删除
+    Update(fieldName string, ids []document.DocId)   // 更新某一条invert list
     Iterator(name, value string) datastruct.Iterator // 迭代器
     Count() int                                      // 统计倒排链的个数
     DebugInfo() *debug.Debug                         // debug信息接口
