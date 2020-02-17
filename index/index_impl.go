@@ -4,118 +4,279 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/log"
+	"github.com/easierway/concurrent_map"
+	"github.com/sirupsen/logrus"
+	"strconv"
+	"strings"
 )
 
-type IndexImpl struct {
+type Indexer struct {
 	invertedIndex   InvertedIndex
 	storageIndex    StorageIndex
-	campaignMapping map[document.DocId]document.DocId
+	campaignMapping *concurrent_map.ConcurrentMap
 	bitmap          *datastruct.BitSet
 	count           document.DocId
+	name            string
+	kvType          *concurrent_map.ConcurrentMap
+	logger          log.Logger
+	aDebug          *debug.Debug
 }
 
-func NewIndex(name string) *IndexImpl {
-	return &IndexImpl{
-		invertedIndex:   NewInvertedIndexImpl(),
-		storageIndex:    NewStorageIndexImpl(),
-		campaignMapping: make(map[document.DocId]document.DocId, 2000000),
+func NewIndex(name string, isDebug ...int) (i *Indexer) {
+	i = &Indexer{
+		invertedIndex:   NewInvertedIndexer(),
+		storageIndex:    NewStorageIndexer(),
+		campaignMapping: concurrent_map.CreateConcurrentMap(128),
+		kvType:          concurrent_map.CreateConcurrentMap(128),
 		bitmap:          datastruct.NewBitMap(),
 		count:           1,
+		name:            name,
+		logger:          logrus.New(),
 	}
-
+	if len(isDebug) != 0 && isDebug[0] == 1 {
+		i.aDebug = debug.NewDebug(name)
+	}
+	return i
 }
 
-func (ii *IndexImpl) GetInvertedIndex() InvertedIndex {
-	return ii.invertedIndex
+func (i *Indexer) GetInvertedIndex() InvertedIndex {
+	return i.invertedIndex
 }
 
-func (ii *IndexImpl) GetStorageIndex() StorageIndex {
-	return ii.storageIndex
+func (i *Indexer) GetStorageIndex() StorageIndex {
+	return i.storageIndex
 }
 
-func (ii *IndexImpl) GetCampaignMap() map[document.DocId]document.DocId {
-	return ii.campaignMapping
+func (i *Indexer) GetCampaignMap() *concurrent_map.ConcurrentMap {
+	return i.campaignMapping
 }
 
-func (ii *IndexImpl) GetBitMap() *datastruct.BitSet {
-	return ii.bitmap
+func (i *Indexer) GetBitMap() *datastruct.BitSet {
+	return i.bitmap
 }
 
-func (ii *IndexImpl) Add(doc *document.DocInfo) error {
+func (i *Indexer) GetName() string {
+	return i.name
+}
+
+func (i *Indexer) UnsetDebug() {
+	i.aDebug = debug.NewDebug(i.GetName())
+}
+
+func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 	if doc == nil {
 		return helpers.DocumentError
 	}
-	for j := range doc.Fields {
-		var err error
-		if doc.Fields[j].IndexType == document.InvertedIndexType {
-			if err = ii.invertedIndex.Add(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count); err != nil {
+	for _, field := range doc.Fields {
+		switch field.IndexType {
+		case document.InvertedIndexType:
+			if err = i.invertAdd(doc.Id, field); err != nil {
+				if i.aDebug != nil {
+					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
+				}
 				return err
 			}
-			ii.campaignMapping[doc.Id] = ii.count
-			ii.bitmap.Set(uint64(ii.count))
-			ii.count++
-		} else if doc.Fields[j].IndexType == document.StorageIndexType {
-			if err = ii.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
+		case document.StorageIndexType:
+			if err = i.storageAdd(doc.Id, field); err != nil {
+				if i.aDebug != nil {
+					i.aDebug.AddDebugMsg(i.StringBuilder(256, "storage", doc.Id, field.Name, field.Value, err.Error()))
+				}
 				return err
 			}
-		} else if doc.Fields[j].IndexType == document.BothIndexType {
-			if err = ii.invertedIndex.Add(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count); err != nil {
+			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
+		case document.BothIndexType:
+			if err = i.invertAdd(doc.Id, field); err != nil {
+				if i.aDebug != nil {
+					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
+				}
 				return err
 			}
-			ii.campaignMapping[doc.Id] = ii.count
-			ii.bitmap.Set(uint64(ii.count))
-			ii.count++
-			if err = ii.storageIndex.Add(doc.Fields[j].Name, doc.Id, doc.Fields[j].Value); err != nil {
+			if err = i.storageAdd(doc.Id, field); err != nil {
+				if i.aDebug != nil {
+					i.aDebug.AddDebugMsg(i.StringBuilder(256, "storage", doc.Id, field.Name, field.Value, err.Error()))
+				}
 				return err
 			}
-		} else {
-			return errors.New("the add doc type is nil or wrong")
+			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
+		default:
+			i.WarnStatus(field.Name, field.Value, "type is wrong")
+			return errors.New("the add doc type is wrong or nil ")
 		}
 	}
-	return nil
+	return err
 }
 
-func (ii *IndexImpl) Del(doc *document.DocInfo) {
+func (i *Indexer) Del(doc *document.DocInfo) {
 	if doc == nil {
 		return
 	}
-	for j := range doc.Fields {
-		if doc.Fields[j].Value == nil {
-			continue
-		}
-		if doc.Fields[j].IndexType == document.InvertedIndexType {
-			ii.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count)
-			ii.bitmap.Del(uint64(ii.count))
-		} else if doc.Fields[j].IndexType == document.StorageIndexType {
-			ii.storageIndex.Del(doc.Fields[j].Name, doc.Id)
-		} else if doc.Fields[j].IndexType == document.BothIndexType {
-			ii.invertedIndex.Del(doc.Fields[j].Name+"_"+fmt.Sprint(doc.Fields[j].Value), ii.count)
-			ii.bitmap.Del(uint64(ii.count))
-			ii.storageIndex.Del(doc.Fields[j].Name, doc.Id)
-		} else {
+	for _, field := range doc.Fields {
+		switch field.IndexType {
+		case document.InvertedIndexType:
+			i.invertDel(doc.Id, field)
+		case document.StorageIndexType:
+			i.storageDel(doc.Id, field)
+		case document.BothIndexType:
+			i.invertDel(doc.Id, field)
+			i.storageDel(doc.Id, field)
+		default:
 			panic("the del doc type is nil or wrong")
 		}
 	}
 }
 
-func (ii *IndexImpl) Update(filename string) error {
-	if err := ii.Dump(filename); err != nil {
+func (i *Indexer) Update(filename string) error {
+	if err := i.Dump(filename); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ii *IndexImpl) Dump(filename string) error {
+func (i *Indexer) Dump(filename string) error {
 	// TODO
 	return nil
 }
 
-func (ii *IndexImpl) Load(filename string) error {
+func (i *Indexer) Load(filename string) error {
 	return nil
 }
 
-func (ii *IndexImpl) GetDataType(fieldName string) document.FieldType {
-	return 0
+func (i *Indexer) GetDataType(fieldName string) document.FieldType {
+	if t, ok := i.kvType.Get(concurrent_map.StrKey(fieldName)); ok {
+		return t.(document.FieldType)
+	}
+	return document.DefaultFieldType
+}
+
+func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error) {
+	switch field.Value.(type) {
+	case []string:
+		value, _ := field.Value.([]string)
+		for _, v := range value {
+			if err = i.invertedIndex.Add(field.Name+"_"+v, id); err != nil {
+				i.WarnStatus(field.Name, v, err.Error())
+				return err
+			}
+			i.campaignMapping.Set(DocId(id), i.count)
+			i.bitmap.Set(i.count)
+			i.count++
+		}
+	case []int64:
+		value, _ := field.Value.([]int64)
+		for _, v := range value {
+			if err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(v, 10), id); err != nil {
+				i.WarnStatus(field.Name, v, err.Error())
+				return err
+			}
+			i.campaignMapping.Set(DocId(id), i.count)
+			i.bitmap.Set(i.count)
+			i.count++
+		}
+	case string:
+		value, _ := field.Value.(string)
+		if err = i.invertedIndex.Add(field.Name+"_"+value, id); err != nil {
+			i.WarnStatus(field.Name, value, err.Error())
+			return err
+		}
+		i.campaignMapping.Set(DocId(id), i.count)
+		i.bitmap.Set(i.count)
+		i.count++
+	case int64:
+		value, _ := field.Value.(int64)
+		if err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(value, 10), id); err != nil {
+			i.WarnStatus(field.Name, value, err.Error())
+			return err
+		}
+		i.campaignMapping.Set(DocId(id), i.count)
+		i.bitmap.Set(i.count)
+		i.count++
+	default:
+		return errors.New("the doc is nil or type is wrong")
+	}
+	return err
+}
+
+func (i *Indexer) storageAdd(id document.DocId, field *document.Field) (err error) {
+	if err = i.storageIndex.Add(field.Name, id, field.Value); err != nil {
+		i.WarnStatus(field.Name, field.Value, err.Error())
+		return
+	}
+	return
+}
+
+func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
+	switch field.Value.(type) {
+	case []string:
+		value, _ := field.Value.([]string)
+		for _, v := range value {
+			i.invertedIndex.Del(field.Name+"_"+v, id)
+			if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
+				i.bitmap.Del(docId.(document.DocId))
+			}
+		}
+	case []int64:
+		value, _ := field.Value.([]int64)
+		for _, v := range value {
+			i.invertedIndex.Del(field.Name+"_"+strconv.FormatInt(v, 10), id)
+			if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
+				i.bitmap.Del(docId.(document.DocId))
+			}
+		}
+	case string:
+		value, _ := field.Value.(string)
+		i.invertedIndex.Del(field.Name+"_"+value, id)
+		if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
+			i.bitmap.Del(docId.(document.DocId))
+		}
+	case int64:
+		value, _ := field.Value.(int64)
+		i.invertedIndex.Del(field.Name+"_"+strconv.FormatInt(value, 10), id)
+		if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
+			i.bitmap.Del(docId.(document.DocId))
+		}
+	default:
+		if i.aDebug != nil {
+			i.aDebug.AddDebugMsg(fmt.Sprintf("the del doc [%v] is nil or type is wrong", field))
+		}
+	}
+}
+
+func (i *Indexer) storageDel(id document.DocId, field *document.Field) {
+	if ok := i.storageIndex.Del(field.Name, id); !ok {
+		if i.aDebug != nil {
+			i.aDebug.AddDebugMsg(fmt.Sprintf("del [%v] - [%v] failed", id, field))
+		}
+	}
+}
+
+func (i *Indexer) DebugInfo() *debug.Debug {
+	if i.aDebug != nil {
+		i.aDebug.AddDebugMsg("invert index count: " + strconv.Itoa(i.invertedIndex.Count()))
+		i.aDebug.AddDebugMsg("storage index count: " + strconv.Itoa(i.storageIndex.Count()))
+		i.aDebug.AddDebug(i.invertedIndex.DebugInfo(), i.storageIndex.DebugInfo())
+		return i.aDebug
+	}
+	return nil
+}
+
+func (i *Indexer) StringBuilder(cap int, value ...interface{}) string {
+	var b strings.Builder
+	b.Grow(cap)
+	_, _ = fmt.Fprintf(&b, "%s: ", value[0])
+	b.WriteString("index add failed. ")
+	_, _ = fmt.Fprintf(&b, "%s:[%v] ", "docId", value[1])
+	_, _ = fmt.Fprintf(&b, "%s:[%v] ", "name", value[2])
+	_, _ = fmt.Fprintf(&b, "%s:[%s] ", "value", value[3])
+	_, _ = fmt.Fprintf(&b, "%s:[%s]", "reason", value[4])
+	return b.String()
+}
+
+func (i *Indexer) WarnStatus(name string, value interface{}, err string) {
+	if i.logger != nil {
+		i.logger.Warnf("name:[%s] value:[%v] wrong reason:[%s]", name, value, err)
+	}
 }

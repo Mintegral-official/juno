@@ -2,6 +2,7 @@ package index
 
 import (
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 )
 
@@ -11,4 +12,5 @@ type StorageIndex interface {
 	Del(fieldName string, id document.DocId) bool
 	Iterator(fieldName string) datastruct.Iterator
 	Count() int
+	DebugInfo() *debug.Debug
 }

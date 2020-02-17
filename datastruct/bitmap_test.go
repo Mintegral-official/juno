@@ -2,6 +2,7 @@ package datastruct
 
 import (
 	"fmt"
+	"github.com/Mintegral-official/juno/document"
 	. "github.com/smartystreets/goconvey/convey"
 	"math/rand"
 	"strconv"
@@ -24,12 +25,12 @@ func TestNewBitMap(t *testing.T) {
 }
 
 func TestNewBitMap3(t *testing.T) {
-	Convey("NewBitMap", t, func() {
+	Convey("bitmap exist", t, func() {
 		bm := NewBitMap()
 		bm.Set(10)
-		fmt.Println(bm.IsExist(10))
+		So(bm.IsExist(10), ShouldBeTrue)
 		bm.Del(10)
-		fmt.Println(bm.IsExist(10))
+		So(bm.IsExist(10), ShouldBeFalse)
 	})
 }
 
@@ -39,7 +40,7 @@ func BenchmarkBitMap(b *testing.B) {
 	bm := NewBitMap()
 	for i := 0; i < b.N; i++ {
 		for j := 0; j < 100000000/8; j++ {
-			bm.Set(uint64(j + 1))
+			bm.Set(document.DocId(j + 1))
 		}
 	}
 }

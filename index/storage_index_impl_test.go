@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-func TestNewStorageIndexImpl(t *testing.T) {
+func TestNewStorageIndexerAdd(t *testing.T) {
 	Convey("Get", t, func() {
-		s := NewStorageIndexImpl()
+		s := NewStorageIndexer()
 		So(s.Get("fieldName", 1), ShouldBeNil)
 		So(s.Del("fieldName", 1), ShouldBeFalse)
 		So(s.Iterator("fieldName"), ShouldNotBeNil)
@@ -20,12 +20,12 @@ func TestNewStorageIndexImpl(t *testing.T) {
 	})
 }
 
-func TestStorageIndexImpl(t *testing.T) {
-	s := NewStorageIndexImpl()
-	sl1, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+func TestStorageIndexer(t *testing.T) {
+	s := NewStorageIndexer()
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	s.data.Store("fieldName1", sl1)
 	s.data.Store("fieldName2", nil)
-	sl2, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	s.data.Store("fieldName4", sl2)
 	Convey("ADD & GET &DEL & ITERATOR", t, func() {
 		So(s.Add("fieldName1", document.DocId(1), nil), ShouldBeNil)
@@ -47,17 +47,19 @@ func TestStorageIndexImpl(t *testing.T) {
 		a = s.Iterator("fieldName1")
 		c = 0
 		for a.HasNext() {
-			if a.Next() != nil {
+			if a.Current() != nil {
 				c++
 			}
+			a.Next()
 		}
 		So(c, ShouldEqual, 3)
 		So(s.Del("XXX", document.DocId(1)), ShouldBeFalse)
 		So(s.Get("fieldName1", document.DocId(1)), ShouldEqual, helpers.DocumentError)
 		So(s.Get("fieldName1", document.DocId(2)), ShouldNotBeNil)
-		//	fmt.Println("*******")
-		//	fmt.Println(s.Get("fieldName1", document.DocId(2)))
 		So(s.Get("fieldName2", document.DocId(2)), ShouldEqual, helpers.ParseError)
+		So(s.Iterator("fieldName2"), ShouldNotBeNil)
+		So(s.Iterator("fieldName4"), ShouldNotBeNil)
+		So(s.Iterator("fieldName0"), ShouldNotBeNil)
 		So(s.Count(), ShouldEqual, 4)
 	})
 }

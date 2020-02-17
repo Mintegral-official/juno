@@ -1,13 +1,13 @@
 module github.com/Mintegral-official/juno
 
-go 1.12.9
+go 1.12
 
 require (
+	github.com/easierway/concurrent_map v0.0.0-20190103024436-7073b0dd7e95
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.4.0 // indirect

@@ -1,30 +1,52 @@
 package check
 
 import (
+	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/query/operation"
 )
 
-type NotCheckerImpl struct {
-	c []Checker
+type NotChecker struct {
+	si       datastruct.Iterator
+	value    interface{}
+	e        operation.Operation
+	transfer bool
 }
 
-func NewNotCheckerImpl(c []Checker) *NotCheckerImpl {
-	if c == nil {
-		return nil
-	}
-	return &NotCheckerImpl{
-		c: c,
+func NewNotChecker(si datastruct.Iterator, value interface{}, e operation.Operation, transfer bool) *NotChecker {
+	return &NotChecker{
+		si:       si,
+		value:    value,
+		e:        e,
+		transfer: transfer,
 	}
 }
 
-func (n *NotCheckerImpl) Check(id document.DocId) bool {
-	if n == nil {
+func (nc *NotChecker) Check(id document.DocId) bool {
+	if nc == nil {
 		return true
 	}
-	for _, cValue := range n.c {
-		if !cValue.Check(id) {
-			return true
-		}
+
+	element := nc.si.GetGE(id)
+	if element == nil {
+		return false
 	}
-	return false
+	key, v := element.Key(), element.Value()
+	if key != id || v == nil {
+		return false
+	}
+	if nc.e == nil {
+		if nc.transfer {
+			o := operation.Operations{FieldValue: nc.value}
+			return !o.In(v)
+		}
+		o := operation.Operations{FieldValue: v}
+		return !o.In(nc.value)
+	}
+	if nc.transfer {
+		nc.e.SetValue(nc.value)
+		return !nc.e.In(v)
+	}
+	nc.e.SetValue(v)
+	return !nc.e.In(nc.value)
 }

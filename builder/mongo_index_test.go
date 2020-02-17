@@ -10,18 +10,30 @@ import (
 type campaignParser struct {
 }
 
+type Data struct {
+	upTime int64
+}
+
 type campaignInfo struct {
 	CampaignId   int64  `bson:"campaignId,omitempty" json:"campaignId,omitempty"`
 	AdvertiserId *int32 `bson:"advertiserId,omitempty" json:"advertiserId,omitempty"`
 	Platform     *int32 `bson:"platform,omitempty" json:"platform,omitempty"`
+	Uptime       int64  `bson:"updated,omitempty"`
 }
 
-func (c *campaignParser) Parse(bytes []byte) (*ParserResult, error) {
+func (c *campaignParser) Parse(bytes []byte, userData interface{}) *ParserResult {
+	ud, ok := userData.(*Data)
+	if !ok {
+		return nil
+	}
 	campaign := &campaignInfo{}
 	if err := bson.Unmarshal(bytes, &campaign); err != nil {
-		return nil, err
+		return nil
 	}
-	return nil, nil
+	if ud.upTime < campaign.Uptime {
+		ud.upTime = campaign.Uptime
+	}
+	return nil
 }
 
 func TestNewMongoIndexBuilder(t *testing.T) {

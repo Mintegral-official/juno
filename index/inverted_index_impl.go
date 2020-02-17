@@ -2,67 +2,104 @@ package index
 
 import (
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"strconv"
 	"sync"
 )
 
-type InvertedIndexImpl struct {
-	data sync.Map
+type InvertedIndexer struct {
+	data   sync.Map
+	aDebug *debug.Debug
 }
 
-func NewInvertedIndexImpl() *InvertedIndexImpl {
-	return &InvertedIndexImpl{data: sync.Map{}}
+func NewInvertedIndexer(isDebug ...int) (i *InvertedIndexer) {
+	i = &InvertedIndexer{
+		data: sync.Map{},
+	}
+	if len(isDebug) != 0 && isDebug[0] == 1 {
+		i.aDebug = debug.NewDebug("invert index")
+	}
+	return i
 }
 
-func (iiImpl *InvertedIndexImpl) Count() int {
-	var count = 0
-	iiImpl.data.Range(func(key, value interface{}) bool {
-		if key != nil {
-			count++
-			return true
-		}
-		return false
+func (i *InvertedIndexer) Count() (count int) {
+	count = 0
+	i.data.Range(func(key, value interface{}) bool {
+		count++
+		return true
 	})
 	return count
 }
 
-func (iiImpl *InvertedIndexImpl) Add(fieldName string, id document.DocId) error {
-	if v, ok := iiImpl.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Add(id, nil)
-		} else {
-			return helpers.ParseError
-		}
-	} else {
-		sl, err := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
-		if err != nil {
-			return err
-		}
+func (i *InvertedIndexer) Add(fieldName string, id document.DocId) (err error) {
+	v, ok := i.data.Load(fieldName)
+	if !ok {
+		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		sl.Add(id, nil)
-		iiImpl.data.Store(fieldName, sl)
+		i.data.Store(fieldName, sl)
+		return err
 	}
-	return nil
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		err = helpers.ParseError
+		return err
+	}
+	sl.Add(id, nil)
+	return err
 }
 
-func (iiImpl *InvertedIndexImpl) Del(fieldName string, id document.DocId) bool {
+func (i *InvertedIndexer) Del(fieldName string, id document.DocId) (ok bool) {
+	v, ok := i.data.Load(fieldName)
+	if !ok {
+		return ok
+	}
+	if sl, ok := v.(*datastruct.SkipList); ok {
+		sl.Del(id)
+		i.data.Store(fieldName, sl)
+		return ok
+	}
+	return ok
+}
 
-	if v, ok := iiImpl.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Del(id)
-			iiImpl.data.Store(fieldName, sl)
-			return true
+func (i *InvertedIndexer) Update(fieldName string, ids []document.DocId) {
+	v, ok := i.data.Load(fieldName)
+	if !ok {
+		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+		for _, id := range ids {
+			sl.Add(id, nil)
 		}
+		i.data.Store(fieldName, sl)
+		return
 	}
-	return false
+	if sl, ok := v.(*datastruct.SkipList); ok {
+		sl = datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+		for _, id := range ids {
+			sl.Add(id, nil)
+		}
+		i.data.Store(fieldName, sl)
+	}
 }
 
-func (iiImpl *InvertedIndexImpl) Iterator(fieldName string) datastruct.Iterator {
-	if v, ok := iiImpl.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
+func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
+	var fieldName = name + "_" + value
+	if v, ok := i.data.Load(fieldName); ok {
+		sl, ok := v.(*datastruct.SkipList)
+		if ok {
+			if i.aDebug != nil {
+				i.aDebug.AddDebugMsg("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
+			}
 			return sl.Iterator()
 		}
 	}
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	if i.aDebug != nil {
+		i.aDebug.AddDebugMsg("index: " + fieldName + " is nil")
+	}
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	return sl.Iterator()
+}
+
+func (i *InvertedIndexer) DebugInfo() *debug.Debug {
+	return i.aDebug
 }

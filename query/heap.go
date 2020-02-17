@@ -1,7 +1,5 @@
 package query
 
-import "github.com/Mintegral-official/juno/helpers"
-
 type Heap []Query
 
 func (h Heap) Len() int {
@@ -21,7 +19,7 @@ func (h Heap) Less(i, j int) bool {
 	if jErr != nil {
 		return true
 	}
-	return helpers.Compare(iDocId, jDocId) < 0
+	return iDocId < jDocId
 }
 
 func (h Heap) Swap(i, j int) {

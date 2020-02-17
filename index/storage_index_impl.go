@@ -2,80 +2,99 @@ package index
 
 import (
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"strconv"
 	"sync"
 )
 
-type StorageIndexImpl struct {
-	data sync.Map
+type StorageIndexer struct {
+	data   sync.Map
+	aDebug *debug.Debug
 }
 
-func NewStorageIndexImpl() *StorageIndexImpl {
-	return &StorageIndexImpl{data: sync.Map{}}
+func NewStorageIndexer(isDebug ...int) (s *StorageIndexer) {
+	s = &StorageIndexer{
+		data: sync.Map{},
+	}
+	if len(isDebug) != 0 && isDebug[0] == 1 {
+		s.aDebug = debug.NewDebug("storage index")
+	}
+	return s
 }
 
-func (siImpl *StorageIndexImpl) Count() int {
-	var count = 0
-	siImpl.data.Range(func(key, value interface{}) bool {
-		if key != nil {
-			count++
-			return true
-		}
-		return false
+func (s *StorageIndexer) Count() (count int) {
+	count = 0
+	s.data.Range(func(key, value interface{}) bool {
+		count++
+		return true
 	})
 	return count
 }
 
-func (siImpl *StorageIndexImpl) Get(fieldName string, id document.DocId) interface{} {
-	if v, ok := siImpl.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			if res, err := sl.Get(id); err == nil {
-				return res
-			}
-			return helpers.DocumentError
-		} else {
-			return helpers.ParseError
-		}
+func (s *StorageIndexer) Get(fieldName string, id document.DocId) interface{} {
+	v, ok := s.data.Load(fieldName)
+	if !ok {
+		return nil
 	}
-	return nil
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		return helpers.ParseError
+	}
+	if res, err := sl.Get(id); err == nil {
+		return res
+	}
+	return helpers.DocumentError
 }
 
-func (siImpl *StorageIndexImpl) Add(fieldName string, id document.DocId, value interface{}) error {
-	if v, ok := siImpl.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Add(id, value)
-		} else {
-			return helpers.ParseError
-		}
-	} else {
-		sl, err := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
-		if err != nil {
-			return err
-		}
+func (s *StorageIndexer) Add(fieldName string, id document.DocId, value interface{}) (err error) {
+	v, ok := s.data.Load(fieldName)
+	if !ok {
+		sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 		sl.Add(id, value)
-		siImpl.data.Store(fieldName, sl)
+		s.data.Store(fieldName, sl)
+		return err
 	}
-	return nil
+	sl, ok := v.(*datastruct.SkipList)
+	if !ok {
+		err = helpers.ParseError
+		return
+	}
+	sl.Add(id, value)
+	return err
 }
 
-func (siImpl *StorageIndexImpl) Del(fieldName string, id document.DocId) bool {
-	if v, ok := siImpl.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
-			sl.Del(id)
-			siImpl.data.Store(fieldName, sl)
-			return true
-		}
+func (s *StorageIndexer) Del(fieldName string, id document.DocId) (ok bool) {
+	v, ok := s.data.Load(fieldName)
+	if !ok {
+		return ok
 	}
-	return false
+	if sl, ok := v.(*datastruct.SkipList); ok {
+		sl.Del(id)
+		s.data.Store(fieldName, sl)
+		return ok
+	}
+	return ok
 }
 
-func (siImpl *StorageIndexImpl) Iterator(fieldName string) datastruct.Iterator {
-	if v, ok := siImpl.data.Load(fieldName); ok {
-		if sl, ok := v.(*datastruct.SkipList); ok {
+func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
+	if v, ok := s.data.Load(fieldName); ok {
+		sl, ok := v.(*datastruct.SkipList)
+		if ok {
+			if s.aDebug != nil {
+				s.aDebug.AddDebugMsg("index: " + fieldName + " len: " + strconv.Itoa(sl.Len()))
+			}
 			return sl.Iterator()
 		}
 	}
-	sl, _ := datastruct.NewSkipList(datastruct.DefaultMaxLevel, helpers.DocIdFunc)
+	if s.aDebug != nil {
+		s.aDebug.AddDebugMsg("index: " + fieldName + " is nil")
+	}
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	return sl.Iterator()
+}
+
+func (s *StorageIndexer) DebugInfo() *debug.Debug {
+	return s.aDebug
 }

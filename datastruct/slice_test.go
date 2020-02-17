@@ -5,15 +5,15 @@ import (
 	"testing"
 )
 
-var slic []int
+var slice []int
 var m = make(map[int]interface{})
 
 func binarySearch(sortedArray []int, lookingFor int) int {
-	var low int = 0
-	var high int = len(sortedArray) - 1
+	var low = 0
+	var high = len(sortedArray) - 1
 	for low <= high {
-		var mid int = low + (high-low)/2
-		var midValue int = sortedArray[mid]
+		var mid = low + (high-low)/2
+		var midValue = sortedArray[mid]
 		if midValue == lookingFor {
 			return mid
 		} else if midValue > lookingFor {
@@ -27,7 +27,7 @@ func binarySearch(sortedArray []int, lookingFor int) int {
 
 func add2() {
 	for i := 0; i < 200000; i++ {
-		slic = append(slic, arr[i])
+		slice = append(slice, arr[i])
 	}
 }
 
@@ -39,7 +39,7 @@ func add3() {
 
 func get2() {
 	for i := 0; i < 100000; i++ {
-		binarySearch(slic, arr[i])
+		binarySearch(slice, arr[i])
 	}
 }
 
@@ -60,7 +60,7 @@ func BenchmarkSlice_Add(b *testing.B) {
 
 func BenchmarkSlice_Get(b *testing.B) {
 	add2()
-	sort.Ints(slic)
+	sort.Ints(slice)
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -70,7 +70,7 @@ func BenchmarkSlice_Get(b *testing.B) {
 
 func BenchmarkSlice_Get_RunParallel(b *testing.B) {
 	add2()
-	sort.Ints(slic)
+	sort.Ints(slice)
 	b.ResetTimer()
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {

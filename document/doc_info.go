@@ -11,15 +11,21 @@ const (
 )
 
 const (
-	NumberFieldType = iota
+	BoolFieldType FieldType = iota
+	IntFieldType
+	FloatFieldType
 	StringFieldType
+	SliceFieldType
+	MapFieldType
 	SelfDefinedFieldType
+	DefaultFieldType = StringFieldType
 )
 
 type Field struct {
 	Name      string
 	IndexType IndexType
 	Value     interface{}
+	ValueType FieldType
 }
 
 type DocInfo struct {

@@ -3,21 +3,24 @@ package check
 import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/query/operation"
 )
 
 type CheckerImpl struct {
-	si    *datastruct.SkipListIterator
-	value interface{}
-	op    operation.OP
+	si       datastruct.Iterator
+	value    interface{}
+	op       operation.OP
+	e        operation.Operation
+	transfer bool
 }
 
-func NewCheckerImpl(si *datastruct.SkipListIterator, value interface{}, op operation.OP) *CheckerImpl {
+func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e operation.Operation, transfer bool) *CheckerImpl {
 	return &CheckerImpl{
-		si:    si,
-		value: value,
-		op:    op,
+		si:       si,
+		value:    value,
+		op:       op,
+		e:        e,
+		transfer: transfer,
 	}
 }
 
@@ -25,24 +28,16 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	if c == nil {
 		return true
 	}
-	iter := c.si
-	v := iter.Current().(*datastruct.Element).Value()
-	if v == nil {
-		return false
-	}
-
-	element := iter.GetGE(id)
+	element := c.si.GetGE(id)
 	if element == nil {
 		return false
 	}
-	key := element.(*datastruct.Element).Key()
-	if key == nil {
+	key, v := element.Key(), element.Value()
+	if key != id || v == nil {
 		return false
 	}
-
-	if k := key.(document.DocId); helpers.Compare(k, id) != 0 {
-		return false
+	if c.transfer {
+		return UtilCheck(c.value, c.op, v, c.e)
 	}
-	v = iter.Current().(*datastruct.Element).Value()
-	return UtilCheck(v, c.op, c.value)
+	return UtilCheck(v, c.op, c.value, c.e)
 }

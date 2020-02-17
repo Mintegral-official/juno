@@ -1,33 +1,41 @@
 package search
 
 import (
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
 	"time"
 )
 
-type Result struct {
-	Docs []document.DocId
-	Time time.Duration
+type Searcher struct {
+	Docs       []document.DocId
+	Time       time.Duration
+	IndexDebug *debug.Debug
+	QueryDebug *debug.Debug
 }
 
-func Search(ii *index.IndexImpl, query query.Query) *Result {
+func NewSearcher() *Searcher {
+	return &Searcher{
+		Docs: []document.DocId{},
+	}
+}
+
+func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	if query == nil {
-		return nil
+		panic("the query should not be nil")
+		return
 	}
-	s, now := &Result{Docs: []document.DocId{}}, time.Now()
-	if _, err := query.Current(); err != nil {
-		return s
-	}
+	now := time.Now()
 	id, err := query.Next()
 	for err == nil {
-		if !ii.GetBitMap().IsExist(uint64(ii.GetCampaignMap()[id])) {
+		if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
 			continue
 		}
 		s.Docs = append(s.Docs, id)
 		id, err = query.Next()
 	}
 	s.Time = time.Since(now)
-	return s
+	s.IndexDebug = iIndexer.DebugInfo()
+	s.QueryDebug = query.DebugInfo()
 }

@@ -1,6 +1,7 @@
 package datastruct
 
 import (
+	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"math/rand"
 	"time"
@@ -12,7 +13,6 @@ const (
 )
 
 type SkipList struct {
-	cmp               helpers.Comparable
 	randSource        rand.Source
 	header            *Element
 	level             int
@@ -20,29 +20,20 @@ type SkipList struct {
 	previousNodeCache [DefaultMaxLevel]*Element
 }
 
-func NewSkipList(level int, cmp helpers.Comparable) (*SkipList, error) {
-	if cmp == nil {
-		return nil, helpers.ComparableError
-	}
+func NewSkipList(level int) *SkipList {
 	if level < 0 || level > DefaultMaxLevel {
 		level = DefaultMaxLevel
 	}
 	return &SkipList{
-		cmp:        cmp,
 		randSource: rand.New(rand.NewSource(time.Now().UnixNano())),
 		level:      level,
 		length:     0,
-		header:     newNode(nil, nil, level),
-	}, nil
+		header:     newNode(0, nil, level),
+	}
 }
 
-func (sl *SkipList) Cmp() helpers.Comparable {
-	return sl.cmp
-}
-
-func (sl *SkipList) Add(key, value interface{}) {
-	prev := sl.previousNodeCache
-	if m, ok := sl.findGE(key, true, prev); ok && sl.cmp.Compare(m.key, key) == 0 {
+func (sl *SkipList) Add(key document.DocId, value interface{}) {
+	if m, ok := sl.findGE(key, true, sl.previousNodeCache); ok && m.key == key {
 		h := len(m.next)
 		x := newNode(key, value, h)
 		for i, n := range sl.previousNodeCache[:h] {
@@ -61,29 +52,25 @@ func (sl *SkipList) Add(key, value interface{}) {
 	sl.length++
 }
 
-func (sl *SkipList) Del(key interface{}) {
-	prev := sl.previousNodeCache
-	if x, ok := sl.findGE(key, true, prev); ok {
-		h := len(x.next)
-		for i, n := range sl.previousNodeCache[:h] {
+func (sl *SkipList) Del(key document.DocId) {
+	if x, ok := sl.findGE(key, true, sl.previousNodeCache); ok {
+		for i, n := range sl.previousNodeCache[:len(x.next)] {
 			if n.Next(i) != nil {
 				n.setNext(i, n.Next(i).Next(i))
 			}
 		}
+		sl.length--
 	}
-	sl.length--
 }
 
-func (sl *SkipList) Contains(key interface{}) bool {
-	prev := sl.previousNodeCache
-	_, ok := sl.findGE(key, true, prev)
+func (sl *SkipList) Contains(key document.DocId) (ok bool) {
+	_, ok = sl.findGE(key, true, sl.previousNodeCache)
 	return ok
 }
 
-func (sl *SkipList) Get(key interface{}) (*Element, error) {
-	prev := sl.previousNodeCache
-	if x, ok := sl.findGE(key, true, prev); ok {
-		return x, nil
+func (sl *SkipList) Get(key document.DocId) (x *Element, err error) {
+	if x, ok := sl.findGE(key, true, sl.previousNodeCache); ok {
+		return x, err
 	}
 	return nil, helpers.ElementNotfound
 }
@@ -92,15 +79,14 @@ func (sl *SkipList) Len() int {
 	return sl.length
 }
 
-func (sl *SkipList) findGE(key interface{}, flag bool, element [DefaultMaxLevel]*Element) (*Element, bool) {
-	x, h := sl.header, sl.level-1
-	for h >= 0 {
+func (sl *SkipList) findGE(key document.DocId, flag bool, element [DefaultMaxLevel]*Element) (*Element, bool) {
+	for x, h := sl.header, sl.level-1; h >= 0; {
 		if x == nil {
 			return nil, false
 		}
 		next, cmp := x.Next(h), 1
 		if next != nil {
-			cmp = sl.cmp.Compare(next.key, key)
+			cmp = int(next.key - key)
 		}
 		if cmp < 0 {
 			x = next
@@ -120,11 +106,10 @@ func (sl *SkipList) findGE(key interface{}, flag bool, element [DefaultMaxLevel]
 	return nil, false
 }
 
-func (sl *SkipList) findLT(key interface{}) (*Element, bool) {
-	x, h := sl.header, sl.level-1
-	for h >= 0 {
+func (sl *SkipList) findLT(key document.DocId) (*Element, bool) {
+	for x, h := sl.header, sl.level-1; h >= 0; {
 		next := x.Next(h)
-		if next == nil || sl.cmp.Compare(next.key, key) >= 0 {
+		if next == nil || next.key >= key {
 			if h == 0 {
 				if x == sl.header {
 					return nil, false
@@ -151,6 +136,5 @@ func (sl *SkipList) randLevel() int {
 }
 
 func (sl *SkipList) Iterator() *SkipListIterator {
-	x := ElementCopy(sl.header)
-	return NewSkipListIterator(x, sl.cmp)
+	return NewSkipListIterator(ElementCopy(sl.header))
 }

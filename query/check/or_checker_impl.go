@@ -4,24 +4,27 @@ import (
 	"github.com/Mintegral-official/juno/document"
 )
 
-type OrCheckerImpl struct {
+type OrChecker struct {
 	c []Checker
 }
 
-func NewOrCheckerImpl(c []Checker) *OrCheckerImpl {
+func NewOrChecker(c []Checker) *OrChecker {
 	if c == nil {
 		return nil
 	}
-	return &OrCheckerImpl{
+	return &OrChecker{
 		c: c,
 	}
 }
 
-func (o *OrCheckerImpl) Check(id document.DocId) bool {
+func (o *OrChecker) Check(id document.DocId) bool {
 	if o == nil {
 		return true
 	}
 	for _, cValue := range o.c {
+		if cValue == nil {
+			continue
+		}
 		if cValue.Check(id) {
 			return true
 		}

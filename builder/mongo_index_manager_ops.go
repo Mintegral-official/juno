@@ -2,6 +2,7 @@ package builder
 
 import (
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/log"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -18,7 +19,7 @@ type ParserResult struct {
 }
 
 type MongoParser interface {
-	Parse([]byte) (*ParserResult, error)
+	Parse([]byte, interface{}) *ParserResult
 }
 
 type MongoIndexManagerOps struct {
@@ -36,6 +37,7 @@ type MongoIndexManagerOps struct {
 	IncQuery       interface{}
 	UserData       interface{}
 	FindOpt        *options.FindOptions
+	Logger         log.Logger
 	OnBeforeBase   func(interface{}) interface{}
 	OnBeforeInc    func(interface{}) interface{}
 }
