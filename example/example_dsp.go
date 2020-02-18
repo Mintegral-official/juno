@@ -1,5 +1,76 @@
 package main
 
+import (
+	"context"
+	"fmt"
+	"github.com/Mintegral-official/juno/builder"
+	"github.com/Mintegral-official/juno/index"
+	"github.com/Mintegral-official/juno/query"
+	"github.com/Mintegral-official/juno/query/check"
+	"github.com/Mintegral-official/juno/query/operation"
+	"github.com/Mintegral-official/juno/search"
+	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+)
+
+type operations struct {
+	value interface{}
+}
+
+func (o *operations) Equal(value interface{}) bool {
+	return true
+}
+
+func (o *operations) Less(value interface{}) bool {
+	return true
+}
+
+func (o *operations) In(value interface{}) bool {
+	switch value.(type) {
+	// mobileCode
+	case string:
+		for _, v := range o.value.([]string) {
+			if strings.Contains(value.(string), v) {
+				return true
+			}
+		}
+		return false
+		// UserInterest
+	case map[int]bool:
+		ov, v := o.value.([][]int), value.(map[int]bool)
+		nInterestNum := len(ov)
+		if 0 == nInterestNum {
+			return true
+		}
+		if 0 == len(v) {
+			// mvutil.InterestOthers
+			v[999999] = true
+		}
+
+		for _, Interests := range ov {
+			flag := false
+			for _, interest := range Interests {
+				if _, ok := v[interest]; ok {
+					flag = true
+					break
+				}
+			}
+			if false == flag {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
+func (o *operations) SetValue(value interface{}) {
+	o.value = value
+}
 
 /**
 campaignId : both
@@ -34,8 +105,7 @@ endTime startTime: storage
 advertiserId: both
 */
 
-
-/*  *************query code*****************
+//  *************query code*****************
 //  campaignId
 //  len(condition.WhiteOfferList) > 0 campaign.campaignId in condition.WhiteOfferList
 //  len(condition.BlackOfferList) > 0 campaign.campaignId not in condition.BlackOfferList
@@ -633,12 +703,35 @@ func creativeAuditQuery(idx *index.Indexer, cond *CampaignCondition) query.Query
 // deviceType
 // len(campaign.DeviceTypeV2) == 0 or (4 in campaign.DeviceTypeV2 and 5 in campaign.DeviceTypeV2) or
 //conditon.DeviceType in campaign.DeviceTypeV2
-func deviceType(idx *index.Indexer, cond *CampaignCondition) query.Query {
-	invertIdx := idx.GetInvertedIndex()
+func deviceTypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+	invertIdx, storage := idx.GetInvertedIndex(), idx.GetStorageIndex()
 	if condtion.DeviceType != 0 {
-		// TODO
+		return query.NewOrQuery([]query.Query{
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedDeviceType", "1")),
+				query.NewTermQuery(invertIdx.Iterator("DeviceType", "4")),
+				query.NewTermQuery(invertIdx.Iterator("DeviceType", "5")),
+			}, nil),
+			query.NewTermQuery(invertIdx.Iterator("NeedDeviceType", "0")),
+			query.NewTermQuery(invertIdx.Iterator("DeviceType", strconv.Itoa(int(cond.DeviceType)))),
+		}, nil)
 	}
-	return nil
+	return query.NewTermQuery(storage.Iterator("DeviceType"))
+}
+
+// mobileCode
+func mobileCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+	invertIdx, storageIdx := idx.GetInvertedIndex(), idx.GetStorageIndex()
+	var q []query.Query
+	q = append(q, query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")))
+	if isNum, _ := regexp.MatchString("(^[0-9]+$)", cond.Carrier); !isNum {
+		q = append(q, query.NewAndQuery([]query.Query{
+			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
+		}, []check.Checker{
+			check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
+		}))
+	}
+	return query.NewOrQuery(q, nil)
 }
 
 // PackageName
@@ -655,8 +748,12 @@ func packageNameQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 // UserInterest
 // len(campaign.UserInterestV2) == 0 or campaign.UserInterestV2的每个二级数组中至少有一个元素在condition.DmpInterests里
 func userInterestQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
-	invertIdx := idx.GetInvertedIndex()
-	// TODO
+	storageIdx := idx.GetStorageIndex()
+	return query.NewAndQuery([]query.Query{
+		query.NewTermQuery(storageIdx.Iterator("UserInterest")),
+	}, []check.Checker{
+		check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
+	})
 }
 
 func queryDsp() {
@@ -711,7 +808,7 @@ func queryDsp() {
 		query.NewTermQuery(invertIdx.Iterator("AdSchedule", curDay-curHour)),
 	}, nil)
 
-	// endTime startTime
+	// endTime startTime TODO 这个在下面合并的时候拆开了写的
 	var endTime = query.NewOrQuery([]query.Query{
 		query.NewAndQuery([]query.Query{
 			query.NewTermQuery(storageIdx.Iterator("EndTime")),
@@ -761,7 +858,8 @@ func queryDsp() {
 		userInterestQuery(tIndex, cond),
 		advertiserAuditQuery(tIndex, cond),
 		creativeAuditQuery(tIndex, cond),
-		deviceType(tIndex,cond),
+		deviceTypeQuery(tIndex, cond),
+		mobileCodeQuery(tIndex, cond),
 		userAgeQuery(tIndex, cond),
 		pkgNameQuery(tIndex, cond),
 		mvAppIdQuery(tIndex, cond),
@@ -769,17 +867,17 @@ func queryDsp() {
 		query.NewTermQuery(storageIdx.Iterator("OsVersionMax")),
 		query.NewTermQuery(storageIdx.Iterator("OsVersionMin")),
 		query.NewTermQuery(storageIdx.Iterator("ContentRating")),
+		query.NewTermQuery(storageIdx.Iterator("UserInterest")),
 	}, []check.Checker{
 		check.NewChecker(storageIdx.Iterator("OsVersionMin"), condition.osv, operation.LE, nil, false),
 		check.NewChecker(storageIdx.Iterator("OsVersionMax"), condition.osv, operation.GE, nil, false),
 		check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
 		check.NewChecker(storageIdx.Iterator("ContentRating"), 12, operation.LE, nil, false),
+		check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
 	})
 
 	searcher := search.NewSearcher()
 	searcher.Search(tIndex, resQuery)
 	fmt.Println(searcher.Docs)
 	fmt.Println(searcher.Time)
-
-
- */
+}

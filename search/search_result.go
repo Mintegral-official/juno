@@ -39,3 +39,7 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	s.IndexDebug = iIndexer.DebugInfo()
 	s.QueryDebug = query.DebugInfo()
 }
+
+func (s *Searcher) Debug(q query.Query, ids []document.DocId) {
+	// TODO
+}
