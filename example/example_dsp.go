@@ -11,7 +11,6 @@ import (
 	"github.com/Mintegral-official/juno/search"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -212,13 +211,26 @@ func ctypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 //}
 
 //devicelanguage
-//conditon.DeviceLanguage not in campaign.DeviceLanguage["2"] and
-//condition.DeviceLanguage in  campaign.DeviceLanguage[“1”]
+// ((campaign.NeedDeviceLanguageWhiteList = 1 and conditon.DeviceLanguage not in campaign.DeviceLanguageWhiteList) or
+//campaign.NeedDeviceLanguageWhiteList = 0) and
+//((NeedDeviceLanguageBlackList = 1 and condition.DeviceLanguage in  campaign.DeviceLanguageBlackList) or campaign.NeedDeviceLanguageBlackList =0)
 func devicelanguageQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
-	return query.NewNotAndQuery([]query.Query{
-		query.NewTermQuery(invertIdx.Iterator("DeviceLanguage_1", cond.DeviceLanguage)),
-		query.NewTermQuery(invertIdx.Iterator("DeviceLanguage_2", cond.DeviceLanguage)),
+	return query.NewAndQuery([]query.Query{
+		query.NewOrQuery([]query.Query{
+			query.NewNotAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedDeviceLanguageWhiteList", "1")),
+				query.NewTermQuery(invertIdx.Iterator("DeviceLanguageWhiteList", cond.DeviceLanguage)),
+			}, nil),
+			query.NewTermQuery(invertIdx.Iterator("NeedDeviceLanguageWhiteList", "0")),
+		}, nil),
+		query.NewOrQuery([]query.Query{
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedDeviceLanguageWhiteList", "1")),
+				query.NewTermQuery(invertIdx.Iterator("DeviceLanguageWhiteList", cond.DeviceLanguage)),
+			}, nil),
+			query.NewTermQuery(invertIdx.Iterator("NeedDeviceLanguageWhiteList", "0")),
+		}, nil),
 	}, nil)
 }
 
@@ -311,23 +323,24 @@ func trafficTypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 				query.NewTermQuery(invertIdx.Iterator("NeedAppSite", "0")),
 			}, nil),
 		}, nil)
+	} else {
+		trafficType = query.NewAndQuery([]query.Query{
+			query.NewOrQuery([]query.Query{
+				query.NewAndQuery([]query.Query{
+					query.NewTermQuery(invertIdx.Iterator("NeedAppSite", "1")),
+					query.NewTermQuery(invertIdx.Iterator("TrafficType", strconv.Itoa(int(mvutil.AppDirect)))),
+				}, nil),
+				query.NewTermQuery(invertIdx.Iterator("NeedTrafficType", "0")),
+			}, nil),
+			query.NewOrQuery([]query.Query{
+				query.NewAndQuery([]query.Query{
+					query.NewTermQuery(invertIdx.Iterator("NeedAppSite", "1")),
+					query.NewTermQuery(invertIdx.Iterator("AppSite", cond.AppSite)),
+				}, nil),
+				query.NewTermQuery(invertIdx.Iterator("NeedTrafficType", "0")),
+			}, nil),
+		}, nil)
 	}
-	trafficType = query.NewAndQuery([]query.Query{
-		query.NewOrQuery([]query.Query{
-			query.NewAndQuery([]query.Query{
-				query.NewTermQuery(invertIdx.Iterator("NeedAppSite", "1")),
-				query.NewTermQuery(invertIdx.Iterator("TrafficType", strconv.Itoa(int(mvutil.AppDirect)))),
-			}, nil),
-			query.NewTermQuery(invertIdx.Iterator("NeedTrafficType", "0")),
-		}, nil),
-		query.NewOrQuery([]query.Query{
-			query.NewAndQuery([]query.Query{
-				query.NewTermQuery(invertIdx.Iterator("NeedAppSite", "1")),
-				query.NewTermQuery(invertIdx.Iterator("AppSite", cond.AppSite)),
-			}, nil),
-			query.NewTermQuery(invertIdx.Iterator("NeedTrafficType", "0")),
-		}, nil),
-	}, nil)
 	return trafficType
 }
 
@@ -705,7 +718,7 @@ func creativeAuditQuery(idx *index.Indexer, cond *CampaignCondition) query.Query
 //conditon.DeviceType in campaign.DeviceTypeV2
 func deviceTypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx, storage := idx.GetInvertedIndex(), idx.GetStorageIndex()
-	if condtion.DeviceType != 0 {
+	if cond.DeviceType != 0 {
 		return query.NewOrQuery([]query.Query{
 			query.NewAndQuery([]query.Query{
 				query.NewTermQuery(invertIdx.Iterator("NeedDeviceType", "1")),
@@ -719,20 +732,20 @@ func deviceTypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	return query.NewTermQuery(storage.Iterator("DeviceType"))
 }
 
-// mobileCode
-func mobileCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
-	invertIdx, storageIdx := idx.GetInvertedIndex(), idx.GetStorageIndex()
-	var q []query.Query
-	q = append(q, query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")))
-	if isNum, _ := regexp.MatchString("(^[0-9]+$)", cond.Carrier); !isNum {
-		q = append(q, query.NewAndQuery([]query.Query{
-			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
-		}, []check.Checker{
-			check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
-		}))
-	}
-	return query.NewOrQuery(q, nil)
-}
+//// mobileCode
+//func mobileCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+//	invertIdx, storageIdx := idx.GetInvertedIndex(), idx.GetStorageIndex()
+//	var q []query.Query
+//	q = append(q, query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")))
+//	if isNum, _ := regexp.MatchString("(^[0-9]+$)", cond.Carrier); !isNum {
+//		q = append(q, query.NewAndQuery([]query.Query{
+//			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
+//		}, []check.Checker{
+//			check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
+//		}))
+//	}
+//	return query.NewOrQuery(q, nil)
+//}
 
 // PackageName
 // campaign.PackageName not in condition.BApp
@@ -745,16 +758,16 @@ func packageNameQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	return query.NewOrQuery(q, nil)
 }
 
-// UserInterest
-// len(campaign.UserInterestV2) == 0 or campaign.UserInterestV2的每个二级数组中至少有一个元素在condition.DmpInterests里
-func userInterestQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
-	storageIdx := idx.GetStorageIndex()
-	return query.NewAndQuery([]query.Query{
-		query.NewTermQuery(storageIdx.Iterator("UserInterest")),
-	}, []check.Checker{
-		check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
-	})
-}
+//// UserInterest
+//// len(campaign.UserInterestV2) == 0 or campaign.UserInterestV2的每个二级数组中至少有一个元素在condition.DmpInterests里
+//func userInterestQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+//	storageIdx := idx.GetStorageIndex()
+//	return query.NewAndQuery([]query.Query{
+//		query.NewTermQuery(storageIdx.Iterator("UserInterest")),
+//	}, []check.Checker{
+//		check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
+//	})
+//}
 
 func queryDsp() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -853,16 +866,20 @@ func queryDsp() {
 		networkTypeQuery(tIndex, cond),
 		deviceModelQuery(tIndex, cond),
 		advertiserIdQuery(tIndex, cond),
-		userInterestQuery(tIndex, cond),
+		//userInterestQuery(tIndex, cond),
 		adxQuery(tIndex, cond),
-		userInterestQuery(tIndex, cond),
+		//userInterestQuery(tIndex, cond),
 		advertiserAuditQuery(tIndex, cond),
 		creativeAuditQuery(tIndex, cond),
 		deviceTypeQuery(tIndex, cond),
-		mobileCodeQuery(tIndex, cond),
+		//mobileCodeQuery(tIndex, cond),
 		userAgeQuery(tIndex, cond),
 		pkgNameQuery(tIndex, cond),
 		mvAppIdQuery(tIndex, cond),
+		query.NewOrQuery([]query.Query{
+			query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")),
+			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
+		}, nil),
 		query.NewTermQuery(storageIdx.Iterator("EndTime")),
 		query.NewTermQuery(storageIdx.Iterator("OsVersionMax")),
 		query.NewTermQuery(storageIdx.Iterator("OsVersionMin")),
@@ -874,6 +891,7 @@ func queryDsp() {
 		check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
 		check.NewChecker(storageIdx.Iterator("ContentRating"), 12, operation.LE, nil, false),
 		check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
+		check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
 	})
 
 	searcher := search.NewSearcher()
