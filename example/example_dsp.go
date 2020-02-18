@@ -972,8 +972,8 @@ func queryDsp() {
 		query.NewTermQuery(storageIdx.Iterator("ContentRating")),
 		query.NewTermQuery(storageIdx.Iterator("UserInterest")),
 	}, []check.Checker{
-		check.NewChecker(storageIdx.Iterator("OsVersionMin"), condition.osv, operation.LE, nil, false),
-		check.NewChecker(storageIdx.Iterator("OsVersionMax"), condition.osv, operation.GE, nil, false),
+		check.NewChecker(storageIdx.Iterator("OsVersionMin"), cond.osv, operation.LE, nil, false),
+		check.NewChecker(storageIdx.Iterator("OsVersionMax"), cond.osv, operation.GE, nil, false),
 		check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
 		check.NewChecker(storageIdx.Iterator("ContentRating"), 12, operation.LE, nil, false),
 		check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
