@@ -38,14 +38,14 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Next()
 	if err != nil {
-		return 0, helpers.NoMoreData
+		return target, helpers.NoMoreData
 	}
 
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
-			return 0, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+			return cur, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 		}
 		if cur != target {
 			lastIdx = curIdx
@@ -61,7 +61,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			curIdx = (curIdx + 1) % len(aq.queries)
 			target, err = aq.queries[curIdx].Next()
 			if err != nil {
-				return 0, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+				return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 			}
 		}
 	}
@@ -74,14 +74,14 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	curIdx, lastIdx := aq.curIdx, aq.curIdx
 	res, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
-		return 0, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
+		return res, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
 	}
 
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(res)
 		if err != nil {
-			return 0, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
+			return cur, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
 		}
 		if cur != res {
 			lastIdx = curIdx
@@ -97,7 +97,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			curIdx = (curIdx + 1) % len(aq.queries)
 			res, err = aq.queries[curIdx].Next()
 			if err != nil {
-				return 0, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
+				return res, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
 			}
 		}
 	}
@@ -109,16 +109,16 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	}
 	res, err := aq.queries[0].Current()
 	if err != nil {
-		return 0, err
+		return res, err
 	}
 
 	for i := 1; i < len(aq.queries); i++ {
 		tar, err := aq.queries[i].GetGE(res)
 		if err != nil {
-			return 0, err
+			return tar, err
 		}
 		if tar != res {
-			return 0, nil
+			return res, errors.New(fmt.Sprintf("queries[%d] is different with %d", i, res))
 		}
 	}
 	if aq.check(res) {
@@ -127,7 +127,7 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 	if aq.debugs != nil {
 		aq.debugs.DebugInfo.AddDebugMsg(aq.StringBuilder(128, res))
 	}
-	return 0, nil
+	return res, err
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {

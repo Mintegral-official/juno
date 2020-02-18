@@ -184,6 +184,10 @@ func TestAndQuery_Next(t *testing.T) {
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
 
+		v, e = a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+
 	})
 }
 

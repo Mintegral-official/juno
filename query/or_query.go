@@ -106,7 +106,7 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	q := top.(Query)
 	res, err := q.Current()
 	if err != nil {
-		return 0, err
+		return res, err
 	}
 	if oq.check(res) {
 		return res, nil
