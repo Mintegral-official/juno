@@ -11,6 +11,7 @@ import (
 	"github.com/Mintegral-official/juno/search"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -119,14 +120,19 @@ func campaignIdQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 			oq = append(oq, query.NewTermQuery(invertIdx.Iterator("CampaignId", k)))
 		}
 	}
-	naq = append(naq, query.NewOrQuery(oq, nil))
-	if len(condition.BlackOfferList) > 0 {
+	if len(oq) != 0 {
+		naq = append(naq, query.NewOrQuery(oq, nil))
+	}
+	if len(cond.BlackOfferList) > 0 {
 		for k, v := range cond.BlackOfferList {
 			if !v {
 				continue
 			}
 			naq = append(naq, query.NewTermQuery(invertIdx.Iterator("CampaignId", k)))
 		}
+	}
+	if len(naq) == 0 {
+		return nil
 	}
 	return query.NewNotAndQuery(naq, nil)
 }
@@ -145,6 +151,9 @@ func campaignTypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query 
 			query.NewTermQuery(invertIdx.Iterator("CampaignType", strconv.Itoa(mvutil.CAMPAIGN_TYPE_GOOGLEPLAY))),
 			query.NewTermQuery(invertIdx.Iterator("CampaignType", strconv.Itoa(mvutil.CAMPAIGN_TYPE_APK))),
 		}, nil))
+	}
+	if len(q) == 0 {
+		return nil
 	}
 	return query.NewAndQuery(q, nil)
 }
@@ -175,26 +184,39 @@ func countryCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 //condition.TrafficType == "site" campaign.ctype != 1(cpa) and campaign.ctype != 5(cpe)
 func ctypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
-	var q1, q2, q3 query.Query
-	if condition.DevImpLimit == true {
+	var q1, q2, q3 query.Query = nil, nil, nil
+	if cond.DevImpLimit == true {
 		q1 = query.NewAndQuery([]query.Query{
 			query.NewTermQuery(invertIdx.Iterator("CType", "1")),
 			query.NewTermQuery(invertIdx.Iterator("CType", "5")),
 		}, nil)
 	}
-	if condition.NeedSearchCpc == false {
+	if cond.NeedSearchCpc == false {
 		q2 = query.NewAndQuery([]query.Query{
 			query.NewTermQuery(invertIdx.Iterator("CType", "2")),
 			query.NewTermQuery(invertIdx.Iterator("CType", "3")),
 		}, nil)
 	}
-	if condition.TrafficType == "site" {
+	if cond.TrafficType == "site" {
 		q3 = query.NewAndQuery([]query.Query{
 			query.NewTermQuery(invertIdx.Iterator("CType", "1")),
 			query.NewTermQuery(invertIdx.Iterator("CType", "5")),
 		}, nil)
 	}
-	return query.NewAndQuery([]query.Query{q1, q2, q3}, nil)
+	var q []query.Query
+	if q1 != nil {
+		q = append(q, q1)
+	}
+	if q2 != nil {
+		q = append(q, q2)
+	}
+	if q3 != nil {
+		q = append(q, q3)
+	}
+	if len(q) == 0 {
+		return nil
+	}
+	return query.NewAndQuery(q, nil)
 }
 
 //// osv
@@ -249,6 +271,8 @@ func advertiserIdQuery(idx *index.Indexer, cond *CampaignCondition) query.Query 
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("AdvertiserId", k)))
 		}
 		blocklist = query.NewOrQuery(q, nil)
+	} else {
+		blocklist = nil
 	}
 	if len(cond.AdvertiserWhitelist) > 0 {
 		var q []query.Query
@@ -259,6 +283,11 @@ func advertiserIdQuery(idx *index.Indexer, cond *CampaignCondition) query.Query 
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("AdvertiserId", k)))
 		}
 		whitelist = query.NewOrQuery(q, nil)
+	} else {
+		whitelist = nil
+	}
+	if blocklist == nil {
+		return nil
 	}
 	return query.NewNotAndQuery([]query.Query{whitelist, blocklist}, nil)
 }
@@ -275,18 +304,18 @@ func industryIdQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 			}
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("IndustryId", k)))
 		}
+		return query.NewOrQuery(q, nil)
 	}
-	return query.NewOrQuery(q, nil)
+	return nil
 }
 
 //supportHttps
 func supportHttpsQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
-	var supportHttps query.Query
 	if cond.Https == true {
-		supportHttps = query.NewTermQuery(invertIdx.Iterator("SupportHttps", "1"))
+		return query.NewTermQuery(invertIdx.Iterator("SupportHttps", "1"))
 	}
-	return supportHttps
+	return nil
 }
 
 // domain
@@ -298,8 +327,9 @@ func domainQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 		for k := range cond.Badv {
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("Domain", k)))
 		}
+		return query.NewOrQuery(q, nil)
 	}
-	return query.NewOrQuery(q, nil)
+	return nil
 }
 
 //trafficType
@@ -356,23 +386,25 @@ func iabCategoryQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 				q = append(q, query.NewTermQuery(invertIdx.Iterator("IabCategory", k)))
 			}
 		}
+		return query.NewOrQuery([]query.Query{
+			query.NewTermQuery(invertIdx.Iterator("NeedIabCategory", "0")),
+			query.NewNotAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedIabCategory", "1")),
+				query.NewOrQuery(q, nil),
+			}, nil),
+		}, nil)
 	}
-	return query.NewNotAndQuery([]query.Query{
-		query.NewTermQuery(invertIdx.Iterator("NeedIabCategory", "1")),
-		query.NewOrQuery(q, nil),
-	}, nil)
-
+	return nil
 }
 
 // Direct
 // condition.Adx == doubleclick campaign.Direct != 2
 func directQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
-	var directQuery query.Query
 	if cond.Adx == doubleclick {
-		directQuery = query.NewTermQuery(invertIdx.Iterator("Direct", "2"))
+		return query.NewTermQuery(invertIdx.Iterator("Direct", "2"))
 	}
-	return directQuery
+	return nil
 }
 
 // AppCategory
@@ -387,8 +419,9 @@ func appCategoryQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 			}
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("AppCategory", k)))
 		}
+		return query.NewOrQuery(q, nil)
 	}
-	return query.NewOrQuery(q, nil)
+	return nil
 }
 
 //AppSubCategory
@@ -546,18 +579,39 @@ func networkTypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 //len(campaign.deviceModelV3)>0 condition.Make in campaign.deviceModelV3 or generateKey in deviceModelV3
 //(campaign.NeedDeviceModel == 1 and (condition.Make in campaign.deviceModelV3 or generateKey in deviceModelV3)) \
 //or campaign.NeedDeviceModel == 0
+//
+//(campaign.NeedDeviceModel == 1 and (condition.Make in campaign.deviceModelV3 or generateKey in deviceModelV3)) or
+//campaign.NeedDeviceModel == 0
 func deviceModelQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
-	return query.NewOrQuery([]query.Query{
-		query.NewAndQuery([]query.Query{
-			query.NewTermQuery(invertIdx.Iterator("NeedDeviceModel", "1")),
-			query.NewOrQuery([]query.Query{
-				query.NewTermQuery(invertIdx.Iterator("DeviceModel", cond.Make)),
-				query.NewTermQuery(invertIdx.Iterator("DeviceModel", generateKey)),
+	var q query.Query
+	if len(cond.Hwv) > 0 && cond.Model != cond.Hwv {
+		q = query.NewTermQuery(invertIdx.Iterator("DeviceModel", generateKey2))
+	}
+	if q != nil {
+		return query.NewOrQuery([]query.Query{
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedDeviceModel", "1")),
+				query.NewOrQuery([]query.Query{
+					query.NewTermQuery(invertIdx.Iterator("DeviceModel", cond.Make)),
+					query.NewTermQuery(invertIdx.Iterator("DeviceModel", generateKey1)),
+					q,
+				}, nil),
 			}, nil),
-		}, nil),
-		query.NewTermQuery(invertIdx.Iterator("NeedDeviceModel", "0")),
-	}, nil)
+			query.NewTermQuery(invertIdx.Iterator("NeedDeviceModel", "0")),
+		}, nil)
+	} else {
+		return query.NewOrQuery([]query.Query{
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedDeviceModel", "1")),
+				query.NewOrQuery([]query.Query{
+					query.NewTermQuery(invertIdx.Iterator("DeviceModel", cond.Make)),
+					query.NewTermQuery(invertIdx.Iterator("DeviceModel", generateKey1)),
+				}, nil),
+			}, nil),
+			query.NewTermQuery(invertIdx.Iterator("NeedDeviceModel", "0")),
+		}, nil)
+	}
 }
 
 //effectiveCountryCode
@@ -630,15 +684,16 @@ func iabQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 			iabCategoryTag1 = append(iabCategoryTag1, query.NewTermQuery(invertIdx.Iterator("IabCategoryTag1", tmp[0])))
 			iabCategoryTag2 = append(iabCategoryTag2, query.NewTermQuery(invertIdx.Iterator("IabCategoryTag1", v)))
 		}
+		return query.NewOrQuery([]query.Query{
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedIabCategoryTag", "1")),
+				query.NewOrQuery(iabCategoryTag1, nil),
+				query.NewOrQuery(iabCategoryTag2, nil),
+			}, nil),
+			query.NewTermQuery(invertIdx.Iterator("NeedIabCategoryTag", "0")),
+		}, nil)
 	}
-	return query.NewOrQuery([]query.Query{
-		query.NewAndQuery([]query.Query{
-			query.NewTermQuery(invertIdx.Iterator("NeedIabCategoryTag", "1")),
-			query.NewOrQuery(iabCategoryTag1, nil),
-			query.NewOrQuery(iabCategoryTag2, nil),
-		}, nil),
-		query.NewTermQuery(invertIdx.Iterator("NeedIabCategoryTag", "0")),
-	}, nil)
+	return nil
 }
 
 // UserAge
@@ -647,6 +702,7 @@ func userAgeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
 	return query.NewOrQuery([]query.Query{
 		query.NewAndQuery([]query.Query{
+			query.NewTermQuery(invertIdx.Iterator("NeedUserAge", "1")),
 			query.NewTermQuery(invertIdx.Iterator("UserAge", strconv.Itoa(cond.UserAge))),
 		}, nil),
 		query.NewTermQuery(invertIdx.Iterator("NeedUserAge", "0")),
@@ -654,8 +710,11 @@ func userAgeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 }
 
 // InstallApps
-// include	if len(campaign.InstallApps) >0 {campaign.InstallApps in condition.InstallApps}
+// campaign.NeedInstallApps ==1 && campaign.InstallApps in condtion.InstallApp
 func installAppsQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+	if len(cond.InstallApps) == 0 {
+		return nil
+	}
 	invertIdx := idx.GetInvertedIndex()
 	var q []query.Query
 	for k, v := range cond.InstallApps {
@@ -664,30 +723,52 @@ func installAppsQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 		}
 		q = append(q, query.NewTermQuery(invertIdx.Iterator("InstallApps", strconv.Itoa(k))))
 	}
-	return query.NewOrQuery(q, nil)
+	return query.NewAndQuery([]query.Query{
+		query.NewOrQuery(q, nil),
+		query.NewTermQuery(invertIdx.Iterator("NeedInstallApps", "1")),
+	}, nil)
 }
 
 // ExcludeInstalledApps
-//exclude	if len(campaign.InstallApps) >0 {campaign.ExcludeInstalledApps not in condition.InstallApps}
+//exclude	campaign.NeedInstallApps ==1 && campaign.ExcludeInstalledApps not in condition.InstallApps
 func excludeInstalledAppsQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+	if len(cond.InstallApps) == 0 {
+		return nil
+	}
 	invertIdx := idx.GetInvertedIndex()
 	var q []query.Query
 	for k := range cond.InstallApps {
 		q = append(q, query.NewTermQuery(invertIdx.Iterator("ExcludeInstalledApps", strconv.Itoa(k))))
 	}
-	return query.NewOrQuery(q, nil)
+	return query.NewNotAndQuery([]query.Query{
+		query.NewTermQuery(invertIdx.Iterator("NeedInstallApps", "1")),
+		query.NewOrQuery(q, nil),
+	}, nil)
 }
 
 // adx
-// condition.Adx in  campaign.AdxWhiteBlack_1 and conditon.Adx not in campaign.AdxWhiteBlack_2
+// （（NeedAdxWhiteList = 1 and condition.Adx in  campaign.AdxWhiteList）or NeedAdxWhiteList = 0） and
+//（（NeedAdxBlackList = 1 and conditon.Adx not in campaign.AdxBlackList）or NeedAdxBlackList = 0）
 func adxQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
 	if cond.Adx == tencent {
 		return query.NewTermQuery(invertIdx.Iterator("AdxInclude", cond.Adx))
 	}
-	return query.NewNotAndQuery([]query.Query{
-		query.NewTermQuery(invertIdx.Iterator("AdxWhiteBlack_1", cond.Adx)),
-		query.NewTermQuery(invertIdx.Iterator("AdxWhiteBlack_2", cond.Adx)),
+	return query.NewAndQuery([]query.Query{
+		query.NewOrQuery([]query.Query{
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedAdxWhiteList", "1")),
+				query.NewTermQuery(invertIdx.Iterator("AdxWhiteList", cond.Adx)),
+			}, nil),
+			query.NewTermQuery(invertIdx.Iterator("NeedAdxWhiteList", "0")),
+		}, nil),
+		query.NewOrQuery([]query.Query{
+			query.NewNotAndQuery([]query.Query{
+				query.NewTermQuery(invertIdx.Iterator("NeedAdxBlackList", "1")),
+				query.NewTermQuery(invertIdx.Iterator("AdxBlackList", cond.Adx)),
+			}, nil),
+			query.NewTermQuery(invertIdx.Iterator("NeedAdxBlackList", "0")),
+		}, nil),
 	}, nil)
 }
 
@@ -695,57 +776,59 @@ func adxQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 // condition.Adx in campaign.AuditAdvertiserMap
 func advertiserAuditQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
-	var advertiserAudit query.Query
 	if cond.NeedAdvAudit == true {
-		advertiserAudit = query.NewTermQuery(invertIdx.Iterator("AuditAdvertiserMap", cond.Adx))
+		return query.NewTermQuery(invertIdx.Iterator("AuditAdvertiserMap", cond.Adx))
 	}
-	return advertiserAudit
+	return nil
 }
 
 // creativeAudit
 // condition.Adx in campaign.AuditCreativeMap
 func creativeAuditQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
-	var advertiserAudit query.Query
 	if cond.NeedCreativeAudit == true {
-		advertiserAudit = query.NewTermQuery(invertIdx.Iterator("AuditCreativeMap", cond.Adx))
+		return query.NewTermQuery(invertIdx.Iterator("AuditCreativeMap", cond.Adx))
 	}
-	return advertiserAudit
+	return nil
 }
 
 // deviceType
 // len(campaign.DeviceTypeV2) == 0 or (4 in campaign.DeviceTypeV2 and 5 in campaign.DeviceTypeV2) or
 //conditon.DeviceType in campaign.DeviceTypeV2
 func deviceTypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
-	invertIdx, storage := idx.GetInvertedIndex(), idx.GetStorageIndex()
+	invertIdx := idx.GetInvertedIndex()
 	if cond.DeviceType != 0 {
 		return query.NewOrQuery([]query.Query{
 			query.NewAndQuery([]query.Query{
 				query.NewTermQuery(invertIdx.Iterator("NeedDeviceType", "1")),
-				query.NewTermQuery(invertIdx.Iterator("DeviceType", "4")),
-				query.NewTermQuery(invertIdx.Iterator("DeviceType", "5")),
+				query.NewOrQuery([]query.Query{
+					query.NewAndQuery([]query.Query{
+						query.NewTermQuery(invertIdx.Iterator("DeviceType", "4")),
+						query.NewTermQuery(invertIdx.Iterator("DeviceType", "5")),
+					}, nil),
+					query.NewTermQuery(invertIdx.Iterator("DeviceType", strconv.Itoa(int(cond.DeviceType)))),
+				}, nil),
 			}, nil),
 			query.NewTermQuery(invertIdx.Iterator("NeedDeviceType", "0")),
-			query.NewTermQuery(invertIdx.Iterator("DeviceType", strconv.Itoa(int(cond.DeviceType)))),
 		}, nil)
 	}
-	return query.NewTermQuery(storage.Iterator("DeviceType"))
+	return nil
 }
 
-//// mobileCode
-//func mobileCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
-//	invertIdx, storageIdx := idx.GetInvertedIndex(), idx.GetStorageIndex()
-//	var q []query.Query
-//	q = append(q, query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")))
-//	if isNum, _ := regexp.MatchString("(^[0-9]+$)", cond.Carrier); !isNum {
-//		q = append(q, query.NewAndQuery([]query.Query{
-//			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
-//		}, []check.Checker{
-//			check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
-//		}))
-//	}
-//	return query.NewOrQuery(q, nil)
-//}
+// mobileCode
+func mobileCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+	invertIdx, storageIdx := idx.GetInvertedIndex(), idx.GetStorageIndex()
+	var q []query.Query
+	q = append(q, query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")))
+	if isNum, _ := regexp.MatchString("(^[0-9]+$)", cond.Carrier); !isNum {
+		q = append(q, query.NewAndQuery([]query.Query{
+			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
+		}, []check.Checker{
+			check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
+		}))
+	}
+	return query.NewOrQuery(q, nil)
+}
 
 // PackageName
 // campaign.PackageName not in condition.BApp
@@ -754,6 +837,9 @@ func packageNameQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	var q []query.Query
 	for k := range cond.BApp {
 		q = append(q, query.NewTermQuery(invertIdx.Iterator("PackageName", k)))
+	}
+	if len(q) == 0 {
+		return nil
 	}
 	return query.NewOrQuery(q, nil)
 }
@@ -872,14 +958,14 @@ func queryDsp() {
 		advertiserAuditQuery(tIndex, cond),
 		creativeAuditQuery(tIndex, cond),
 		deviceTypeQuery(tIndex, cond),
-		//mobileCodeQuery(tIndex, cond),
+		mobileCodeQuery(tIndex, cond),
 		userAgeQuery(tIndex, cond),
 		pkgNameQuery(tIndex, cond),
 		mvAppIdQuery(tIndex, cond),
-		query.NewOrQuery([]query.Query{
-			query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")),
-			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
-		}, nil),
+		//query.NewOrQuery([]query.Query{
+		//	query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")),
+		//	query.NewTermQuery(storageIdx.Iterator("MobileCode")),
+		//}, nil),
 		query.NewTermQuery(storageIdx.Iterator("EndTime")),
 		query.NewTermQuery(storageIdx.Iterator("OsVersionMax")),
 		query.NewTermQuery(storageIdx.Iterator("OsVersionMin")),
@@ -891,7 +977,7 @@ func queryDsp() {
 		check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
 		check.NewChecker(storageIdx.Iterator("ContentRating"), 12, operation.LE, nil, false),
 		check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
-		check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
+		//	check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
 	})
 
 	searcher := search.NewSearcher()
