@@ -8,7 +8,6 @@ import (
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/query/check"
 	"github.com/Mintegral-official/juno/query/operation"
-	"github.com/Mintegral-official/juno/search"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"regexp"
@@ -22,7 +21,13 @@ type operations struct {
 }
 
 func (o *operations) Equal(value interface{}) bool {
-	return true
+	switch value.(type) {
+	// mobileCode
+	case string:
+		ov := o.value.(map[string]string)
+		return ov[value.(string)] == "ALL"
+	}
+	return false
 }
 
 func (o *operations) Less(value interface{}) bool {
@@ -33,9 +38,16 @@ func (o *operations) In(value interface{}) bool {
 	switch value.(type) {
 	// mobileCode
 	case string:
-		for _, v := range o.value.([]string) {
-			if strings.Contains(value.(string), v) {
-				return true
+		ov, v := o.value.(map[string]string), value.(string)
+		if isNum, _ := regexp.MatchString("(^[0-9]+$)", v); isNum {
+			if len(ov[v]) == 0 {
+				return false
+			}
+		} else {
+			for _, value := range ov {
+				if strings.Contains(v, value) {
+					return true
+				}
 			}
 		}
 		return false
@@ -437,6 +449,9 @@ func appSubCategoryQuery(idx *index.Indexer, cond *CampaignCondition) query.Quer
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("AppSubCategory", k)))
 		}
 	}
+	if len(q) == 0 {
+		return nil
+	}
 	return query.NewOrQuery(q, nil)
 }
 
@@ -444,15 +459,14 @@ func appSubCategoryQuery(idx *index.Indexer, cond *CampaignCondition) query.Quer
 //condition.BSubCategoryName != nil condition.BSubCategoryName not in campaign.SubCategoryName 切片对切片
 func subCategoryNameQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
-	var subCategoryName query.Query
 	if cond.BSubCategoryName != nil {
 		var q []query.Query
 		for _, v := range cond.BSubCategoryName {
 			q = append(q, query.NewTermQuery(invertIdx.Iterator("SubCategoryName", v)))
 		}
-		subCategoryName = query.NewAndQuery(q, nil)
+		return query.NewAndQuery(q, nil)
 	}
-	return subCategoryName
+	return nil
 }
 
 ////ContentRating
@@ -772,7 +786,7 @@ func adxQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	}, nil)
 }
 
-// advertiserAudit
+// advertiserAudit TODO
 // condition.Adx in campaign.AuditAdvertiserMap
 func advertiserAuditQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
@@ -782,7 +796,7 @@ func advertiserAuditQuery(idx *index.Indexer, cond *CampaignCondition) query.Que
 	return nil
 }
 
-// creativeAudit
+// creativeAudit TODO
 // condition.Adx in campaign.AuditCreativeMap
 func creativeAuditQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	invertIdx := idx.GetInvertedIndex()
@@ -815,20 +829,20 @@ func deviceTypeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	return nil
 }
 
-// mobileCode
-func mobileCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
-	invertIdx, storageIdx := idx.GetInvertedIndex(), idx.GetStorageIndex()
-	var q []query.Query
-	q = append(q, query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")))
-	if isNum, _ := regexp.MatchString("(^[0-9]+$)", cond.Carrier); !isNum {
-		q = append(q, query.NewAndQuery([]query.Query{
-			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
-		}, []check.Checker{
-			check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
-		}))
-	}
-	return query.NewOrQuery(q, nil)
-}
+//// mobileCode
+//func mobileCodeQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+//	storageIdx :=  idx.GetStorageIndex()
+//	return query.NewOrQuery([]query.Query{
+//		query.NewAndQuery([]query.Query{
+//			query.NewTermQuery(storageIdx.Iterator("MobileCode")),
+//		}, []check.Checker{
+//			check.NewOrChecker([]check.Checker{
+//				check.NewChecker(storageIdx.Iterator("MobileCode"), cond.carrier, operation.EQ, &operations{}, false),
+//				check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
+//			}),
+//		}),
+//	}, nil)
+//}
 
 // PackageName
 // campaign.PackageName not in condition.BApp
@@ -844,6 +858,17 @@ func packageNameQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 	return query.NewOrQuery(q, nil)
 }
 
+// adSchedule
+//“-2“ in campaign.AdSchedule or ("-1-curHour" in campaign.AdSchedule ) or (curDay-curHour in campaign.AdSchedule)
+func adScheduleQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
+	invertIdx := idx.GetInvertedIndex()
+	return query.NewOrQuery([]query.Query{
+		query.NewTermQuery(invertIdx.Iterator("AdSchedule", "-2")),
+		query.NewTermQuery(invertIdx.Iterator("AdSchedule", "-1-curHour")),
+		query.NewTermQuery(invertIdx.Iterator("AdSchedule", curDay-curHour)),
+	}, nil)
+}
+
 //// UserInterest
 //// len(campaign.UserInterestV2) == 0 or campaign.UserInterestV2的每个二级数组中至少有一个元素在condition.DmpInterests里
 //func userInterestQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
@@ -855,7 +880,7 @@ func packageNameQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 //	})
 //}
 
-func queryDsp() {
+func queryDsp() query.Query {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -885,102 +910,211 @@ func queryDsp() {
 	})
 	if e != nil {
 		fmt.Println(e)
-		return
+		return nil
 	}
 	if e := b.Build(ctx, "indexName"); e != nil {
 		fmt.Println("build error", e.Error())
 	}
 
 	tIndex := b.GetIndex()
-
-	// invert list
-	invertIdx := tIndex.GetInvertedIndex()
+	//
+	//// invert list
+	//invertIdx := tIndex.GetInvertedIndex()
 
 	// storage list
 	storageIdx := tIndex.GetStorageIndex()
 
-	// adSchedule
-	//“-2“ in campaign.AdSchedule or ("-1-curHour" in campaign.AdSchedule ) or (curDay-curHour in campaign.AdSchedule)
-	var adSchedule = query.NewOrQuery([]query.Query{
-		query.NewTermQuery(invertIdx.Iterator("AdSchedule", "-2")),
-		query.NewTermQuery(invertIdx.Iterator("AdSchedule", "-1-curHour")),
-		query.NewTermQuery(invertIdx.Iterator("AdSchedule", curDay-curHour)),
-	}, nil)
+	//// adSchedule
+	////“-2“ in campaign.AdSchedule or ("-1-curHour" in campaign.AdSchedule ) or (curDay-curHour in campaign.AdSchedule)
+	//var adSchedule = query.NewOrQuery([]query.Query{
+	//	query.NewTermQuery(invertIdx.Iterator("AdSchedule", "-2")),
+	//	query.NewTermQuery(invertIdx.Iterator("AdSchedule", "-1-curHour")),
+	//	query.NewTermQuery(invertIdx.Iterator("AdSchedule", curDay-curHour)),
+	//}, nil)
 
-	// endTime startTime TODO 这个在下面合并的时候拆开了写的
-	var endTime = query.NewOrQuery([]query.Query{
-		query.NewAndQuery([]query.Query{
-			query.NewTermQuery(storageIdx.Iterator("EndTime")),
-		}, []check.Checker{
-			check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
-			check.NewChecker(storageIdx.Iterator("EndTime"), 0, operation.GT, nil, false),
+	//// endTime startTime TODO 这个在下面合并的时候拆开了写的
+	//var endTime = query.NewOrQuery([]query.Query{
+	//	query.NewAndQuery([]query.Query{
+	//		query.NewTermQuery(storageIdx.Iterator("EndTime")),
+	//	}, []check.Checker{
+	//		check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
+	//		check.NewChecker(storageIdx.Iterator("EndTime"), 0, operation.GT, nil, false),
+	//	}),
+	//	query.NewTermQuery(storageIdx.Iterator("EndTime")),
+	//}, []check.Checker{
+	//	check.NewChecker(storageIdx.Iterator("EndTime"), 0, operation.LE, nil, false),
+	//})
+
+	var andQuery *query.AndQuery
+	var notAndQuery *query.NotAndQuery
+	var queryAnd, queryNot []query.Query
+	if campaignIdQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, campaignIdQuery(tIndex, cond))
+	}
+	if campaignTypeQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, campaignTypeQuery(tIndex, cond))
+	}
+	if ctypeQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, ctypeQuery(tIndex, cond))
+	}
+	if directQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, directQuery(tIndex, cond))
+	}
+	queryNot = append(queryNot, isecadvQuery(tIndex, cond))
+	if industryIdQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, industryIdQuery(tIndex, cond))
+	}
+	if domainQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, domainQuery(tIndex, cond))
+	}
+	if deviceAndIpuaRetargetQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, deviceAndIpuaRetargetQuery(tIndex, cond))
+	}
+	if appCategoryQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, appCategoryQuery(tIndex, cond))
+	}
+	if appSubCategoryQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, appSubCategoryQuery(tIndex, cond))
+	}
+	queryNot = append(queryNot, subCategoryV2Query(tIndex, cond))
+	queryNot = append(queryNot, excludeInstalledAppsQuery(tIndex, cond))
+	if packageNameQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, packageNameQuery(tIndex, cond))
+	}
+	if iabCategoryQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, iabCategoryQuery(tIndex, cond))
+	}
+	if subCategoryNameQuery(tIndex, cond) != nil {
+		queryNot = append(queryNot, subCategoryNameQuery(tIndex, cond))
+	}
+	if len(queryNot) != 0 {
+		notAndQuery = query.NewNotAndQuery(queryNot, nil)
+		queryAnd = append(queryAnd, notAndQuery)
+	}
+	queryAnd = append(queryAnd, osQuery(tIndex, cond))
+	queryAnd = append(queryAnd, countryCodeQuery(tIndex, cond))
+	if iabQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, iabQuery(tIndex, cond))
+	}
+	if installAppsQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, installAppsQuery(tIndex, cond))
+	}
+	queryAnd = append(queryAnd, trafficTypeQuery(tIndex, cond))
+	if adtypeQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, adtypeQuery(tIndex, cond))
+	}
+	if effectiveCountryCodeQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, effectiveCountryCodeQuery(tIndex, cond))
+	}
+	if supportHttpsQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, supportHttpsQuery(tIndex, cond))
+	}
+	queryAnd = append(queryAnd, genderQuery(tIndex, cond))
+	queryAnd = append(queryAnd, devicelanguageQuery(tIndex, cond))
+	queryAnd = append(queryAnd, adScheduleQuery(tIndex, cond))
+	queryAnd = append(queryAnd, networkTypeQuery(tIndex, cond))
+	queryAnd = append(queryAnd, deviceModelQuery(tIndex, cond))
+	if advertiserIdQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, advertiserIdQuery(tIndex, cond))
+	}
+	queryAnd = append(queryAnd, adxQuery(tIndex, cond))
+	if advertiserAuditQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, advertiserAuditQuery(tIndex, cond))
+	}
+	if creativeAuditQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, creativeAuditQuery(tIndex, cond))
+	}
+	if deviceTypeQuery(tIndex, cond) != nil {
+		queryAnd = append(queryAnd, deviceTypeQuery(tIndex, cond))
+	}
+	queryAnd = append(queryAnd, userAgeQuery(tIndex, cond))
+	queryAnd = append(queryAnd, pkgNameQuery(tIndex, cond))
+	queryAnd = append(queryAnd, pkgNameQuery(tIndex, cond))
+
+	var checkers = []check.Checker{
+		check.NewChecker(storageIdx.Iterator("OsVersionMin"), cond.osv, operation.LE, nil, false),
+		check.NewChecker(storageIdx.Iterator("OsVersionMax"), cond.osv, operation.GE, nil, false),
+		check.NewOrChecker([]check.Checker{
+			check.NewAndChecker([]check.Checker{
+				check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
+				check.NewChecker(storageIdx.Iterator("EndTime"), 0, operation.GT, nil, false),
+			}),
+			check.NewChecker(storageIdx.Iterator("EndTime"), 0, operation.LE, nil, false),
 		}),
-		query.NewTermQuery(storageIdx.Iterator("EndTime")),
-	}, []check.Checker{
-		check.NewChecker(storageIdx.Iterator("EndTime"), 0, operation.LE, nil, false),
-	})
-
-	resQuery := query.NewOrQuery([]query.Query{
-		query.NewTermQuery(invertIdx.Iterator("MobileCode", "All")),
-		query.NewAndQuery([]query.Query{
-			query.NewNotAndQuery([]query.Query{
-				campaignIdQuery(tIndex, cond),
-				campaignTypeQuery(tIndex, cond),
-				ctypeQuery(tIndex, cond),
-				directQuery(tIndex, cond),
-				isecadvQuery(tIndex, cond),
-				industryIdQuery(tIndex, cond),
-				domainQuery(tIndex, cond),
-				deviceAndIpuaRetargetQuery(tIndex, cond),
-				appCategoryQuery(tIndex, cond),
-				appSubCategoryQuery(tIndex, cond),
-				subCategoryV2Query(tIndex, cond),
-				excludeInstalledAppsQuery(tIndex, cond),
-				packageNameQuery(tIndex, cond),
-				iabCategoryQuery(tIndex, cond),
-				subCategoryNameQuery(tIndex, cond),
-			}, nil),
-			osQuery(tIndex, cond),
-			countryCodeQuery(tIndex, cond),
-			iabQuery(tIndex, cond),
-			installAppsQuery(tIndex, cond),
-			trafficTypeQuery(tIndex, cond),
-			adtypeQuery(tIndex, cond),
-			effectiveCountryCodeQuery(tIndex, cond),
-			supportHttpsQuery(tIndex, cond),
-			genderQuery(tIndex, cond),
-			devicelanguageQuery(tIndex, cond),
-			adSchedule,
-			networkTypeQuery(tIndex, cond),
-			deviceModelQuery(tIndex, cond),
-			advertiserIdQuery(tIndex, cond),
-			//userInterestQuery(tIndex, cond),
-			adxQuery(tIndex, cond),
-			//userInterestQuery(tIndex, cond),
-			advertiserAuditQuery(tIndex, cond),
-			creativeAuditQuery(tIndex, cond),
-			deviceTypeQuery(tIndex, cond),
-			mobileCodeQuery(tIndex, cond),
-			userAgeQuery(tIndex, cond),
-			pkgNameQuery(tIndex, cond),
-			mvAppIdQuery(tIndex, cond),
-			//query.NewTermQuery(storageIdx.Iterator("EndTime")),
-			//query.NewTermQuery(storageIdx.Iterator("OsVersionMax")),
-			//query.NewTermQuery(storageIdx.Iterator("OsVersionMin")),
-			//query.NewTermQuery(storageIdx.Iterator("ContentRating")),
-			//query.NewTermQuery(storageIdx.Iterator("UserInterest")),
-		}, []check.Checker{
-			check.NewChecker(storageIdx.Iterator("OsVersionMin"), cond.osv, operation.LE, nil, false),
-			check.NewChecker(storageIdx.Iterator("OsVersionMax"), cond.osv, operation.GE, nil, false),
-			check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
-			check.NewChecker(storageIdx.Iterator("ContentRating"), 12, operation.LE, nil, false),
-			check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
+		check.NewChecker(storageIdx.Iterator("ContentRating"), 12, operation.LE, nil, false),
+		check.NewOrChecker([]check.Checker{
+			check.NewChecker(storageIdx.Iterator("MobileCode"), cond.carrier, operation.EQ, &operations{}, false),
 			check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
 		}),
-	}, nil)
+		check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
+	}
+	if len(queryAnd) != 0 {
+		andQuery = query.NewAndQuery(queryAnd, checkers)
+		return andQuery
+	}
+	return nil
 
-	searcher := search.NewSearcher()
-	searcher.Search(tIndex, resQuery)
-	fmt.Println(searcher.Docs)
-	fmt.Println(searcher.Time)
+	//resQuery := query.NewAndQuery([]query.Query{
+	//	query.NewNotAndQuery([]query.Query{
+	//		campaignIdQuery(tIndex, cond),
+	//		campaignTypeQuery(tIndex, cond),
+	//		ctypeQuery(tIndex, cond),
+	//		directQuery(tIndex, cond),
+	//		isecadvQuery(tIndex, cond),
+	//		industryIdQuery(tIndex, cond),
+	//		domainQuery(tIndex, cond),
+	//		deviceAndIpuaRetargetQuery(tIndex, cond),
+	//		appCategoryQuery(tIndex, cond),
+	//		appSubCategoryQuery(tIndex, cond),
+	//		subCategoryV2Query(tIndex, cond),
+	//		excludeInstalledAppsQuery(tIndex, cond),
+	//		packageNameQuery(tIndex, cond),
+	//		iabCategoryQuery(tIndex, cond),
+	//		subCategoryNameQuery(tIndex, cond),
+	//	}, nil),
+	//	osQuery(tIndex, cond),
+	//	countryCodeQuery(tIndex, cond),
+	//	iabQuery(tIndex, cond),
+	//	installAppsQuery(tIndex, cond),
+	//	trafficTypeQuery(tIndex, cond),
+	//	adtypeQuery(tIndex, cond),
+	//	effectiveCountryCodeQuery(tIndex, cond),
+	//	supportHttpsQuery(tIndex, cond),
+	//	genderQuery(tIndex, cond),
+	//	devicelanguageQuery(tIndex, cond),
+	//	adScheduleQuery(tIndex, cond),
+	//	networkTypeQuery(tIndex, cond),
+	//	deviceModelQuery(tIndex, cond),
+	//	advertiserIdQuery(tIndex, cond),
+	//	adxQuery(tIndex, cond),
+	//	advertiserAuditQuery(tIndex, cond),
+	//	creativeAuditQuery(tIndex, cond),
+	//	deviceTypeQuery(tIndex, cond),
+	//	userAgeQuery(tIndex, cond),
+	//	pkgNameQuery(tIndex, cond),
+	//	mvAppIdQuery(tIndex, cond),
+	//}, []check.Checker{
+	//	check.NewChecker(storageIdx.Iterator("OsVersionMin"), cond.osv, operation.LE, nil, false),
+	//	check.NewChecker(storageIdx.Iterator("OsVersionMax"), cond.osv, operation.GE, nil, false),
+	//	check.NewOrChecker([]check.Checker{
+	//		check.NewAndChecker([]check.Checker{
+	//			check.NewChecker(storageIdx.Iterator("EndTime"), time.Now().Unix(), operation.GT, nil, false),
+	//			check.NewChecker(storageIdx.Iterator("EndTime"), 0, operation.GT, nil, false),
+	//		}),
+	//		check.NewChecker(storageIdx.Iterator("EndTime"), 0, operation.LE, nil, false),
+	//	}),
+	//	check.NewChecker(storageIdx.Iterator("ContentRating"), 12, operation.LE, nil, false),
+	//	check.NewOrChecker([]check.Checker{
+	//		check.NewChecker(storageIdx.Iterator("MobileCode"), cond.carrier, operation.EQ, &operations{}, false),
+	//		check.NewInChecker(storageIdx.Iterator("MobileCode"), cond.Carrier, &operations{}, false),
+	//	}),
+	//	check.NewInChecker(storageIdx.Iterator("UserInterest"), cond.DmpInterests, &operations{}, false),
+	//})
+	//
+
+	// ******  Search  ******
+	//searcher := search.NewSearcher()
+	//searcher.Search(tIndex, resQuery)
+	//fmt.Println(searcher.Docs)
+	//fmt.Println(searcher.Time)
 }
