@@ -1,10 +1,10 @@
 package query
 
 import (
+	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/query/check"
-	"github.com/Mintegral-official/juno/query/operation"
+	"github.com/Mintegral-official/juno/operation"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

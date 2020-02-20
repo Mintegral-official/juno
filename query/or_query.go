@@ -2,10 +2,10 @@ package query
 
 import (
 	"container/heap"
+	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/query/check"
 	"strconv"
 )
 
