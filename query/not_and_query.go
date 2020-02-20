@@ -2,10 +2,10 @@ package query
 
 import (
 	"errors"
+	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/query/check"
 	"strconv"
 )
 
@@ -37,7 +37,7 @@ label:
 	for {
 		target, err := naq.queries[0].Current()
 		if err != nil {
-			return 0, helpers.NoMoreData
+			return target, helpers.NoMoreData
 		}
 		if len(naq.queries) == 1 {
 			_, _ = naq.queries[0].Next()
@@ -62,7 +62,7 @@ label:
 					}
 					target, err = naq.queries[0].Current()
 					if err != nil {
-						return 0, err
+						return target, err
 					}
 					_, _ = naq.queries[0].Next()
 				}
@@ -82,7 +82,7 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	for {
 		target, err := naq.queries[0].GetGE(id)
 		if err != nil {
-			return 0, helpers.NoMoreData
+			return target, helpers.NoMoreData
 		}
 		if len(naq.queries) == 1 {
 			for !naq.check(target) {
@@ -123,7 +123,7 @@ func (naq *NotAndQuery) Current() (document.DocId, error) {
 	}
 	res, err := naq.queries[0].Current()
 	if err != nil {
-		return 0, err
+		return res, err
 	}
 	for i := 1; i < len(naq.queries); i++ {
 		tar, err := naq.queries[i].GetGE(res)
@@ -132,7 +132,7 @@ func (naq *NotAndQuery) Current() (document.DocId, error) {
 			continue
 		}
 		if tar == res {
-			return 0, errors.New("this target is not result")
+			return res, errors.New("this target is not result")
 		} else if i == len(naq.queries)-1 {
 			if naq.check(res) {
 				return res, nil

@@ -3,7 +3,7 @@ package check
 import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/query/operation"
+	"github.com/Mintegral-official/juno/operation"
 )
 
 type NotChecker struct {

@@ -1,31 +1,17 @@
 package query
 
 import (
-	"bytes"
-	"encoding/gob"
-	"unsafe"
+	"encoding/json"
+	"fmt"
+	"testing"
 )
 
-type MarshalQueryInfo struct {
-	queries Query
-}
+func TestMarshalQueryInfo_Marshal(t *testing.T) {
+	var a interface{} = 4
+	var b int = 100
+	r, e := json.Marshal(b)
+	fmt.Println(string(r), e)
+	_ = json.Unmarshal(r, &a)
+	fmt.Println(a)
 
-func (q *MarshalQueryInfo) Marshal(queries Query) (string, error) {
-	buf := new(bytes.Buffer)
-	enc := gob.NewEncoder(buf)
-	if err := enc.Encode(queries); err != nil {
-		return "", err
-	} else {
-		return buf.String(), nil
-	}
-}
-
-func (q *MarshalQueryInfo) UnMarshal(str string) (Query, error) {
-	var res = &MarshalQueryInfo{}
-	dec := gob.NewDecoder(bytes.NewBuffer(*(*[]byte)(unsafe.Pointer(&str))))
-	if err := dec.Decode(&res); err != nil {
-		return nil, err
-	} else {
-		return res.queries, nil
-	}
 }

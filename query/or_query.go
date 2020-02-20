@@ -2,10 +2,10 @@ package query
 
 import (
 	"container/heap"
+	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/query/check"
 	"strconv"
 )
 
@@ -106,7 +106,7 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	q := top.(Query)
 	res, err := q.Current()
 	if err != nil {
-		return 0, err
+		return res, err
 	}
 	if oq.check(res) {
 		return res, nil

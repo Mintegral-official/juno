@@ -2,7 +2,7 @@ package check
 
 import (
 	"github.com/Mintegral-official/juno/datastruct"
-	"github.com/Mintegral-official/juno/query/operation"
+	"github.com/Mintegral-official/juno/operation"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

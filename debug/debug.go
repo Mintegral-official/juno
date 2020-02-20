@@ -1,6 +1,9 @@
 package debug
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"unsafe"
+)
 
 type Debug struct {
 	Name string   `json:"name"`
@@ -30,7 +33,7 @@ func (d *Debug) AddDebugMsg(msg ...string) {
 func (d *Debug) String() string {
 	res, err := json.Marshal(d)
 	if err == nil {
-		return string(res)
+		return *(*string)(unsafe.Pointer(&res))
 	} else {
 		return err.Error()
 	}

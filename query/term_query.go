@@ -36,7 +36,7 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 
 	tq.iterator.Next()
 	element := tq.iterator.Current()
-	if element == nil || element.Key() == 0 {
+	if element == nil  {
 		return 0, helpers.ElementNotfound
 	}
 	return element.Key(), nil
@@ -51,7 +51,7 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	}
 
 	element := tq.iterator.GetGE(id)
-	if element == nil || element.Key() == 0 {
+	if element == nil  {
 		return 0, helpers.ElementNotfound
 	}
 	return element.Key(), nil
@@ -65,7 +65,7 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 		return 0, helpers.DocumentError
 	}
 	element := tq.iterator.Current()
-	if element == nil || element.Key() == 0 {
+	if element == nil  {
 		return 0, helpers.ElementNotfound
 	}
 	return element.Key(), nil
