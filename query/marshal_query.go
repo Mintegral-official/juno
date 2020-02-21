@@ -2,7 +2,6 @@ package query
 
 import (
 	"encoding/json"
-	"github.com/Mintegral-official/juno/index"
 	"unsafe"
 )
 
@@ -22,10 +21,9 @@ func (j *JSONFormatter) Marshal(cond interface{}) (string, error) {
 
 }
 
-func (j *JSONFormatter) Unmarshal(str string, idx *index.Indexer, cond interface{},
-	queryFunc func(idx *index.Indexer, cond interface{}) Query) (Query, error) {
+func (j *JSONFormatter) Unmarshal(str string, cond interface{}, queryFunc func(cond interface{}) Query) (Query, error) {
 	if e := json.Unmarshal([]byte(str), &cond); e != nil {
 		return nil, e
 	}
-	return queryFunc(idx, cond), nil
+	return queryFunc(cond), nil
 }

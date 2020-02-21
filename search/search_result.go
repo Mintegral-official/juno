@@ -3,6 +3,7 @@ package search
 import (
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
 	"time"
@@ -46,18 +47,13 @@ func (s *Searcher) Debug(q query.Query, ids []document.DocId) map[document.DocId
 		res[id] = nil
 	}
 	id, err := q.Next()
-	for _, v := range ids {
-		if v == id {
-			res[id] = err
-		}
-	}
-	for err == nil {
-		id, err = q.Next()
+	for err != helpers.NoMoreData {
 		for _, v := range ids {
 			if v == id {
 				res[id] = err
 			}
 		}
+		id, err = q.Next()
 	}
 	return res
 }
