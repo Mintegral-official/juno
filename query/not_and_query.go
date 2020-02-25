@@ -6,6 +6,8 @@ import (
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/index"
+	"github.com/Mintegral-official/juno/operation"
 	"strconv"
 )
 
@@ -174,4 +176,36 @@ func (naq *NotAndQuery) check(id document.DocId) bool {
 		}
 	}
 	return true
+}
+
+func (naq *NotAndQuery) Marshal(idx *index.Indexer) map[string]interface{} {
+	var queryInfo, checkInfo []map[string]interface{}
+	res := make(map[string]interface{}, len(naq.queries))
+	for _, v := range naq.queries {
+		queryInfo = append(queryInfo, v.Marshal(idx))
+	}
+	if len(naq.checkers) != 0 {
+		for _, v := range naq.checkers {
+			checkInfo = append(checkInfo, v.Marshal(idx))
+		}
+		res["not_check"] = checkInfo
+	}
+	res["not"] = queryInfo
+	return res
+}
+
+func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
+	if v, ok := res["not"]; ok {
+		r := v.([]map[string]interface{})
+		var q []Query
+		var c []check.Checker
+		for i, v := range naq.queries {
+			q = append(q, v.Unmarshal(idx, r[i], nil))
+		}
+		for i, v := range naq.checkers {
+			c = append(c, v.Unmarshal(idx, r[i], e))
+		}
+		return NewOrQuery(q, c)
+	}
+	return nil
 }

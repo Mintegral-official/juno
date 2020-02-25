@@ -2,10 +2,13 @@ package query
 
 import (
 	"container/heap"
+	"errors"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/index"
+	"github.com/Mintegral-official/juno/operation"
 	"strconv"
 )
 
@@ -41,7 +44,7 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 	}
 	for target, err := oq.Current(); err == nil; {
 		oq.next()
-		if target != 0 && oq.check(target) {
+		if oq.check(target) {
 			for cur, err := oq.Current(); err == nil; {
 				if cur != target {
 					break
@@ -86,7 +89,7 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 		oq.getGE(id)
 		target, err = oq.Current()
 	}
-	for err == nil && (target == 0 || !oq.check(target)) {
+	for err == nil && !oq.check(target) {
 		if oq.debugs != nil {
 			oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
 		}
@@ -112,9 +115,9 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 		return res, nil
 	}
 	if oq.debugs != nil {
-		oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + "has been filtered out")
+		oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + " has been filtered out")
 	}
-	return 0, nil
+	return res, errors.New(strconv.FormatInt(int64(res), 10) + " has been filtered out")
 }
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {
@@ -143,4 +146,36 @@ func (oq *OrQuery) check(id document.DocId) bool {
 		}
 	}
 	return false
+}
+
+func (oq *OrQuery) Marshal(idx *index.Indexer) map[string]interface{} {
+	var queryInfo, checkInfo []map[string]interface{}
+	res := make(map[string]interface{}, len(oq.h))
+	for _, v := range oq.h {
+		queryInfo = append(queryInfo, v.Marshal(idx))
+	}
+	if len(oq.checkers) != 0 {
+		for _, v := range oq.checkers {
+			checkInfo = append(checkInfo, v.Marshal(idx))
+		}
+		res["or_check"] = checkInfo
+	}
+	res["or"] = queryInfo
+	return res
+}
+
+func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
+	if v, ok := res["or"]; ok {
+		r := v.([]map[string]interface{})
+		var q []Query
+		var c []check.Checker
+		for i, v := range oq.h {
+			q = append(q, v.Unmarshal(idx, r[i], nil))
+		}
+		for i, v := range oq.checkers {
+			c = append(c, v.Unmarshal(idx, r[i], e))
+		}
+		return NewOrQuery(q, c)
+	}
+	return nil
 }

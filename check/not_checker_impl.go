@@ -3,6 +3,7 @@ package check
 import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 )
 
@@ -49,4 +50,38 @@ func (nc *NotChecker) Check(id document.DocId) bool {
 	}
 	nc.e.SetValue(v)
 	return !nc.e.In(nc.value)
+}
+
+func (nc *NotChecker) Marshal(idx *index.Indexer) map[string]interface{} {
+	storageIdx := idx.GetStorageIndex().(*index.StorageIndexer)
+	if len(storageIdx.GetFieldName()) == 0 {
+		return nil
+	}
+	fieldName := storageIdx.GetFieldName()
+	res := make(map[string]interface{}, 1)
+	var tmp []interface{}
+	tmp = append(tmp, fieldName[0])
+	tmp = append(tmp, nc.value)
+	if nc.e != nil {
+		tmp = append(tmp, 1)
+	} else {
+		tmp = append(tmp, 0)
+	}
+	tmp = append(tmp, nc.transfer)
+	res["not_check"] = tmp
+	fieldName = append(fieldName[:0], fieldName[1:]...)
+	return res
+}
+
+func (nc *NotChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Checker {
+	v, ok := res["not_check"]
+	if !ok {
+		return nil
+	}
+	value := v.([]interface{})
+	if value[2] == 1 {
+		return NewNotChecker(idx.GetStorageIndex().Iterator(value[0].(string)), value[1], e, value[3].(bool))
+	}
+	return NewNotChecker(idx.GetStorageIndex().Iterator(value[0].(string)), value[1], nil, value[3].(bool))
+
 }

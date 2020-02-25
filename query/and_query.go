@@ -7,6 +7,8 @@ import (
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/index"
+	"github.com/Mintegral-official/juno/operation"
 	"strconv"
 	"strings"
 )
@@ -165,4 +167,36 @@ func (aq *AndQuery) StringBuilder(cap int, value ...interface{}) string {
 	_, _ = fmt.Fprintf(&b, "not found:[%d], ", value[1])
 	_, _ = fmt.Fprintf(&b, "reason:[%s]", value[2])
 	return b.String()
+}
+
+func (aq *AndQuery) Marshal(idx *index.Indexer) map[string]interface{} {
+	var queryInfo, checkInfo []map[string]interface{}
+	res := make(map[string]interface{}, len(aq.queries))
+	for _, v := range aq.queries {
+		queryInfo = append(queryInfo, v.Marshal(idx))
+	}
+	if len(aq.checkers) != 0 {
+		for _, v := range aq.checkers {
+			checkInfo = append(checkInfo, v.Marshal(idx))
+		}
+		res["and_check"] = checkInfo
+	}
+	res["and"] = queryInfo
+	return res
+}
+
+func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
+	if v, ok := res["and"]; ok {
+		r := v.([]map[string]interface{})
+		var q []Query
+		var c []check.Checker
+		for i, v := range aq.queries {
+			q = append(q, v.Unmarshal(idx, r[i], nil))
+		}
+		for i, v := range aq.checkers {
+			c = append(c, v.Unmarshal(idx, r[i], e))
+		}
+		return NewAndQuery(q, c)
+	}
+	return nil
 }

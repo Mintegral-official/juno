@@ -5,6 +5,8 @@ import (
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
+	"github.com/Mintegral-official/juno/index"
+	"github.com/Mintegral-official/juno/operation"
 	"strconv"
 )
 
@@ -36,7 +38,7 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 
 	tq.iterator.Next()
 	element := tq.iterator.Current()
-	if element == nil  {
+	if element == nil {
 		return 0, helpers.ElementNotfound
 	}
 	return element.Key(), nil
@@ -51,7 +53,7 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	}
 
 	element := tq.iterator.GetGE(id)
-	if element == nil  {
+	if element == nil {
 		return 0, helpers.ElementNotfound
 	}
 	return element.Key(), nil
@@ -65,7 +67,7 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 		return 0, helpers.DocumentError
 	}
 	element := tq.iterator.Current()
-	if element == nil  {
+	if element == nil {
 		return 0, helpers.ElementNotfound
 	}
 	return element.Key(), nil
@@ -79,4 +81,25 @@ func (tq *TermQuery) DebugInfo() *debug.Debug {
 		return tq.debugs.DebugInfo
 	}
 	return nil
+}
+
+func (tq *TermQuery) Marshal(idx *index.Indexer) map[string]interface{} {
+	invertIdx := idx.GetInvertedIndex().(*index.InvertedIndexer)
+	if len(invertIdx.GetField()) == 0 || len(invertIdx.GetValue()) == 0 {
+		return nil
+	}
+	field, value := invertIdx.GetField(), invertIdx.GetValue()
+	res := make(map[string]interface{}, 1)
+	res["="] = []string{field[0], value[0]}
+	field = append(field[:0], field[1:]...)
+	value = append(value[:0], value[1:]...)
+	return res
+}
+
+func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
+	v, ok := res["="]
+	if !ok {
+		return nil
+	}
+	return NewTermQuery(idx.GetInvertedIndex().Iterator(v.([]string)[0], v.([]string)[1]))
 }

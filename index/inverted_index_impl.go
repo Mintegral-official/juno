@@ -11,6 +11,8 @@ import (
 
 type InvertedIndexer struct {
 	data   sync.Map
+	field  []string
+	value  []string
 	aDebug *debug.Debug
 }
 
@@ -84,6 +86,8 @@ func (i *InvertedIndexer) Update(fieldName string, ids []document.DocId) {
 
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	var fieldName = name + "_" + value
+	i.field = append(i.field, name)
+	i.value = append(i.value, value)
 	if v, ok := i.data.Load(fieldName); ok {
 		sl, ok := v.(*datastruct.SkipList)
 		if ok {
@@ -102,4 +106,12 @@ func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 
 func (i *InvertedIndexer) DebugInfo() *debug.Debug {
 	return i.aDebug
+}
+
+func (i *InvertedIndexer) GetField() []string {
+	return i.field
+}
+
+func (i *InvertedIndexer) GetValue() []string {
+	return i.value
 }
