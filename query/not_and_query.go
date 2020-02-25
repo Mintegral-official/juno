@@ -196,14 +196,14 @@ func (naq *NotAndQuery) Marshal(idx *index.Indexer) map[string]interface{} {
 
 func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
 	if v, ok := res["not"]; ok {
-		r := v.([]map[string]interface{})
+		r := v.([]interface{})
 		var q []Query
 		var c []check.Checker
 		for i, v := range naq.queries {
-			q = append(q, v.Unmarshal(idx, r[i], nil))
+			q = append(q, v.Unmarshal(idx, r[i].(map[string]interface{}), nil))
 		}
 		for i, v := range naq.checkers {
-			c = append(c, v.Unmarshal(idx, r[i], e))
+			c = append(c, v.Unmarshal(idx, r[i].(map[string]interface{}), e))
 		}
 		return NewOrQuery(q, c)
 	}

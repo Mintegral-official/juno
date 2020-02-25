@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -101,5 +102,5 @@ func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e
 	if !ok {
 		return nil
 	}
-	return NewTermQuery(idx.GetInvertedIndex().Iterator(v.([]string)[0], v.([]string)[1]))
+	return NewTermQuery(idx.GetInvertedIndex().Iterator(fmt.Sprint(v.([]interface{})[0]), fmt.Sprint(v.([]interface{})[1])))
 }

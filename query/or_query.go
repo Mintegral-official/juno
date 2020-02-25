@@ -166,14 +166,14 @@ func (oq *OrQuery) Marshal(idx *index.Indexer) map[string]interface{} {
 
 func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
 	if v, ok := res["or"]; ok {
-		r := v.([]map[string]interface{})
+		r := v.([]interface{})
 		var q []Query
 		var c []check.Checker
 		for i, v := range oq.h {
-			q = append(q, v.Unmarshal(idx, r[i], nil))
+			q = append(q, v.Unmarshal(idx, r[i].(map[string]interface{}), nil))
 		}
 		for i, v := range oq.checkers {
-			c = append(c, v.Unmarshal(idx, r[i], e))
+			c = append(c, v.Unmarshal(idx, r[i].(map[string]interface{}), e))
 		}
 		return NewOrQuery(q, c)
 	}

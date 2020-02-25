@@ -84,8 +84,12 @@ func TestNewTermQuery1(t *testing.T) {
 		fmt.Println(q.Next())
 		fmt.Println(q.Next())
 
-		res := q.Marshal(ss)            // query marshal params: index
-		rr := q.Unmarshal(ss, res, nil) // unmarshal query  params:   1. index   2. query marshal结果  3. operation
+		res := q.Marshal(ss) // query marshal params: index
+		jf := &JSONFormatter{}
+		str, _ := jf.Marshal(res) // 转换成json的形式
+		fmt.Println(str)
+		rr1, _ := jf.Unmarshal(str)     // 反序列化
+		rr := q.Unmarshal(ss, rr1, nil) // unmarshal query  params:   1. index   2. query marshal结果  3. operation
 		fmt.Println(rr.Current())
 		fmt.Println(rr.Next())
 		fmt.Println(rr.Next())

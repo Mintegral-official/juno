@@ -187,14 +187,14 @@ func (aq *AndQuery) Marshal(idx *index.Indexer) map[string]interface{} {
 
 func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
 	if v, ok := res["and"]; ok {
-		r := v.([]map[string]interface{})
+		r := v.([]interface{})
 		var q []Query
 		var c []check.Checker
 		for i, v := range aq.queries {
-			q = append(q, v.Unmarshal(idx, r[i], nil))
+			q = append(q, v.Unmarshal(idx, r[i].(map[string]interface{}), nil))
 		}
 		for i, v := range aq.checkers {
-			c = append(c, v.Unmarshal(idx, r[i], e))
+			c = append(c, v.Unmarshal(idx, r[i].(map[string]interface{}), e))
 		}
 		return NewAndQuery(q, c)
 	}
