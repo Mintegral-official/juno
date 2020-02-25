@@ -35,6 +35,23 @@ func (i *InvertedIndexer) Count() (count int) {
 	return count
 }
 
+func (i *InvertedIndexer) GetValueById(id document.DocId) []string {
+	var str []string
+	i.data.Range(func(key, value interface{}) bool {
+		v, ok := value.(*datastruct.SkipList)
+		if !ok {
+			return true
+		}
+		e := v.Iterator().GetGE(id)
+		if e == nil {
+			return true
+		}
+		str = append(str, key.(string))
+		return true
+	})
+	return str
+}
+
 func (i *InvertedIndexer) Add(fieldName string, id document.DocId) (err error) {
 	v, ok := i.data.Load(fieldName)
 	if !ok {

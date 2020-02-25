@@ -12,5 +12,6 @@ type InvertedIndex interface {
 	Update(fieldName string, ids []document.DocId)
 	Iterator(name, value string) datastruct.Iterator
 	Count() int
+	GetValueById(id document.DocId) []string
 	DebugInfo() *debug.Debug
 }
