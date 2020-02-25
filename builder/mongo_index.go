@@ -2,8 +2,10 @@ package builder
 
 import (
 	"context"
+	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -186,6 +188,17 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 		}
 	}
 	return err
+}
+
+func (mib *MongoIndexBuilder) FindOne(ctx context.Context, id document.DocId) (interface{}, error) {
+	c, cancel := context.WithTimeout(ctx, time.Duration(mib.ops.ReadTimeout)*time.Microsecond)
+	defer cancel()
+	var res interface{}
+	if err := mib.collection.FindOne(c, bson.M{"campaignId": id}).Decode(&res); err == nil {
+		return res, nil
+	} else {
+		return nil, err
+	}
 }
 
 func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {
