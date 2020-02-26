@@ -101,6 +101,10 @@ func (i *InvertedIndexer) Update(fieldName string, ids []document.DocId) {
 	}
 }
 
+func (i *InvertedIndexer) Delete(fieldName string) {
+	i.data.Delete(fieldName)
+}
+
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	var fieldName = name + "_" + value
 	i.field = append(i.field, name)

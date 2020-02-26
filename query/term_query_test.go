@@ -25,11 +25,18 @@ func TestNewTermQuery(t *testing.T) {
 		tq := NewTermQuery(b)
 		res := tq.Marshal(ss)
 		fmt.Println(res)
-		sss := tq.Unmarshal(ss, tq.Marshal(ss), nil)
+		//jf := &JSONFormatter{}
+		//str, _ := jf.Marshal(res) // 转换成json的形式
+		//fmt.Println(str)
+		//rr1, _ := jf.Unmarshal(str) // 反序列化
+		//sss := tq.Unmarshal(ss, rr1, nil)
+
+		sss := tq.Unmarshal(ss, res, nil)
 		fmt.Println(sss.Current())
 		fmt.Println(sss.Next())
 		fmt.Println(sss.Next())
 		fmt.Println(sss.Next())
+		fmt.Println(sss.DebugInfo())
 		//aq := NewAndQuery([]Query{
 		//	NewTermQuery(s.Iterator("fieldName", "10")),
 		//	NewTermQuery(s.Iterator("fieldName", "1")),
@@ -68,7 +75,7 @@ func TestNewTermQuery1(t *testing.T) {
 		So(s2.Add("fieldName", 8, 4), ShouldBeNil)
 		So(s2.Add("fieldName", 10, 3), ShouldBeNil)
 
-		q := NewOrQuery([]Query{
+		q := NewAndQuery([]Query{
 			NewTermQuery(s1.Iterator("fieldName", "1")),
 			NewAndQuery([]Query{
 				NewTermQuery(s1.Iterator("fieldName", "1")),
@@ -76,24 +83,37 @@ func TestNewTermQuery1(t *testing.T) {
 			}, nil),
 		}, []check.Checker{
 			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			//check.NewAndChecker([]check.Checker{
+			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			//}),
 		})
 
-		fmt.Println(q.Current())
-		fmt.Println(q.Next())
-		fmt.Println(q.Next())
-		fmt.Println(q.Next())
-		fmt.Println(q.Next())
+		//q.SetDebug(1)
+		//
+		//fmt.Println(q.Current())
+		//fmt.Println(q.Next())
+		//fmt.Println(q.Next())
+		//fmt.Println(q.Next())
+		//fmt.Println(q.Next())
+		//
+		//fmt.Println(q.DebugInfo())
 
 		res := q.Marshal(ss) // query marshal params: index
-		jf := &JSONFormatter{}
-		str, _ := jf.Marshal(res) // 转换成json的形式
-		fmt.Println(str)
-		rr1, _ := jf.Unmarshal(str)     // 反序列化
-		rr := q.Unmarshal(ss, rr1, nil) // unmarshal query  params:   1. index   2. query marshal结果  3. operation
+		fmt.Println(res)
+		//jf := &JSONFormatter{}
+		//str, _ := jf.Marshal(res) // 转换成json的形式
+		//fmt.Println("\n", str)
+		//rr1, _ := jf.Unmarshal(str)     // 反序列化
+		//rr := q.Unmarshal(ss, rr1, nil) // unmarshal query  params:   1. index   2. query marshal结果  3. operation
+
+		rr := q.Unmarshal(ss, res, nil)
 		fmt.Println(rr.Current())
 		fmt.Println(rr.Next())
 		fmt.Println(rr.Next())
 		fmt.Println(rr.Next())
 		fmt.Println(rr.Next())
+		fmt.Println(rr.DebugInfo())
 	})
 }

@@ -2,6 +2,7 @@ package query
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -9,6 +10,7 @@ import (
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"strconv"
+	"strings"
 )
 
 type NotAndQuery struct {
@@ -43,12 +45,19 @@ label:
 		}
 		if len(naq.queries) == 1 {
 			_, _ = naq.queries[0].Next()
-			if target != 0 && naq.check(target) {
+			if naq.check(target) {
 				return target, nil
 			}
-			if naq.debugs != nil {
-				naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
+		}
+		if naq.debugs != nil {
+			var msg []string
+			for i := 1; i < len(naq.queries); i++ {
+				cur, _ := naq.queries[i].GetGE(target)
+				if target == cur {
+					msg = append(msg, fmt.Sprintf("%d found in queries[%d]", target, i))
+				}
 			}
+			naq.debugs.DebugInfo.AddDebugMsg("[" + strings.Join(msg, ",") + "]")
 		}
 		for i := 1; i < len(naq.queries); i++ {
 			cur, err := naq.queries[i].GetGE(target)
@@ -59,18 +68,13 @@ label:
 			if (target != cur || err != nil) && i == len(naq.queries)-1 {
 				_, _ = naq.queries[0].Next()
 				for !naq.check(target) {
-					if naq.debugs != nil {
-						naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
-					}
 					target, err = naq.queries[0].Current()
 					if err != nil {
 						return target, err
 					}
 					_, _ = naq.queries[0].Next()
 				}
-				if target != 0 {
-					return target, nil
-				}
+				return target, nil
 			}
 		}
 		target, err = naq.queries[0].Next()
@@ -88,9 +92,6 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		}
 		if len(naq.queries) == 1 {
 			for !naq.check(target) {
-				if naq.debugs != nil {
-					naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
-				}
 				target, err = naq.queries[0].Next()
 			}
 			return target, nil
@@ -98,20 +99,14 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		for i := 1; i < len(naq.queries); i++ {
 			if _, err := naq.queries[i].Current(); err != nil {
 				for !naq.check(target) {
-					if naq.debugs != nil {
-						naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
-					}
 					target, err = naq.queries[0].Next()
 				}
 				return target, nil
 			}
 			cur, err := naq.queries[i].GetGE(target)
 			if (target != cur || err != nil) && i == len(naq.queries)-1 {
-				if target != 0 && naq.check(target) {
+				if naq.check(target) {
 					return target, nil
-				}
-				if naq.debugs != nil {
-					naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
 				}
 			}
 		}
@@ -127,6 +122,16 @@ func (naq *NotAndQuery) Current() (document.DocId, error) {
 	if err != nil {
 		return res, err
 	}
+	if naq.debugs != nil {
+		var msg []string
+		for i := 1; i < len(naq.queries); i++ {
+			cur, _ := naq.queries[i].GetGE(res)
+			if res == cur {
+				msg = append(msg, fmt.Sprintf("%d found in queries[%d]", res, i))
+			}
+		}
+		naq.debugs.DebugInfo.AddDebugMsg("[" + strings.Join(msg, ",") + "]")
+	}
 	for i := 1; i < len(naq.queries); i++ {
 		tar, err := naq.queries[i].GetGE(res)
 		_, _ = naq.queries[0].Next()
@@ -139,13 +144,7 @@ func (naq *NotAndQuery) Current() (document.DocId, error) {
 			if naq.check(res) {
 				return res, nil
 			}
-			if naq.debugs != nil {
-				naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + "has been filtered out")
-			}
 		}
-	}
-	if naq.debugs != nil {
-		naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + "has been filtered out")
 	}
 	return 0, nil
 }
@@ -166,6 +165,23 @@ func (naq *NotAndQuery) DebugInfo() *debug.Debug {
 func (naq *NotAndQuery) check(id document.DocId) bool {
 	if len(naq.checkers) == 0 {
 		return true
+	}
+	if naq.debugs != nil {
+		var msg []string
+		for i, v := range naq.checkers {
+			if v == nil {
+				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
+				continue
+			}
+			if c, ok := v.(*check.AndChecker); ok {
+				msg = append(msg, c.DebugInfo())
+			} else if c, ok := v.(*check.OrChecker); ok {
+				msg = append(msg, c.DebugInfo())
+			} else {
+				msg = append(msg, strconv.FormatBool(c.Check(id)))
+			}
+		}
+		naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(id), 10) + " check: [" + strings.Join(msg, ",") + "]")
 	}
 	for _, v := range naq.checkers {
 		if v == nil {
@@ -195,17 +211,55 @@ func (naq *NotAndQuery) Marshal(idx *index.Indexer) map[string]interface{} {
 }
 
 func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
-	if v, ok := res["not"]; ok {
-		r := v.([]interface{})
-		var q []Query
-		var c []check.Checker
-		for i, v := range naq.queries {
-			q = append(q, v.Unmarshal(idx, r[i].(map[string]interface{}), nil))
-		}
-		for i, v := range naq.checkers {
-			c = append(c, v.Unmarshal(idx, r[i].(map[string]interface{}), e))
-		}
-		return NewOrQuery(q, c)
+	and, ok := res["not"]
+	if !ok {
+		return nil
 	}
-	return nil
+	notCheck, ok := res["not_check"]
+	r := and.([]map[string]interface{})
+	var q []Query
+	var c []check.Checker
+	for i, v := range naq.queries {
+		q = append(q, v.Unmarshal(idx, r[i], nil))
+	}
+	if !ok {
+		return NewNotAndQuery(q, nil, 1)
+	}
+	checks := notCheck.([]map[string]interface{})
+	for i, v := range naq.checkers {
+		c = append(c, v.Unmarshal(idx, checks[i], e))
+	}
+	return NewNotAndQuery(q, c, 1)
+}
+
+func (naq *NotAndQuery) SetDebug(isDebug ...int) {
+	if len(isDebug) == 1 && isDebug[0] == 1 {
+		naq.debugs = debug.NewDebugs(debug.NewDebug("NotAndQuery"))
+	}
+	for _, v := range naq.queries {
+		v.SetDebug(1)
+	}
+	for _, v := range naq.checkers {
+		switch v.(type) {
+		case *check.AndChecker:
+			v.(*check.AndChecker).SetDebug()
+		case *check.OrChecker:
+			v.(*check.OrChecker).SetDebug()
+		}
+	}
+}
+
+func (naq *NotAndQuery) UnsetDebug() {
+	naq.debugs = nil
+	for _, v := range naq.queries {
+		v.UnsetDebug()
+	}
+	for _, v := range naq.checkers {
+		switch v.(type) {
+		case *check.AndChecker:
+			v.(*check.AndChecker).UnsetDebug()
+		case *check.OrChecker:
+			v.(*check.OrChecker).UnsetDebug()
+		}
+	}
 }

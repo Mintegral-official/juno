@@ -413,14 +413,14 @@ type Debug struct {
 //               []checker{NewChecker{},NewChecker{},NewAndChecker(NewChecker{})})
 {
     "name":"AndQuery",
-    "msg":[],
+    // 这个表示3这个id在check中的条件的情况，
+    // 第一个为true,说明在第一个check中是不会被过滤的
+    // 第二个为false,说明在第二个check中会被过滤掉
+    "msg":["3 check: [true,false,{\"name\":\"AndCheck\",\"msg\":[\"true\"],\"node\":null}]"],
     "node":[
         {
             "name":"TermQuery",
-            // 这个表示3这个id在check中的条件的情况，
-            // 第一个为true,说明在第一个check中是不会被过滤的
-            // 第二个为false,说明在第二个check中会被过滤掉
-            "msg":["3 check: [true,false,{\"name\":\"AndCheck\",\"msg\":[\"true\"],\"node\":null}]"],
+            "msg":[],
             "node":null
         },
         {

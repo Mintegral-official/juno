@@ -55,6 +55,9 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 
 	element := tq.iterator.GetGE(id)
 	if element == nil {
+		if tq.debugs != nil {
+			tq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("%d not found in this query", id))
+		}
 		return 0, helpers.ElementNotfound
 	}
 	return element.Key(), nil
@@ -102,5 +105,15 @@ func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e
 	if !ok {
 		return nil
 	}
-	return NewTermQuery(idx.GetInvertedIndex().Iterator(fmt.Sprint(v.([]interface{})[0]), fmt.Sprint(v.([]interface{})[1])))
+	return NewTermQuery(idx.GetInvertedIndex().Iterator(fmt.Sprint(v.([]string)[0]), fmt.Sprint(v.([]string)[1])), 1)
+}
+
+func (tq *TermQuery) SetDebug(isDebug ...int) {
+	if len(isDebug) == 1 && isDebug[0] == 1 {
+		tq.debugs = debug.NewDebugs(debug.NewDebug("TermQuery"))
+	}
+}
+
+func (tq *TermQuery) UnsetDebug() {
+	tq.debugs = nil
 }

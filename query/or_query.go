@@ -3,6 +3,7 @@ package query
 import (
 	"container/heap"
 	"errors"
+	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -10,6 +11,7 @@ import (
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"strconv"
+	"strings"
 )
 
 type OrQuery struct {
@@ -54,9 +56,6 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 			}
 			return target, nil
 		}
-		if oq.debugs != nil {
-			oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
-		}
 		target, err = oq.Current()
 	}
 	return 0, helpers.NoMoreData
@@ -90,9 +89,6 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 		target, err = oq.Current()
 	}
 	for err == nil && !oq.check(target) {
-		if oq.debugs != nil {
-			oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(target), 10) + "has been filtered out")
-		}
 		target, err = oq.Next()
 	}
 	return target, err
@@ -114,9 +110,6 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	if oq.check(res) {
 		return res, nil
 	}
-	if oq.debugs != nil {
-		oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(res), 10) + " has been filtered out")
-	}
 	return res, errors.New(strconv.FormatInt(int64(res), 10) + " has been filtered out")
 }
 
@@ -136,6 +129,23 @@ func (oq *OrQuery) DebugInfo() *debug.Debug {
 func (oq *OrQuery) check(id document.DocId) bool {
 	if len(oq.checkers) == 0 {
 		return true
+	}
+	if oq.debugs != nil {
+		var msg []string
+		for i, v := range oq.checkers {
+			if v == nil {
+				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
+				continue
+			}
+			if c, ok := v.(*check.AndChecker); ok {
+				msg = append(msg, c.DebugInfo())
+			} else if c, ok := v.(*check.OrChecker); ok {
+				msg = append(msg, c.DebugInfo())
+			} else {
+				msg = append(msg, strconv.FormatBool(v.Check(id)))
+			}
+		}
+		oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(id), 10) + " check: [" + strings.Join(msg, ",") + "]")
 	}
 	for _, v := range oq.checkers {
 		if v == nil {
@@ -165,17 +175,55 @@ func (oq *OrQuery) Marshal(idx *index.Indexer) map[string]interface{} {
 }
 
 func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
-	if v, ok := res["or"]; ok {
-		r := v.([]interface{})
-		var q []Query
-		var c []check.Checker
-		for i, v := range oq.h {
-			q = append(q, v.Unmarshal(idx, r[i].(map[string]interface{}), nil))
-		}
-		for i, v := range oq.checkers {
-			c = append(c, v.Unmarshal(idx, r[i].(map[string]interface{}), e))
-		}
-		return NewOrQuery(q, c)
+	or, ok := res["or"]
+	if !ok {
+		return nil
 	}
-	return nil
+	orCheck, ok := res["or_check"]
+	r := or.([]map[string]interface{})
+	var q []Query
+	var c []check.Checker
+	for i, v := range oq.h {
+		q = append(q, v.Unmarshal(idx, r[i], nil))
+	}
+	if !ok {
+		return NewOrQuery(q, nil, 1)
+	}
+	checks := orCheck.([]map[string]interface{})
+	for i, v := range oq.checkers {
+		c = append(c, v.Unmarshal(idx, checks[i], e))
+	}
+	return NewOrQuery(q, c, 1)
+}
+
+func (oq *OrQuery) SetDebug(isDebug ...int) {
+	if len(isDebug) == 1 && isDebug[0] == 1 {
+		oq.debugs = debug.NewDebugs(debug.NewDebug("OrQuery"))
+	}
+	for _, v := range oq.h {
+		v.SetDebug(1)
+	}
+	for _, v := range oq.checkers {
+		switch v.(type) {
+		case *check.AndChecker:
+			v.(*check.AndChecker).SetDebug()
+		case *check.OrChecker:
+			v.(*check.OrChecker).SetDebug()
+		}
+	}
+}
+
+func (oq *OrQuery) UnsetDebug() {
+	oq.debugs = nil
+	for _, v := range oq.h {
+		v.UnsetDebug()
+	}
+	for _, v := range oq.checkers {
+		switch v.(type) {
+		case *check.AndChecker:
+			v.(*check.AndChecker).UnsetDebug()
+		case *check.OrChecker:
+			v.(*check.OrChecker).UnsetDebug()
+		}
+	}
 }

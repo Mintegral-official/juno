@@ -1,10 +1,12 @@
 package check
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
+	"reflect"
 )
 
 type CheckerImpl struct {
@@ -71,6 +73,7 @@ func (c *CheckerImpl) Unmarshal(idx *index.Indexer, res map[string]interface{}, 
 		return nil
 	}
 	value := v.([]interface{})
+	fmt.Println(reflect.TypeOf(value[1]))
 	if value[3] == 1 {
 		return NewChecker(idx.GetStorageIndex().Iterator(value[0].(string)), value[1], value[2].(operation.OP), e, value[4].(bool))
 	}
