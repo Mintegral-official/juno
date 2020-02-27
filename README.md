@@ -506,5 +506,66 @@ var doc2 = &document.DocInfo{
 var idx Indexer
 invertIdx := idx.GetInvertIndex()
 invertIdx.GetValueById(docId)
+
+
+	    ss := index.NewIndex("")
+	    s1 := ss.GetInvertedIndex()
+	    s2 := ss.GetStorageIndex()
+		q := query.NewAndQuery([]query.Query{
+			query.NewTermQuery(s1.Iterator("fieldName", "1")),
+			query.NewTermQuery(s1.Iterator("fieldName", "2")),
+			query.NewTermQuery(s1.Iterator("fieldName", "3")),
+		}, []check.Checker{
+			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			check.NewAndChecker([]check.Checker{
+				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			}),
+		})
+
+		q.SetDebug(1) // 设置debug调试信息
+
+		se := NewSearcher()
+
+        //  ss是index索引  q是query语句
+		fmt.Println(se.Debug(ss, q).String()) // debug查询
+		// se.DebugInfo(ss, q, ids)  ids：指定查找的id列表
+		{
+		    "node":{
+		    "10":[
+		        // 不一定所有的id都会走check
+		        ["field:fieldName_1","reason: found id"],
+		        ["field:fieldName_2","reason: not found"],
+		        ["fieldName_1"]
+		    ],
+		    "3":[
+		        // 对应的是check的结果，包含：
+		        // fieldname, 正排的那个值 storageIdx.Iterator("Name"), Name
+		        // condition传进去的value，
+		        // 操作符(=, !=, >, <)等操作，
+		        // operation：判断这个operation是自定义的还是使用默认的，transfer暂不用考虑
+		        ["and check result: false","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","{\"node\":{\"3\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]]}}\tcheck result: false"],
+		        // 中间表示的是query的过滤原因，在field条件下，这个id是否存在
+		        ["field:fieldName_1","reason: found id"],
+		        ["field:fieldName_2","reason: found id"],
+		        ["field:fieldName_3","reason: found id"],
+		        // 表示的是倒排建立索引的每一个id对应的全部field值，建立索引时候的name_value组合
+		        ["fieldName_5","fieldName_6","fieldName_1","fieldName_2","fieldName_3","fieldName_4"]
+		    ],
+		    "4":[
+		        ["and check result: false","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","{\"node\":{\"3\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"],[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]],\"4\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]]}}\tcheck result: false"],
+		        ["field:fieldName_1","reason: found id"],
+		        ["field:fieldName_2","reason: found id"],
+		        ["field:fieldName_3","reason: found id"],
+		        ["fieldName_6","fieldName_1","fieldName_2","fieldName_3","fieldName_4","fieldName_5"]
+		    ],
+		    "6":[
+		        ["field:fieldName_1","reason: found id"],
+		        ["field:fieldName_2","reason: found id"],
+		        ["field:fieldName_3","reason: not found"],
+		        ["fieldName_1","fieldName_2","fieldName_4","fieldName_6"]
+		    ]}
+        }
 ```
 
