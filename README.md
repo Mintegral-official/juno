@@ -391,4 +391,184 @@ func (o *operation) SetValue(value interface{}) {
 ```
 实现Operation接口（operastion.go）可以自定义相关的操作符的操作
 
+#### Debug 在debug模式下执行
+1. debug接口
+```go
+// CurNum, NextNum, GetNum 表示函数调用次数，后续性能测试使用
+type Debugs struct {
+	DebugInfo *Debug // debug info
+	CurNum    int    // Current() transfer times
+	NextNum   int    // Next() transfer times
+	GetNum    int    // GetGE() transfer times
+}
+type Debug struct {
+	Name string   `json:"name"`
+	Msg  []string `json:"msg"`
+	Node []*Debug `json:"node"`
+}
+// name 表示的是某个query或者check的名字。例如：NewAndQuery 对应的名字是: AndQuery
+// Msg 一个string切片，存放的每一个元素表示的是过滤信息，比如某个id没有在某条query里面出现，check条件等
+// Node节点， 对应query之间的嵌套关系，AndQuery里面的[]Query放在node里面，递归保存query
+//eg: NewAndQuery([]Query{NewTermQuery{}, NewAndQuery(NewTermQuery{},NewTermQuery)},
+//               []checker{NewChecker{},NewChecker{},NewAndChecker(NewChecker{})})
+{
+    "name":"AndQuery",
+    // 这个表示3这个id在check中的条件的情况，
+    // 第一个为true,说明在第一个check中是不会被过滤的
+    // 第二个为false,说明在第二个check中会被过滤掉
+    "msg":["3 check: [true,false,{\"name\":\"AndCheck\",\"msg\":[\"true\"],\"node\":null}]"],
+    "node":[
+        {
+            "name":"TermQuery",
+            "msg":[],
+            "node":null
+        },
+        {
+            "name":"AndQuery",
+            "msg":[],
+            "node":[
+                {
+                    "name":"TermQuery",
+                    "msg":[],
+                    "node":null
+                },
+                {
+                    "name":"TermQuery",
+                    "msg":[],
+                    "node":null
+                }
+            ]
+        }
+    ]
+}
+
+// Query中新增两个接口 ：
+// 1.SetDebug(isDebug ...int): query调用接口,query.SetDebug(1) 表示开启debug模式
+// 2.UnsetDebug(): query.UnsetDebug() 关闭debug模式
+```
+
+```go
+// invertIndex 新增方法，通过id获取对应的fieldName,
+func (i *InvertedIndexer) GetValueById(id document.DocId) []string {}
+
+var doc1 = &document.DocInfo{
+	Id: 0,
+	Fields: []*document.Field{
+		{
+			Name:      "field1",
+			IndexType: 1,
+			Value:     1,
+			ValueType: document.IntFieldType,
+		},
+		{
+			Name:      "field2",
+			IndexType: 0,
+			Value:     "2",
+			ValueType: document.StringFieldType,
+		},
+		{
+			Name:      "field1",
+			IndexType: 2,
+			Value:     "1",
+			ValueType: document.StringFieldType,
+		},
+	},
+}
+
+var doc2 = &document.DocInfo{
+	Id: 1,
+	Fields: []*document.Field{
+		{
+			Name:      "field1",
+			IndexType: 0,
+			Value:     "1",
+			ValueType: document.StringFieldType,
+		},
+		{
+			Name:      "field2",
+			IndexType: 1,
+			Value:     "2",
+			ValueType: document.StringFieldType,
+		},
+		{
+			Name:      "field1",
+			IndexType: 0,
+			Value:     "2",
+			ValueType: document.StringFieldType,
+		},
+	},
+}
+
+// eg：
+// docId = 0, 则返回[field2_2, field1_1]
+// docId = 1, 则返回[field1_1, field1_2]
+// 调用方法
+var idx Indexer
+invertIdx := idx.GetInvertIndex()
+invertIdx.GetValueById(docId)
+
+
+	    ss := index.NewIndex("")
+	    s1 := ss.GetInvertedIndex()
+	    s2 := ss.GetStorageIndex()
+		q := query.NewAndQuery([]query.Query{
+			query.NewTermQuery(s1.Iterator("fieldName", "1")),
+			query.NewTermQuery(s1.Iterator("fieldName", "2")),
+			query.NewTermQuery(s1.Iterator("fieldName", "3")),
+		}, []check.Checker{
+			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			check.NewAndChecker([]check.Checker{
+				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			}),
+		})
+
+		q.SetDebug(1) // 设置debug调试信息
+
+		se := NewSearcher()
+
+        //  ss是index索引  q是query语句
+		fmt.Println(se.Debug(ss, q).String()) // debug查询
+		// se.DebugInfo(ss, q, ids)  ids：指定查找的id列表
+		{
+		    "node":{
+		    "10":[
+		        // 不一定所有的id都会走check
+		        ["field:fieldName_1","reason: found id"],
+		        ["field:fieldName_2","reason: not found"],
+		    ],
+		    "3":[
+		        // 对应的是check的结果，包含：
+		        // 第一个值，"and check result: false"，表示这个check条件的过滤结果，true表示是需要的，false表示是要被过滤的
+		        // FieldName, Campaign的字段名
+		        // condition传进去的value
+		        // OP 操作符(=, !=, >, <)等操作，
+		        // operation：判断这个operation是自定义的还是使用默认的
+		        // transfer暂不用考虑
+		        ["and check result: false","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","{\"node\":{\"3\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]]}}\tcheck result: false"],
+		        // 中间表示的是query的过滤原因，在field条件下，这个id是否存在
+		        // invertIdx.Iterator("fieldName", "1") -> campaign字段名和mongo读取出来的对应字段的值
+		        ["field:fieldName_1","reason: found id"],
+		        ["field:fieldName_2","reason: found id"],
+		        ["field:fieldName_3","reason: found id"],
+		    ],
+		    "4":[
+		        ["and check result: false","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","{\"node\":{\"3\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"],[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]],\"4\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]]}}\tcheck result: false"],
+		        ["field:fieldName_1","reason: found id"],
+		        ["field:fieldName_2","reason: found id"],
+		        ["field:fieldName_3","reason: found id"],
+		    ],
+		    "6":[
+		        ["field:fieldName_1","reason: found id"],
+		        ["field:fieldName_2","reason: found id"],
+		        ["field:fieldName_3","reason: not found"],
+		    ]}
+        }
+
+        // 根据id获取id对应的field信息
+        func (i *InvertedIndexer) GetValueById(id document.DocId) []string{}
+        // 根绝fieldname删除所有的id
+        func (i *InvertedIndexer) Delete(fieldName string){}
+```
 

@@ -11,6 +11,8 @@ import (
 
 type InvertedIndexer struct {
 	data   sync.Map
+	field  []string
+	value  []string
 	aDebug *debug.Debug
 }
 
@@ -31,6 +33,23 @@ func (i *InvertedIndexer) Count() (count int) {
 		return true
 	})
 	return count
+}
+
+func (i *InvertedIndexer) GetValueById(id document.DocId) []string {
+	var str []string
+	i.data.Range(func(key, value interface{}) bool {
+		v, ok := value.(*datastruct.SkipList)
+		if !ok {
+			return true
+		}
+		e := v.Iterator().GetGE(id)
+		if e == nil {
+			return true
+		}
+		str = append(str, key.(string))
+		return true
+	})
+	return str
 }
 
 func (i *InvertedIndexer) Add(fieldName string, id document.DocId) (err error) {
@@ -82,15 +101,23 @@ func (i *InvertedIndexer) Update(fieldName string, ids []document.DocId) {
 	}
 }
 
+func (i *InvertedIndexer) Delete(fieldName string) {
+	i.data.Delete(fieldName)
+}
+
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	var fieldName = name + "_" + value
+	i.field = append(i.field, name)
+	i.value = append(i.value, value)
 	if v, ok := i.data.Load(fieldName); ok {
 		sl, ok := v.(*datastruct.SkipList)
 		if ok {
 			if i.aDebug != nil {
 				i.aDebug.AddDebugMsg("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
 			}
-			return sl.Iterator()
+			iter := sl.Iterator()
+			iter.FieldName = fieldName
+			return iter
 		}
 	}
 	if i.aDebug != nil {
@@ -102,4 +129,12 @@ func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 
 func (i *InvertedIndexer) DebugInfo() *debug.Debug {
 	return i.aDebug
+}
+
+func (i *InvertedIndexer) GetField() []string {
+	return i.field
+}
+
+func (i *InvertedIndexer) GetValue() []string {
+	return i.value
 }

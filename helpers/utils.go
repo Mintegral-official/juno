@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"github.com/Mintegral-official/juno/document"
+	"reflect"
 )
 
 func Compare(i, j interface{}) int {
@@ -47,4 +48,13 @@ func Merge(arr1, arr2 []document.DocId) []document.DocId {
 		res = append(res, arr1[j])
 	}
 	return res
+}
+
+func CompareSlice(a, b [][]string) bool {
+	for _, av := range a {
+		for _, bv := range b {
+			return reflect.DeepEqual(av, bv)
+		}
+	}
+	return false
 }

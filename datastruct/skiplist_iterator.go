@@ -5,11 +5,14 @@ import (
 )
 
 type SkipListIterator struct {
-	Element *Element
+	Element   *Element
+	FieldName string
 }
 
 func NewSkipListIterator(element *Element) *SkipListIterator {
-	sli := &SkipListIterator{element}
+	sli := &SkipListIterator{
+		Element: element,
+	}
 	sli.Next()
 	return sli
 }

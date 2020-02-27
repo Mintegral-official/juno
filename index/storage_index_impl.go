@@ -10,8 +10,9 @@ import (
 )
 
 type StorageIndexer struct {
-	data   sync.Map
-	aDebug *debug.Debug
+	data      sync.Map
+	fieldName []string
+	aDebug    *debug.Debug
 }
 
 func NewStorageIndexer(isDebug ...int) (s *StorageIndexer) {
@@ -79,13 +80,16 @@ func (s *StorageIndexer) Del(fieldName string, id document.DocId) (ok bool) {
 }
 
 func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
+	s.fieldName = append(s.fieldName, fieldName)
 	if v, ok := s.data.Load(fieldName); ok {
 		sl, ok := v.(*datastruct.SkipList)
 		if ok {
 			if s.aDebug != nil {
 				s.aDebug.AddDebugMsg("index: " + fieldName + " len: " + strconv.Itoa(sl.Len()))
 			}
-			return sl.Iterator()
+			iter := sl.Iterator()
+			iter.FieldName = fieldName
+			return iter
 		}
 	}
 	if s.aDebug != nil {
@@ -97,4 +101,8 @@ func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 
 func (s *StorageIndexer) DebugInfo() *debug.Debug {
 	return s.aDebug
+}
+
+func (s *StorageIndexer) GetFieldName() []string {
+	return s.fieldName
 }
