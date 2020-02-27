@@ -1,6 +1,7 @@
 package index
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -23,6 +24,23 @@ func NewStorageIndexer(isDebug ...int) (s *StorageIndexer) {
 		s.aDebug = debug.NewDebug("storage index")
 	}
 	return s
+}
+
+func (s *StorageIndexer) GetValueById(id document.DocId) []string {
+	var str []string
+	s.data.Range(func(key, value interface{}) bool {
+		v, ok := value.(*datastruct.SkipList)
+		if !ok {
+			return true
+		}
+		e := v.Iterator().GetGE(id)
+		if e == nil {
+			return true
+		}
+		str = append(str, key.(string)+"_"+fmt.Sprintf("%v", e.Value()))
+		return true
+	})
+	return str
 }
 
 func (s *StorageIndexer) Count() (count int) {

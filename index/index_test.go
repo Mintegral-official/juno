@@ -91,6 +91,8 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc1), ShouldBeNil)
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
+
+		fmt.Println(index.GetValueById(document.DocId(2)))
 		if1 := index.GetInvertedIndex().Iterator("field1", "1")
 		c := 0
 		for if1.HasNext() {

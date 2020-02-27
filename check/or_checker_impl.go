@@ -101,15 +101,3 @@ func (o *OrChecker) SetDebug() {
 		}
 	}
 }
-
-func (o *OrChecker) UnsetDebug() {
-	o.aDebug = nil
-	for _, v := range o.c {
-		switch v.(type) {
-		case *AndChecker:
-			v.(*AndChecker).aDebug = nil
-		case *OrChecker:
-			v.(*OrChecker).aDebug = nil
-		}
-	}
-}

@@ -224,18 +224,3 @@ func (naq *NotAndQuery) SetDebug(isDebug ...int) {
 		}
 	}
 }
-
-func (naq *NotAndQuery) UnsetDebug() {
-	naq.debugs = nil
-	for _, v := range naq.queries {
-		v.UnsetDebug()
-	}
-	for _, v := range naq.checkers {
-		switch v.(type) {
-		case *check.AndChecker:
-			v.(*check.AndChecker).UnsetDebug()
-		case *check.OrChecker:
-			v.(*check.OrChecker).UnsetDebug()
-		}
-	}
-}

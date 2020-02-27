@@ -61,11 +61,11 @@ func TestNewTermQuery1(t *testing.T) {
 			}),
 		})
 
-		q.SetDebug(1) // 设置debug调试信息
-
 		se := NewSearcher()
-
-		fmt.Println(se.Debug(ss, q).String()) // debug查询
+		se.Debug(ss, q)
+		fmt.Println(se.Docs)                // id列表
+		fmt.Println(se.Time)                // 耗时 debug模式不考虑性能
+		fmt.Println(se.QueryDebug.String()) // debug查询
 		// se.DebugInfo(ss, q, ids)  ids：指定查找的id列表
 	})
 }

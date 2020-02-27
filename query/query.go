@@ -15,5 +15,4 @@ type Query interface {
 	Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query
 	DebugInfo() *debug.Debug
 	SetDebug(isDebug ...int)
-	UnsetDebug()
 }
