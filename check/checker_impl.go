@@ -6,7 +6,7 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"reflect"
+	"strconv"
 )
 
 type CheckerImpl struct {
@@ -25,6 +25,31 @@ func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e op
 		e:        e,
 		transfer: transfer,
 	}
+}
+
+func (c *CheckerImpl) DebugInfo() string {
+	tmp := false
+	if c.e != nil {
+		tmp = true
+	}
+	var opMap = map[operation.OP]string{
+		operation.EQ:  "=",   // 相等
+		operation.NE:  "!=",  // 不等
+		operation.LE:  "<=",  // 小于等于
+		operation.GE:  ">=",  // 大于等于
+		operation.LT:  "<",   // 小于
+		operation.GT:  ">",   // 大于
+		operation.AND: "and", // 与
+		operation.OR:  "or",  // 或
+		operation.NOT: "not", // 非
+		operation.IN:  "in",  // 范围
+	}
+	return "FieldName: " + c.si.(*datastruct.SkipListIterator).FieldName + "\t" +
+		"value: " + fmt.Sprintf("%v", c.value) + "\t" +
+		"OP: " + opMap[c.op] + "\t" +
+		"defined operation: " + strconv.FormatBool(tmp) + "\t" +
+		"transfer: " + strconv.FormatBool(c.transfer)
+
 }
 
 func (c *CheckerImpl) Check(id document.DocId) bool {
@@ -73,7 +98,6 @@ func (c *CheckerImpl) Unmarshal(idx *index.Indexer, res map[string]interface{}, 
 		return nil
 	}
 	value := v.([]interface{})
-	fmt.Println(reflect.TypeOf(value[1]))
 	if value[3] == 1 {
 		return NewChecker(idx.GetStorageIndex().Iterator(value[0].(string)), value[1], value[2].(operation.OP), e, value[4].(bool))
 	}

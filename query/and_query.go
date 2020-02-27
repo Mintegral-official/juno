@@ -17,13 +17,13 @@ type AndQuery struct {
 	queries  []Query
 	checkers []check.Checker
 	curIdx   int
-	debugs   *debug.Debugs
+	debugs   *debug.Debug
 }
 
 func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq *AndQuery) {
 	aq = &AndQuery{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		aq.debugs = debug.NewDebugs(debug.NewDebug("AndQuery"))
+		aq.debugs = debug.NewDebug("AndQuery")
 	}
 	if len(queries) == 0 {
 		return aq
@@ -34,34 +34,10 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 }
 
 func (aq *AndQuery) Next() (document.DocId, error) {
-	if aq.debugs != nil {
-		aq.debugs.NextNum++
-	}
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Next()
 	if err != nil {
 		return target, helpers.NoMoreData
-	}
-	if aq.debugs != nil {
-		var count = 0
-		var msg []string
-		for {
-			if count == len(aq.queries) {
-				aq.debugs.DebugInfo.AddDebugMsg("[" + strings.Join(msg, ",") + "]")
-				break
-			}
-			curIdx = (curIdx + 1) % len(aq.queries)
-			cur, err := aq.queries[curIdx].GetGE(target)
-			count++
-			if err != nil {
-				msg = append(msg, fmt.Sprintf("%d not found in queries[%d].", target, curIdx))
-				continue
-			}
-			if cur != target {
-				msg = append(msg, fmt.Sprintf("%d not found in queries[%d].", target, curIdx))
-				continue
-			}
-		}
 	}
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
@@ -87,15 +63,11 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 }
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	if aq.debugs != nil {
-		aq.debugs.GetNum++
-	}
 	curIdx, lastIdx := aq.curIdx, aq.curIdx
 	res, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
 		return res, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
 	}
-
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(res)
@@ -120,14 +92,10 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
-	if aq.debugs != nil {
-		aq.debugs.CurNum++
-	}
 	res, err := aq.queries[0].Current()
 	if err != nil {
 		return res, err
 	}
-
 	for i := 1; i < len(aq.queries); i++ {
 		tar, err := aq.queries[i].GetGE(res)
 		if err != nil {
@@ -145,13 +113,14 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {
 	if aq.debugs != nil {
-		aq.debugs.DebugInfo.AddDebugMsg("next has been called: " + strconv.Itoa(aq.debugs.NextNum))
-		aq.debugs.DebugInfo.AddDebugMsg("get has been called: " + strconv.Itoa(aq.debugs.GetNum))
-		aq.debugs.DebugInfo.AddDebugMsg("current has been called: " + strconv.Itoa(aq.debugs.CurNum))
-		for i := 0; i < len(aq.queries); i++ {
-			aq.debugs.DebugInfo.AddDebug(aq.queries[i].DebugInfo())
+		for _, v := range aq.queries {
+			if v.DebugInfo() != nil {
+				for key, value := range v.DebugInfo().Node {
+					aq.debugs.Node[key] = append(aq.debugs.Node[key], value...)
+				}
+			}
 		}
-		return aq.debugs.DebugInfo
+		return aq.debugs
 	}
 	return nil
 }
@@ -162,20 +131,25 @@ func (aq *AndQuery) check(id document.DocId) bool {
 	}
 	if aq.debugs != nil {
 		var msg []string
+		var flag = true
+		msg = append(msg, "and check result: true")
 		for i, c := range aq.checkers {
 			if c == nil {
 				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
 				continue
 			}
-			if v, ok := c.(*check.AndChecker); ok {
-				msg = append(msg, v.DebugInfo())
-			} else if v, ok := c.(*check.OrChecker); ok {
-				msg = append(msg, v.DebugInfo())
-			} else {
-				msg = append(msg, strconv.FormatBool(c.Check(id)))
+			if !c.Check(id) {
+				flag = false
 			}
+			msg = append(msg, c.DebugInfo()+"\tcheck result: "+strconv.FormatBool(c.Check(id)))
 		}
-		aq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(id), 10) + " check: [" + strings.Join(msg, ",") + "]")
+		if flag {
+			aq.debugs.Node[id] = append(aq.debugs.Node[id], msg)
+		} else {
+			msg[0] = "and check result: false"
+			aq.debugs.Node[id] = append(aq.debugs.Node[id], msg)
+		}
+		return flag
 	}
 	for _, c := range aq.checkers {
 		if c == nil {
@@ -237,7 +211,7 @@ func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e 
 
 func (aq *AndQuery) SetDebug(isDebug ...int) {
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		aq.debugs = debug.NewDebugs(debug.NewDebug("AndQuery"))
+		aq.debugs = debug.NewDebug("AndQuery")
 	}
 	for _, v := range aq.queries {
 		v.SetDebug(1)

@@ -7,12 +7,11 @@ import (
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"strconv"
-	"strings"
 )
 
 type OrChecker struct {
 	c      []Checker
-	aDebug *debug.Debugs
+	aDebug *debug.Debug
 }
 
 func NewOrChecker(c []Checker, isDebug ...int) *OrChecker {
@@ -21,7 +20,7 @@ func NewOrChecker(c []Checker, isDebug ...int) *OrChecker {
 	}
 	o := &OrChecker{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		o.aDebug = debug.NewDebugs(debug.NewDebug("OrCheck"))
+		o.aDebug = debug.NewDebug("OrCheck")
 	}
 	o.c = c
 	return o
@@ -33,20 +32,25 @@ func (o *OrChecker) Check(id document.DocId) bool {
 	}
 	if o.aDebug != nil {
 		var msg []string
-		for i, cValue := range o.c {
-			if cValue == nil {
+		var flag = false
+		msg = append(msg, "or checker: false")
+		for i, c := range o.c {
+			if c == nil {
 				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
 				continue
 			}
-			if c, ok := cValue.(*OrChecker); ok {
-				msg = append(msg, c.DebugInfo())
-			} else if c, ok := cValue.(*AndChecker); ok {
-				msg = append(msg, c.DebugInfo())
-			} else {
-				msg = append(msg, strconv.FormatBool(cValue.Check(id)))
+			if c.Check(id) {
+				flag = true
 			}
+			msg = append(msg, c.DebugInfo()+"\tis checked: "+strconv.FormatBool(c.Check(id)))
 		}
-		o.aDebug.DebugInfo.AddDebugMsg("[" + strings.Join(msg, ",") + "]")
+		if !flag {
+			o.aDebug.Node[id] = append(o.aDebug.Node[id], msg)
+		} else {
+			msg[0] = "and check result: true"
+			o.aDebug.Node[id] = append(o.aDebug.Node[id], msg)
+		}
+		return flag
 	}
 	for _, cValue := range o.c {
 		if cValue == nil {
@@ -74,26 +78,26 @@ func (o *OrChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}, e 
 	if !ok {
 		return nil
 	}
-	value := v.([]interface{})
+	value := v.([]map[string]interface{})
 	var c []Checker
 	for i, v := range o.c {
-		c = append(c, v.Unmarshal(idx, value[i].(map[string]interface{}), e))
+		c = append(c, v.Unmarshal(idx, value[i], e))
 	}
 	return NewOrChecker(c)
 }
 
 func (o *OrChecker) DebugInfo() string {
-	return o.aDebug.DebugInfo.String()
+	return o.aDebug.String()
 }
 
 func (o *OrChecker) SetDebug() {
-	o.aDebug = debug.NewDebugs(debug.NewDebug("OrCheck"))
+	o.aDebug = debug.NewDebug("OrCheck")
 	for _, v := range o.c {
 		switch v.(type) {
 		case *AndChecker:
-			v.(*AndChecker).aDebug = debug.NewDebugs(debug.NewDebug("AndCheck"))
+			v.(*AndChecker).aDebug = debug.NewDebug("AndCheck")
 		case *OrChecker:
-			v.(*OrChecker).aDebug = debug.NewDebugs(debug.NewDebug("OrCheck"))
+			v.(*OrChecker).aDebug = debug.NewDebug("OrCheck")
 		}
 	}
 }

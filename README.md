@@ -537,34 +537,32 @@ invertIdx.GetValueById(docId)
 		        // 不一定所有的id都会走check
 		        ["field:fieldName_1","reason: found id"],
 		        ["field:fieldName_2","reason: not found"],
-		        ["fieldName_1"]
 		    ],
 		    "3":[
 		        // 对应的是check的结果，包含：
-		        // fieldname, 正排的那个值 storageIdx.Iterator("Name"), Name
-		        // condition传进去的value，
-		        // 操作符(=, !=, >, <)等操作，
-		        // operation：判断这个operation是自定义的还是使用默认的，transfer暂不用考虑
+		        // 第一个值，"and check result: false"，表示这个check条件的过滤结果，true表示是需要的，false表示是要被过滤的
+		        // FieldName, Campaign的字段名
+		        // condition传进去的value
+		        // OP 操作符(=, !=, >, <)等操作，
+		        // operation：判断这个operation是自定义的还是使用默认的
+		        // transfer暂不用考虑
 		        ["and check result: false","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","{\"node\":{\"3\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]]}}\tcheck result: false"],
 		        // 中间表示的是query的过滤原因，在field条件下，这个id是否存在
+		        // invertIdx.Iterator("fieldName", "1") -> campaign字段名和mongo读取出来的对应字段的值
 		        ["field:fieldName_1","reason: found id"],
 		        ["field:fieldName_2","reason: found id"],
 		        ["field:fieldName_3","reason: found id"],
-		        // 表示的是倒排建立索引的每一个id对应的全部field值，建立索引时候的name_value组合
-		        ["fieldName_5","fieldName_6","fieldName_1","fieldName_2","fieldName_3","fieldName_4"]
 		    ],
 		    "4":[
 		        ["and check result: false","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","FieldName: fieldName\tvalue: 3\tOP: =\tdefined operation: false\ttransfer: false\tcheck result: true","{\"node\":{\"3\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"],[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]],\"4\":[[\"and check result: false\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\",\"FieldName: fieldName\\tvalue: 3\\tOP: =\\tdefined operation: false\\ttransfer: false\\tis checked: true\"]]}}\tcheck result: false"],
 		        ["field:fieldName_1","reason: found id"],
 		        ["field:fieldName_2","reason: found id"],
 		        ["field:fieldName_3","reason: found id"],
-		        ["fieldName_6","fieldName_1","fieldName_2","fieldName_3","fieldName_4","fieldName_5"]
 		    ],
 		    "6":[
 		        ["field:fieldName_1","reason: found id"],
 		        ["field:fieldName_2","reason: found id"],
 		        ["field:fieldName_3","reason: not found"],
-		        ["fieldName_1","fieldName_2","fieldName_4","fieldName_6"]
 		    ]}
         }
 ```

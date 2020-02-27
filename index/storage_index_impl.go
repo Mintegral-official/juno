@@ -87,7 +87,9 @@ func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 			if s.aDebug != nil {
 				s.aDebug.AddDebugMsg("index: " + fieldName + " len: " + strconv.Itoa(sl.Len()))
 			}
-			return sl.Iterator()
+			iter := sl.Iterator()
+			iter.FieldName = fieldName
+			return iter
 		}
 	}
 	if s.aDebug != nil {

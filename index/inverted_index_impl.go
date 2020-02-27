@@ -115,7 +115,9 @@ func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 			if i.aDebug != nil {
 				i.aDebug.AddDebugMsg("index[" + fieldName + "] len: " + strconv.Itoa(sl.Len()))
 			}
-			return sl.Iterator()
+			iter := sl.Iterator()
+			iter.FieldName = fieldName
+			return iter
 		}
 	}
 	if i.aDebug != nil {

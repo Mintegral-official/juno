@@ -10,20 +10,19 @@ import (
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"strconv"
-	"strings"
 )
 
 type NotAndQuery struct {
 	queries  []Query
 	checkers []check.Checker
 	curIdx   int
-	debugs   *debug.Debugs
+	debugs   *debug.Debug
 }
 
 func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (naq *NotAndQuery) {
 	naq = &NotAndQuery{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		naq.debugs = debug.NewDebugs(debug.NewDebug("NotAndQuery"))
+		naq.debugs = debug.NewDebug("NotAndQuery")
 	}
 	if len(queries) == 0 {
 		return naq
@@ -34,9 +33,6 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (
 }
 
 func (naq *NotAndQuery) Next() (document.DocId, error) {
-	if naq.debugs != nil {
-		naq.debugs.NextNum++
-	}
 label:
 	for {
 		target, err := naq.queries[0].Current()
@@ -48,16 +44,6 @@ label:
 			if naq.check(target) {
 				return target, nil
 			}
-		}
-		if naq.debugs != nil {
-			var msg []string
-			for i := 1; i < len(naq.queries); i++ {
-				cur, _ := naq.queries[i].GetGE(target)
-				if target == cur {
-					msg = append(msg, fmt.Sprintf("%d found in queries[%d]", target, i))
-				}
-			}
-			naq.debugs.DebugInfo.AddDebugMsg("[" + strings.Join(msg, ",") + "]")
 		}
 		for i := 1; i < len(naq.queries); i++ {
 			cur, err := naq.queries[i].GetGE(target)
@@ -82,9 +68,6 @@ label:
 }
 
 func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	if naq.debugs != nil {
-		naq.debugs.GetNum++
-	}
 	for {
 		target, err := naq.queries[0].GetGE(id)
 		if err != nil {
@@ -115,22 +98,9 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (naq *NotAndQuery) Current() (document.DocId, error) {
-	if naq.debugs != nil {
-		naq.debugs.CurNum++
-	}
 	res, err := naq.queries[0].Current()
 	if err != nil {
 		return res, err
-	}
-	if naq.debugs != nil {
-		var msg []string
-		for i := 1; i < len(naq.queries); i++ {
-			cur, _ := naq.queries[i].GetGE(res)
-			if res == cur {
-				msg = append(msg, fmt.Sprintf("%d found in queries[%d]", res, i))
-			}
-		}
-		naq.debugs.DebugInfo.AddDebugMsg("[" + strings.Join(msg, ",") + "]")
 	}
 	for i := 1; i < len(naq.queries); i++ {
 		tar, err := naq.queries[i].GetGE(res)
@@ -151,13 +121,14 @@ func (naq *NotAndQuery) Current() (document.DocId, error) {
 
 func (naq *NotAndQuery) DebugInfo() *debug.Debug {
 	if naq.debugs != nil {
-		naq.debugs.DebugInfo.AddDebugMsg("next has been called: " + strconv.Itoa(naq.debugs.NextNum))
-		naq.debugs.DebugInfo.AddDebugMsg("get has been called: " + strconv.Itoa(naq.debugs.GetNum))
-		naq.debugs.DebugInfo.AddDebugMsg("current has been called: " + strconv.Itoa(naq.debugs.CurNum))
-		for i := 0; i < len(naq.queries); i++ {
-			naq.debugs.DebugInfo.AddDebug(naq.queries[i].DebugInfo())
+		for _, v := range naq.queries {
+			if v.DebugInfo() != nil {
+				for key, value := range v.DebugInfo().Node {
+					naq.debugs.Node[key] = append(naq.debugs.Node[key], value...)
+				}
+			}
 		}
-		return naq.debugs.DebugInfo
+		return naq.debugs
 	}
 	return nil
 }
@@ -168,20 +139,25 @@ func (naq *NotAndQuery) check(id document.DocId) bool {
 	}
 	if naq.debugs != nil {
 		var msg []string
-		for i, v := range naq.checkers {
-			if v == nil {
+		var flag = true
+		msg = append(msg, "not and check result: true")
+		for i, c := range naq.checkers {
+			if c == nil {
 				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
 				continue
 			}
-			if c, ok := v.(*check.AndChecker); ok {
-				msg = append(msg, c.DebugInfo())
-			} else if c, ok := v.(*check.OrChecker); ok {
-				msg = append(msg, c.DebugInfo())
-			} else {
-				msg = append(msg, strconv.FormatBool(c.Check(id)))
+			if c.Check(id) {
+				flag = false
 			}
+			msg = append(msg, c.DebugInfo()+"\t check result: "+strconv.FormatBool(c.Check(id)))
 		}
-		naq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(id), 10) + " check: [" + strings.Join(msg, ",") + "]")
+		if flag {
+			naq.debugs.Node[id] = append(naq.debugs.Node[id], msg)
+		} else {
+			msg[0] = "or check result: false"
+			naq.debugs.Node[id] = append(naq.debugs.Node[id], msg)
+		}
+		return flag
 	}
 	for _, v := range naq.checkers {
 		if v == nil {
@@ -234,7 +210,7 @@ func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}
 
 func (naq *NotAndQuery) SetDebug(isDebug ...int) {
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		naq.debugs = debug.NewDebugs(debug.NewDebug("NotAndQuery"))
+		naq.debugs = debug.NewDebug("NotAndQuery")
 	}
 	for _, v := range naq.queries {
 		v.SetDebug(1)

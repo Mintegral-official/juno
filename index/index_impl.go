@@ -257,7 +257,6 @@ func (i *Indexer) DebugInfo() *debug.Debug {
 	if i.aDebug != nil {
 		i.aDebug.AddDebugMsg("invert index count: " + strconv.Itoa(i.invertedIndex.Count()))
 		i.aDebug.AddDebugMsg("storage index count: " + strconv.Itoa(i.storageIndex.Count()))
-		i.aDebug.AddDebug(i.invertedIndex.DebugInfo(), i.storageIndex.DebugInfo())
 		return i.aDebug
 	}
 	return nil

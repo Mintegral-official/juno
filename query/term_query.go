@@ -8,21 +8,20 @@ import (
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strconv"
 )
 
 type TermQuery struct {
 	iterator datastruct.Iterator
-	debugs   *debug.Debugs
+	debugs   *debug.Debug
 }
 
 func NewTermQuery(iter datastruct.Iterator, isDebug ...int) (tq *TermQuery) {
 	tq = &TermQuery{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		tq.debugs = debug.NewDebugs(debug.NewDebug("TermQuery"))
+		tq.debugs = debug.NewDebug("TermQuery")
 	}
 	if iter == nil {
-		tq.debugs.DebugInfo.AddDebugMsg("the iterator is nil")
+		tq.debugs.AddDebugMsg("the iterator is nil")
 		return tq
 	}
 	tq.iterator = iter
@@ -30,9 +29,6 @@ func NewTermQuery(iter datastruct.Iterator, isDebug ...int) (tq *TermQuery) {
 }
 
 func (tq *TermQuery) Next() (document.DocId, error) {
-	if tq.debugs != nil {
-		tq.debugs.NextNum++
-	}
 	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
@@ -42,13 +38,14 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 	if element == nil {
 		return 0, helpers.ElementNotfound
 	}
+	if tq.debugs != nil {
+		tq.debugs.Node[element.Key()] = append(tq.debugs.Node[element.Key()],
+			[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: found id"})
+	}
 	return element.Key(), nil
 }
 
 func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
-	if tq.debugs != nil {
-		tq.debugs.GetNum++
-	}
 	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
@@ -56,17 +53,26 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	element := tq.iterator.GetGE(id)
 	if element == nil {
 		if tq.debugs != nil {
-			tq.debugs.DebugInfo.AddDebugMsg(fmt.Sprintf("%d not found in this query", id))
+			tq.debugs.Node[id] = append(tq.debugs.Node[id],
+				[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: not found"})
 		}
 		return 0, helpers.ElementNotfound
+	}
+	if tq.debugs != nil {
+		if element.Key() != id {
+			tq.debugs.Node[element.Key()] = append(tq.debugs.Node[element.Key()],
+				[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: found id"})
+			tq.debugs.Node[id] = append(tq.debugs.Node[id],
+				[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: not found"})
+		} else {
+			tq.debugs.Node[id] = append(tq.debugs.Node[id],
+				[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: found id"})
+		}
 	}
 	return element.Key(), nil
 }
 
 func (tq *TermQuery) Current() (document.DocId, error) {
-	if tq.debugs != nil {
-		tq.debugs.CurNum++
-	}
 	if tq == nil || tq.iterator == nil {
 		return 0, helpers.DocumentError
 	}
@@ -74,15 +80,16 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 	if element == nil {
 		return 0, helpers.ElementNotfound
 	}
+	if tq.debugs != nil {
+		tq.debugs.Node[element.Key()] = append(tq.debugs.Node[element.Key()],
+			[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: found id"})
+	}
 	return element.Key(), nil
 }
 
 func (tq *TermQuery) DebugInfo() *debug.Debug {
 	if tq.debugs != nil {
-		tq.debugs.DebugInfo.AddDebugMsg("next has been called: " + strconv.Itoa(tq.debugs.NextNum))
-		tq.debugs.DebugInfo.AddDebugMsg("get has been called: " + strconv.Itoa(tq.debugs.GetNum))
-		tq.debugs.DebugInfo.AddDebugMsg("current has been called: " + strconv.Itoa(tq.debugs.CurNum))
-		return tq.debugs.DebugInfo
+		return tq.debugs
 	}
 	return nil
 }
@@ -110,7 +117,7 @@ func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e
 
 func (tq *TermQuery) SetDebug(isDebug ...int) {
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		tq.debugs = debug.NewDebugs(debug.NewDebug("TermQuery"))
+		tq.debugs = debug.NewDebug("TermQuery")
 	}
 }
 

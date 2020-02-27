@@ -11,19 +11,18 @@ import (
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"strconv"
-	"strings"
 )
 
 type OrQuery struct {
 	checkers []check.Checker
 	h        Heap
-	debugs   *debug.Debugs
+	debugs   *debug.Debug
 }
 
 func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) (oq *OrQuery) {
 	oq = &OrQuery{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		oq.debugs = debug.NewDebugs(debug.NewDebug("OrQuery"))
+		oq.debugs = debug.NewDebug("OrQuery")
 	}
 	if len(queries) == 0 {
 		return oq
@@ -41,9 +40,6 @@ func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) (oq *
 }
 
 func (oq *OrQuery) Next() (document.DocId, error) {
-	if oq.debugs != nil {
-		oq.debugs.NextNum++
-	}
 	for target, err := oq.Current(); err == nil; {
 		oq.next()
 		if oq.check(target) {
@@ -80,9 +76,6 @@ func (oq *OrQuery) getGE(id document.DocId) {
 }
 
 func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
-	if oq.debugs != nil {
-		oq.debugs.GetNum++
-	}
 	target, err := oq.Current()
 	for err == nil && target < id {
 		oq.getGE(id)
@@ -95,9 +88,6 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (oq *OrQuery) Current() (document.DocId, error) {
-	if oq.debugs != nil {
-		oq.debugs.CurNum++
-	}
 	top := oq.h.Top()
 	if top == nil {
 		return 0, helpers.NoMoreData
@@ -115,13 +105,14 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {
 	if oq.debugs != nil {
-		oq.debugs.DebugInfo.AddDebugMsg("next has been called: " + strconv.Itoa(oq.debugs.NextNum))
-		oq.debugs.DebugInfo.AddDebugMsg("get has been called: " + strconv.Itoa(oq.debugs.GetNum))
-		oq.debugs.DebugInfo.AddDebugMsg("current has been called: " + strconv.Itoa(oq.debugs.CurNum))
-		for i := 0; i < oq.h.Len(); i++ {
-			oq.debugs.DebugInfo.AddDebug(oq.h[i].DebugInfo())
+		for _, v := range oq.h {
+			if v.DebugInfo() != nil {
+				for key, value := range v.DebugInfo().Node {
+					oq.debugs.Node[key] = append(oq.debugs.Node[key], value...)
+				}
+			}
 		}
-		return oq.debugs.DebugInfo
+		return oq.debugs
 	}
 	return nil
 }
@@ -132,20 +123,25 @@ func (oq *OrQuery) check(id document.DocId) bool {
 	}
 	if oq.debugs != nil {
 		var msg []string
-		for i, v := range oq.checkers {
-			if v == nil {
+		var flag = false
+		msg = append(msg, "or check result: false")
+		for i, c := range oq.checkers {
+			if c == nil {
 				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
 				continue
 			}
-			if c, ok := v.(*check.AndChecker); ok {
-				msg = append(msg, c.DebugInfo())
-			} else if c, ok := v.(*check.OrChecker); ok {
-				msg = append(msg, c.DebugInfo())
-			} else {
-				msg = append(msg, strconv.FormatBool(v.Check(id)))
+			if c.Check(id) {
+				flag = true
 			}
+			msg = append(msg, c.DebugInfo()+"\t check result: "+strconv.FormatBool(c.Check(id)))
 		}
-		oq.debugs.DebugInfo.AddDebugMsg(strconv.FormatInt(int64(id), 10) + " check: [" + strings.Join(msg, ",") + "]")
+		if !flag {
+			oq.debugs.Node[id] = append(oq.debugs.Node[id], msg)
+		} else {
+			msg[0] = "or check result: true"
+			oq.debugs.Node[id] = append(oq.debugs.Node[id], msg)
+		}
+		return flag
 	}
 	for _, v := range oq.checkers {
 		if v == nil {
@@ -198,7 +194,7 @@ func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e o
 
 func (oq *OrQuery) SetDebug(isDebug ...int) {
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		oq.debugs = debug.NewDebugs(debug.NewDebug("OrQuery"))
+		oq.debugs = debug.NewDebug("OrQuery")
 	}
 	for _, v := range oq.h {
 		v.SetDebug(1)

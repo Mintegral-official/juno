@@ -7,12 +7,11 @@ import (
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"strconv"
-	"strings"
 )
 
 type AndChecker struct {
 	c      []Checker
-	aDebug *debug.Debugs
+	aDebug *debug.Debug
 }
 
 func NewAndChecker(c []Checker, isDebug ...int) *AndChecker {
@@ -21,7 +20,7 @@ func NewAndChecker(c []Checker, isDebug ...int) *AndChecker {
 	}
 	a := &AndChecker{}
 	if len(isDebug) == 1 && isDebug[0] == 1 {
-		a.aDebug = debug.NewDebugs(debug.NewDebug("AndCheck"))
+		a.aDebug = debug.NewDebug("AndCheck")
 	}
 	a.c = c
 	return a
@@ -32,23 +31,26 @@ func (a *AndChecker) Check(id document.DocId) bool {
 		return true
 	}
 	if a.aDebug != nil {
-		if a.aDebug != nil {
-			var msg []string
-			for i, cValue := range a.c {
-				if cValue == nil {
-					msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
-					continue
-				}
-				if c, ok := cValue.(*OrChecker); ok {
-					msg = append(msg, c.DebugInfo())
-				} else if c, ok := cValue.(*AndChecker); ok {
-					msg = append(msg, c.DebugInfo())
-				} else {
-					msg = append(msg, strconv.FormatBool(cValue.Check(id)))
-				}
+		var msg []string
+		var flag = true
+		msg = append(msg, "and checker: true")
+		for i, c := range a.c {
+			if c == nil {
+				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
+				continue
 			}
-			a.aDebug.DebugInfo.AddDebugMsg("[" + strings.Join(msg, ",") + "]")
+			if c.Check(id) {
+				flag = false
+			}
+			msg = append(msg, c.DebugInfo()+"\tis checked: "+strconv.FormatBool(c.Check(id)))
 		}
+		if flag {
+			a.aDebug.Node[id] = append(a.aDebug.Node[id], msg)
+		} else {
+			msg[0] = "and check result: false"
+			a.aDebug.Node[id] = append(a.aDebug.Node[id], msg)
+		}
+		return flag
 	}
 	for _, cValue := range a.c {
 		if cValue == nil {
@@ -76,29 +78,29 @@ func (a *AndChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}, e
 	if !ok {
 		return nil
 	}
-	value := v.([]interface{})
+	value := v.([]map[string]interface{})
 	var c []Checker
 	for i, v := range a.c {
-		c = append(c, v.Unmarshal(idx, value[i].(map[string]interface{}), e))
+		c = append(c, v.Unmarshal(idx, value[i], e))
 	}
 	return NewAndChecker(c, 1)
 }
 
 func (a *AndChecker) DebugInfo() string {
 	if a.aDebug != nil {
-		return a.aDebug.DebugInfo.String()
+		return a.aDebug.String()
 	}
 	return ""
 }
 
 func (a *AndChecker) SetDebug() {
-	a.aDebug = debug.NewDebugs(debug.NewDebug("AndCheck"))
+	a.aDebug = debug.NewDebug("AndCheck")
 	for _, v := range a.c {
 		switch v.(type) {
 		case *AndChecker:
-			v.(*AndChecker).aDebug = debug.NewDebugs(debug.NewDebug("AndCheck"))
+			v.(*AndChecker).aDebug = debug.NewDebug("AndCheck")
 		case *OrChecker:
-			v.(*OrChecker).aDebug = debug.NewDebugs(debug.NewDebug("OrCheck"))
+			v.(*OrChecker).aDebug = debug.NewDebug("OrCheck")
 		}
 	}
 }
