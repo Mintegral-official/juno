@@ -565,5 +565,10 @@ invertIdx.GetValueById(docId)
 		        ["field:fieldName_3","reason: not found"],
 		    ]}
         }
+
+        // 根据id获取id对应的field信息
+        func (i *InvertedIndexer) GetValueById(id document.DocId) []string{}
+        // 根绝fieldname删除所有的id
+        func (i *InvertedIndexer) Delete(fieldName string){}
 ```
 
