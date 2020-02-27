@@ -9,6 +9,7 @@ type Index interface {
 	Add(docInfo *document.DocInfo) error
 	Del(docInfo *document.DocInfo)
 	GetDataType(fieldName string) document.FieldType
+	GetValueById(id document.DocId) map[string][]string
 	Dump(filename string) error
 	Load(filename string) error
 	DebugInfo() *debug.Debug

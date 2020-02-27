@@ -43,16 +43,16 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	s.QueryDebug = query.DebugInfo()
 }
 
-func (s *Searcher) Debug(iIndexer *index.Indexer, q query.Query) *debug.Debug {
+func (s *Searcher) Debug(iIndexer *index.Indexer, q query.Query) {
+	q.SetDebug(1)
 	s.Search(iIndexer, q)
-	return s.QueryDebug
 }
 
 func (s *Searcher) DebugInfo(iIndexer *index.Indexer, q query.Query, ids []document.DocId) map[document.DocId][][]string {
-	d := s.Debug(iIndexer, q)
+	s.Debug(iIndexer, q)
 	var res = make(map[document.DocId][][]string, len(ids))
 	for _, v := range ids {
-		res[v] = d.Node[v]
+		res[v] = s.QueryDebug.Node[v]
 	}
 	return res
 }

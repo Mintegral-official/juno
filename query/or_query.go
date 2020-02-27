@@ -208,18 +208,3 @@ func (oq *OrQuery) SetDebug(isDebug ...int) {
 		}
 	}
 }
-
-func (oq *OrQuery) UnsetDebug() {
-	oq.debugs = nil
-	for _, v := range oq.h {
-		v.UnsetDebug()
-	}
-	for _, v := range oq.checkers {
-		switch v.(type) {
-		case *check.AndChecker:
-			v.(*check.AndChecker).UnsetDebug()
-		case *check.OrChecker:
-			v.(*check.OrChecker).UnsetDebug()
-		}
-	}
-}

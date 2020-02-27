@@ -67,6 +67,13 @@ func (i *Indexer) UnsetDebug() {
 	i.aDebug = debug.NewDebug(i.GetName())
 }
 
+func (i *Indexer) GetValueById(id document.DocId) map[string][]string {
+	res := make(map[string][]string, 2)
+	res["invert"] = i.GetInvertedIndex().GetValueById(id)
+	res["storage"] = i.GetInvertedIndex().GetValueById(id)
+	return res
+}
+
 func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 	if doc == nil {
 		return helpers.DocumentError
