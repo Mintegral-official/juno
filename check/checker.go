@@ -2,11 +2,15 @@ package check
 
 import (
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 )
 
 type Checker interface {
 	Check(id document.DocId) bool
+	DebugInfo() string
+	Marshal(idx *index.Indexer) map[string]interface{}
+	Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Checker
 }
 
 func UtilCheck(cValue interface{}, op operation.OP, value interface{}, e operation.Operation) bool {

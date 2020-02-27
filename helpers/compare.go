@@ -78,7 +78,7 @@ var floatCompare Func = func(a, b interface{}) int {
 	//case *float64:
 	//	return float64Func(*(a.(*float64)), *(b.(*float64)))
 	default:
-		panic(fmt.Sprintf("parameters[%v[%T] - %v[%T]] type wrong.", a, a, b, b))
+		panic(fmt.Sprintf("parameters[%v [%T] - %v [%T]] type wrong.", a, a, b, b))
 	}
 }
 
@@ -89,7 +89,7 @@ var stringCompare Func = func(a, b interface{}) int {
 	//case *string:
 	//	return stringFunc(*(a.(*string)), *(b.(*string)))
 	default:
-		panic(fmt.Sprintf("parameters[%v[%T] - %v[%T]] type wrong.", a, a, b, b))
+		panic(fmt.Sprintf("parameters[%v [%T] - %v [%T]] type wrong.", a, a, b, b))
 	}
 }
 

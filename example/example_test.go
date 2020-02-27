@@ -87,7 +87,7 @@ func BenchmarkSliceEqual(b *testing.B) {
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
 			}, []check.Checker{
-				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, &operation{}, false),
+				check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), devi, nil, false),
 			}),
 			query.NewAndQuery([]query.Query{
 				query.NewAndQuery([]query.Query{

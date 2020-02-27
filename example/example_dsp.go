@@ -1,4 +1,5 @@
 package main
+
 //
 //import (
 //	"github.com/Mintegral-official/juno/check"
@@ -272,9 +273,6 @@ package main
 //	if len(cond.AdvertiserBlocklist) > 0 {
 //		var q []query.Query
 //		for k, v := range cond.AdvertiserBlocklist {
-//			if !v {
-//				continue
-//			}
 //			q = append(q, query.NewTermQuery(invertIdx.Iterator("AdvertiserId", k)))
 //		}
 //		blocklist = query.NewOrQuery(q, nil)
@@ -284,9 +282,6 @@ package main
 //	if len(cond.AdvertiserWhitelist) > 0 {
 //		var q []query.Query
 //		for k, v := range cond.AdvertiserWhitelist {
-//			if !v {
-//				continue
-//			}
 //			q = append(q, query.NewTermQuery(invertIdx.Iterator("AdvertiserId", k)))
 //		}
 //		whitelist = query.NewOrQuery(q, nil)
@@ -306,9 +301,6 @@ package main
 //	var q []query.Query
 //	if len(cond.BlockIndustryIds) > 0 {
 //		for k, v := range cond.BlockIndustryIds {
-//			if !v {
-//				continue
-//			}
 //			q = append(q, query.NewTermQuery(invertIdx.Iterator("IndustryId", k)))
 //		}
 //		return query.NewOrQuery(q, nil)
@@ -421,9 +413,6 @@ package main
 //	var q []query.Query
 //	if len(cond.BAppCategory) > 0 {
 //		for k, v := range cond.BAppCategory {
-//			if !v {
-//				continue
-//			}
 //			q = append(q, query.NewTermQuery(invertIdx.Iterator("AppCategory", k)))
 //		}
 //		return query.NewOrQuery(q, nil)
@@ -438,9 +427,6 @@ package main
 //	var q []query.Query
 //	if len(cond.BAppSubCategory) > 0 {
 //		for k, v := range cond.BAppSubCategory {
-//			if !v {
-//				continue
-//			}
 //			q = append(q, query.NewTermQuery(invertIdx.Iterator("AppSubCategory", k)))
 //		}
 //	}
@@ -674,11 +660,37 @@ package main
 //// campaign.isEcAdv == 1 (mvutil.EcAdv） campaign.retargetVisitionType == 1 (include)
 //func isecadvQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 //	invertIdx := idx.GetInvertedIndex()
-//	return query.NewAndQuery([]query.Query{
-//		query.NewTermQuery(invertIdx.Iterator("IsEcAdv", "1")),
-//		query.NewTermQuery(invertIdx.Iterator("RetargetVisitorType", "1")),
+//	if len(cond.CampaignIds) > 0{
+//		var q []query.Query
+//		for k, _ := range cond.CampaignIds {
+//			q = append(q, query.NewTermQuery(invertIdx.Iterator("CampaignId", strconv.FormatInt(k, 10))))
+//		}
+//		return query.NewOrQuery([]query.Query{
+//			query.NewTermQuery(invertIdx.Iterator("IsEcAdv", "0")),
+//			query.NewAndQuery([]query.Query{
+//				query.NewTermQuery(invertIdx.Iterator("IsEcAdv", "1")),
+//				query.NewOrQuery([]query.Query{
+//					query.NewAndQuery([]query.Query{
+//						query.NewTermQuery(invertIdx.Iterator("RetargetVisitorType", "1")),
+//						query.NewOrQuery(q, nil),
+//					}, nil),
+//					query.NewNotAndQuery([]query.Query{
+//						query.NewTermQuery(invertIdx.Iterator("RetargetVisitorType", "2")),
+//						query.NewOrQuery(q, nil),
+//					}, nil),
+//				}, nil),
+//			}, nil),
+//		}, nil)
+//	}
+//	return query.NewOrQuery([]query.Query{
+//		query.NewTermQuery(invertIdx.Iterator("IsEcAdv", "0")),
+//		query.NewAndQuery([]query.Query{
+//			query.NewTermQuery(invertIdx.Iterator("IsEcAdv", "1")),
+//			query.NewTermQuery(invertIdx.Iterator("RetargetVisitorType", "2")),
+//		}, nil),
 //	}, nil)
 //}
+
 //
 //// iab
 //// (campaign.NeedIabCategoryTag == 1 and condition.IabCategory 某个元素使用”-“split的第一个元素在campaign.IabCategoryTag1
@@ -727,9 +739,6 @@ package main
 //	invertIdx := idx.GetInvertedIndex()
 //	var q []query.Query
 //	for k, v := range cond.InstallApps {
-//		if !v {
-//			continue
-//		}
 //		q = append(q, query.NewTermQuery(invertIdx.Iterator("InstallApps", strconv.Itoa(k))))
 //	}
 //	return query.NewAndQuery([]query.Query{
@@ -938,7 +947,6 @@ package main
 //	if directQuery(idx, cond) != nil {
 //		queryNot = append(queryNot, directQuery(idx, cond))
 //	}
-//	queryNot = append(queryNot, isecadvQuery(idx, cond))
 //	if industryIdQuery(idx, cond) != nil {
 //		queryNot = append(queryNot, industryIdQuery(idx, cond))
 //	}
@@ -992,6 +1000,7 @@ package main
 //	queryAnd = append(queryAnd, adScheduleQuery(idx, cond))
 //	queryAnd = append(queryAnd, networkTypeQuery(idx, cond))
 //	queryAnd = append(queryAnd, deviceModelQuery(idx, cond))
+//	queryAnd = append(queryAnd, isecadvQuery(idx, cond))
 //	if advertiserIdQuery(idx, cond) != nil {
 //		queryAnd = append(queryAnd, advertiserIdQuery(idx, cond))
 //	}
@@ -999,7 +1008,7 @@ package main
 //	if advertiserAuditQuery(idx, cond) != nil {
 //		queryAnd = append(queryAnd, advertiserAuditQuery(idx, cond))
 //	}
-//	if creativeAuditQuery(idx, cond) != nil {
+//	if idx(idx, cond) != nil {
 //		queryAnd = append(queryAnd, creativeAuditQuery(idx, cond))
 //	}
 //	if deviceTypeQuery(idx, cond) != nil {

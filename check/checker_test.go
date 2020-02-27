@@ -1,7 +1,10 @@
 package check
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -93,6 +96,30 @@ func TestNewInChecker(t *testing.T) {
 		So(o.Check(6), ShouldBeTrue)
 		So(o.Check(10), ShouldBeTrue)
 		So(o.Check(6), ShouldBeFalse)
+	})
+}
+
+func TestUtilCheck(t *testing.T) {
+	ss := index.NewIndex("")
+	s := ss.GetStorageIndex()
+	Convey("Add", t, func() {
+		So(s.Add("fieldName_1", 1, 1), ShouldBeNil)
+		So(s.Add("fieldName_1", 5, 1), ShouldBeNil)
+		So(s.Add("fieldName_1", 6, 2), ShouldBeNil)
+		So(s.Add("fieldName_1", 7, 2), ShouldBeNil)
+		So(s.Add("fieldName_1", 8, 3), ShouldBeNil)
+		So(s.Add("fieldName_1", 9, 3), ShouldBeNil)
+		c := NewChecker(s.Iterator("fieldName_1"), 3, operation.EQ, nil, false)
+		So(c.Check(1), ShouldBeFalse)
+		So(c.Check(8), ShouldBeTrue)
+		So(c.Check(9), ShouldBeTrue)
+		tmp := c.Marshal(ss)
+		res, _ := json.Marshal(tmp)
+		fmt.Println(string(res))
+		cc := c.Unmarshal(ss, tmp, nil)
+		So(cc.Check(1), ShouldBeFalse)
+		So(cc.Check(8), ShouldBeTrue)
+		So(cc.Check(9), ShouldBeTrue)
 	})
 }
 

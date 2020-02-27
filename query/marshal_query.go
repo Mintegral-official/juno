@@ -2,8 +2,6 @@ package query
 
 import (
 	"encoding/json"
-	"github.com/Mintegral-official/juno/index"
-	"unsafe"
 )
 
 type JSONFormatter struct {
@@ -13,19 +11,19 @@ func NewJSONFormatter() *JSONFormatter {
 	return &JSONFormatter{}
 }
 
-func (j *JSONFormatter) Marshal(cond interface{}) (string, error) {
-	if r, e := json.Marshal(cond); e != nil {
+func (j *JSONFormatter) Marshal(queryInfo map[string]interface{}) (string, error) {
+	if r, e := json.Marshal(queryInfo); e != nil {
 		return "", e
 	} else {
-		return *(*string)(unsafe.Pointer(&r)), nil
+		return string(r), nil
 	}
 
 }
 
-func (j *JSONFormatter) Unmarshal(str string, idx *index.Indexer, cond interface{},
-	queryFunc func(idx *index.Indexer, cond interface{}) Query) (Query, error) {
-	if e := json.Unmarshal([]byte(str), &cond); e != nil {
+func (j *JSONFormatter) Unmarshal(str string) (map[string]interface{}, error) {
+	var res map[string]interface{}
+	if e := json.Unmarshal([]byte(str), &res); e != nil {
 		return nil, e
 	}
-	return queryFunc(idx, cond), nil
+	return res, nil
 }

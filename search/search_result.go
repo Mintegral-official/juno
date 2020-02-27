@@ -3,6 +3,7 @@ package search
 import (
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
 	"time"
@@ -27,12 +28,14 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 		return
 	}
 	now := time.Now()
-	id, err := query.Next()
-	for err == nil {
-		if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
-			continue
+	id, err := query.Current()
+	for err != helpers.NoMoreData {
+		if err == nil {
+			if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
+				continue
+			}
+			s.Docs = append(s.Docs, id)
 		}
-		s.Docs = append(s.Docs, id)
 		id, err = query.Next()
 	}
 	s.Time = time.Since(now)
@@ -40,24 +43,16 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	s.QueryDebug = query.DebugInfo()
 }
 
-func (s *Searcher) Debug(q query.Query, ids []document.DocId) map[document.DocId]error {
-	res := make(map[document.DocId]error, len(ids))
-	for _, id := range ids {
-		res[id] = nil
-	}
-	id, err := q.Next()
+func (s *Searcher) Debug(iIndexer *index.Indexer, q query.Query) *debug.Debug {
+	s.Search(iIndexer, q)
+	return s.QueryDebug
+}
+
+func (s *Searcher) DebugInfo(iIndexer *index.Indexer, q query.Query, ids []document.DocId) map[document.DocId][][]string {
+	d := s.Debug(iIndexer, q)
+	var res = make(map[document.DocId][][]string, len(ids))
 	for _, v := range ids {
-		if v == id {
-			res[id] = err
-		}
-	}
-	for err == nil {
-		id, err = q.Next()
-		for _, v := range ids {
-			if v == id {
-				res[id] = err
-			}
-		}
+		res[v] = d.Node[v]
 	}
 	return res
 }

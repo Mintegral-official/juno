@@ -6,7 +6,6 @@ import (
 	"github.com/Mintegral-official/juno/builder"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/operation"
 	"github.com/Mintegral-official/juno/query"
 	"github.com/Mintegral-official/juno/search"
 	"github.com/sirupsen/logrus"
@@ -244,20 +243,22 @@ func main() {
 				}, []check.Checker{
 					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), a0, nil, false),
 				})}, nil),
-			// !=
-			query.NewNotAndQuery([]query.Query{
-				query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
-			}, nil),
-			// !=
-			query.NewAndQuery([]query.Query{
-				query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-			}, []check.Checker{
-				check.NewChecker(storageIdx.Iterator("AdvertiserId"), 457, operation.NE, nil, false),
-			}),
+			//// !=
+			//query.NewNotAndQuery([]query.Query{
+			//	query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+			//	query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
+			//}, nil),
+			//// !=
+			//query.NewAndQuery([]query.Query{
+			//	query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
+			//}, []check.Checker{
+			//	check.NewChecker(storageIdx.Iterator("AdvertiserId"), 457, operation.NE, nil, false),
+			//}),
 		},
 			nil,
 		)
+
+		q.SetDebug(1)
 
 		tquery := time.Now()
 		r1 := search.NewSearcher()
@@ -265,6 +266,18 @@ func main() {
 		fmt.Println("query: ", time.Since(tquery))
 		fmt.Println("+****************************+")
 		fmt.Println("res: ", len(r1.Docs), r1.Time)
+		fmt.Println(r1.Docs[0])
+		fmt.Println(invertIdx.GetValueById(document.DocId(1526540701)))
+		fmt.Println(r1.QueryDebug)
+		//res := q.Marshal(tIndex) // query marshal params: index
+		//jf := &query.JSONFormatter{}
+		//str, _ := jf.Marshal(res) // 转换成json的形式
+		//fmt.Println(str)
+		//rr1, _ := jf.Unmarshal(str)     // 反序列化
+		//rr := q.Unmarshal(tIndex, rr1, nil) // unmarshal query  params:   1. index   2. query marshal结果  3. operation
+		//r2 := search.NewSearcher()
+		//r2.Search(tIndex, rr)
+		//fmt.Println(rr.DebugInfo())
 		//fmt.Println("+****************************+")
 		//fmt.Println(r1.QueryDebug)
 		//fmt.Println("+****************************+")
