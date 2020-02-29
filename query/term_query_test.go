@@ -9,6 +9,7 @@ import (
 	"github.com/Mintegral-official/juno/operation"
 	. "github.com/smartystreets/goconvey/convey"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -16,14 +17,14 @@ func TestNewTermQuery(t *testing.T) {
 	ss := index.NewIndex("")
 	s := ss.GetInvertedIndex()
 	Convey("Add", t, func() {
-		So(s.Add("fieldName_1", document.DocId(1)), ShouldBeNil)
-		So(s.Add("fieldName_1", document.DocId(5)), ShouldBeNil)
-		So(s.Add("fieldName_1", document.DocId(6)), ShouldBeNil)
-		So(s.Add("fieldName_1", document.DocId(7)), ShouldBeNil)
-		So(s.Add("fieldName_4", document.DocId(2)), ShouldBeNil)
+		So(s.Add("fieldName\0071", document.DocId(1)), ShouldBeNil)
+		So(s.Add("fieldName\0071", document.DocId(5)), ShouldBeNil)
+		So(s.Add("fieldName\0071", document.DocId(6)), ShouldBeNil)
+		So(s.Add("fieldName\0071", document.DocId(7)), ShouldBeNil)
+		So(s.Add("fieldName\0074", document.DocId(2)), ShouldBeNil)
 		b := s.Iterator("fieldName", "1")
 		tq := NewTermQuery(b)
-		res := tq.Marshal(ss)
+		res := tq.Marshal()
 		fmt.Println(res)
 
 		tq.SetDebug(1)
@@ -34,9 +35,9 @@ func TestNewTermQuery(t *testing.T) {
 		fmt.Println(tq.Next())
 		fmt.Println(tq.DebugInfo())
 		//jf := &JSONFormatter{}
-		//str, _ := jf.Marshal(res) // 转换成json的形式
+		//str, \007 := jf.Marshal(res) // 转换成json的形式
 		//fmt.Println(str)
-		//rr1, _ := jf.Unmarshal(str) // 反序列化
+		//rr1, \007 := jf.Unmarshal(str) // 反序列化
 		//sss := tq.Unmarshal(ss, rr1, nil)
 
 		sss := tq.Unmarshal(ss, res, nil)
@@ -59,7 +60,7 @@ func TestNewTermQuery(t *testing.T) {
 		//	}, nil),
 		//}, nil)
 		////fmt.Println(aq.Marshal(ss))
-		//res, _ := json.Marshal(aq.Marshal(ss))
+		//res, \007 := json.Marshal(aq.Marshal(ss))
 		//fmt.Println(string(res))
 	})
 }
@@ -68,21 +69,21 @@ func TestTermQuery_Current(t *testing.T) {
 	ss := index.NewIndex("")
 	s := ss.GetInvertedIndex()
 	Convey("Add", t, func() {
-		So(s.Add("fieldName_1", document.DocId(1)), ShouldBeNil)
-		So(s.Add("fieldName_1", document.DocId(5)), ShouldBeNil)
-		So(s.Add("fieldName_1", document.DocId(6)), ShouldBeNil)
-		So(s.Add("fieldName_1", document.DocId(7)), ShouldBeNil)
+		So(s.Add("fieldName\0071", document.DocId(1)), ShouldBeNil)
+		So(s.Add("fieldName\0071", document.DocId(5)), ShouldBeNil)
+		So(s.Add("fieldName\0071", document.DocId(6)), ShouldBeNil)
+		So(s.Add("fieldName\0071", document.DocId(7)), ShouldBeNil)
 
-		So(s.Add("fieldName_2", document.DocId(1)), ShouldBeNil)
-		So(s.Add("fieldName_2", document.DocId(5)), ShouldBeNil)
-		So(s.Add("fieldName_2", document.DocId(6)), ShouldBeNil)
-		So(s.Add("fieldName_2", document.DocId(7)), ShouldBeNil)
+		So(s.Add("fieldName\0072", document.DocId(1)), ShouldBeNil)
+		So(s.Add("fieldName\0072", document.DocId(5)), ShouldBeNil)
+		So(s.Add("fieldName\0072", document.DocId(6)), ShouldBeNil)
+		So(s.Add("fieldName\0072", document.DocId(7)), ShouldBeNil)
 
-		So(s.Add("fieldName_3", document.DocId(2)), ShouldBeNil)
-		So(s.Add("fieldName_3", document.DocId(7)), ShouldBeNil)
+		So(s.Add("fieldName\0073", document.DocId(2)), ShouldBeNil)
+		So(s.Add("fieldName\0073", document.DocId(7)), ShouldBeNil)
 
-		So(s.Add("fieldName_4", document.DocId(2)), ShouldBeNil)
-		So(s.Add("fieldName_4", document.DocId(7)), ShouldBeNil)
+		So(s.Add("fieldName\0074", document.DocId(2)), ShouldBeNil)
+		So(s.Add("fieldName\0074", document.DocId(7)), ShouldBeNil)
 		b := NewNotAndQuery([]Query{
 			NewTermQuery(s.Iterator("fieldName", "1")),
 			NewTermQuery(s.Iterator("fieldName", "2")),
@@ -90,7 +91,7 @@ func TestTermQuery_Current(t *testing.T) {
 			NewTermQuery(s.Iterator("fieldName", "4")),
 		}, nil)
 		tq := b
-		res := tq.Marshal(ss)
+		res := tq.Marshal()
 		fmt.Println(res)
 
 		tq.SetDebug(1)
@@ -110,32 +111,32 @@ func TestNewTermQuery1(t *testing.T) {
 	s1 := ss.GetInvertedIndex()
 	s2 := ss.GetStorageIndex()
 	Convey("Add", t, func() {
-		So(s1.Add("fieldName_1", 1), ShouldBeNil)
-		So(s1.Add("fieldName_1", 3), ShouldBeNil)
-		So(s1.Add("fieldName_1", 4), ShouldBeNil)
-		So(s1.Add("fieldName_1", 6), ShouldBeNil)
-		So(s1.Add("fieldName_1", 10), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 3), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 6), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 10), ShouldBeNil)
 
-		So(s1.Add("fieldName_2", 3), ShouldBeNil)
-		So(s1.Add("fieldName_2", 1), ShouldBeNil)
-		So(s1.Add("fieldName_2", 4), ShouldBeNil)
-		So(s1.Add("fieldName_2", 6), ShouldBeNil)
+		So(s1.Add("fieldName\0072", 3), ShouldBeNil)
+		So(s1.Add("fieldName\0072", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0072", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0072", 6), ShouldBeNil)
 
-		So(s1.Add("fieldName_3", 3), ShouldBeNil)
-		So(s1.Add("fieldName_3", 1), ShouldBeNil)
-		So(s1.Add("fieldName_3", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0073", 3), ShouldBeNil)
+		So(s1.Add("fieldName\0073", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0073", 4), ShouldBeNil)
 
-		So(s1.Add("fieldName_4", 4), ShouldBeNil)
-		So(s1.Add("fieldName_4", 1), ShouldBeNil)
-		So(s1.Add("fieldName_4", 6), ShouldBeNil)
+		So(s1.Add("fieldName\0074", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0074", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0074", 6), ShouldBeNil)
 
-		So(s1.Add("fieldName_5", 3), ShouldBeNil)
-		So(s1.Add("fieldName_5", 1), ShouldBeNil)
-		So(s1.Add("fieldName_5", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0075", 3), ShouldBeNil)
+		So(s1.Add("fieldName\0075", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0075", 4), ShouldBeNil)
 
-		So(s1.Add("fieldName_6", 4), ShouldBeNil)
-		So(s1.Add("fieldName_6", 1), ShouldBeNil)
-		So(s1.Add("fieldName_6", 6), ShouldBeNil)
+		So(s1.Add("fieldName\0076", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0076", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0076", 6), ShouldBeNil)
 
 		So(s2.Add("fieldName", 3, 3), ShouldBeNil)
 		So(s2.Add("fieldName", 4, 3), ShouldBeNil)
@@ -166,12 +167,10 @@ func TestNewTermQuery1(t *testing.T) {
 
 		fmt.Println(q.DebugInfo())
 
-		res := q.Marshal(ss) // query marshal params: index
+		res := q.Marshal() // query marshal params: index
 		fmt.Println(res)
-		//jf := &JSONFormatter{}
-		//str, _ := jf.Marshal(res) // 转换成json的形式
-		//fmt.Println("\n", str)
-		//rr1, _ := jf.Unmarshal(str)     // 反序列化
+		//r, \007 := json.Marshal(res)
+		//fmt.Println(string(r))
 		//rr := q.Unmarshal(ss, rr1, nil) // unmarshal query  params:   1. index   2. query marshal结果  3. operation
 
 		rr := q.Unmarshal(ss, res, nil)
@@ -185,8 +184,14 @@ func TestNewTermQuery1(t *testing.T) {
 }
 
 func TestNewExpression(t *testing.T) {
-	var a = [][]string{{"field:fieldName_6", "reason: found id"}}
-	var b = [][]string{{"field:fieldName_6", "reason: found id"}}
+	var a = [][]string{{"field:fieldName\0076", "reason: found id"}}
+	var b = [][]string{{"field:fieldName\0076", "reason: found id"}}
 	fmt.Println(reflect.DeepEqual(a[0], b[0]))
 	fmt.Println(helpers.CompareSlice(a, b))
+	r := "hello"+ "\007"+"world"
+	fmt.Println(len(r))
+	fmt.Println("----"+ "\007"+"---")
+	fmt.Println("----"+" "+"---")
+	fmt.Println(r[5])
+	fmt.Println(strings.Split(r, "\007"))
 }

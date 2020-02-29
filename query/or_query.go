@@ -3,7 +3,6 @@ package query
 import (
 	"container/heap"
 	"errors"
-	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -121,28 +120,6 @@ func (oq *OrQuery) check(id document.DocId) bool {
 	if len(oq.checkers) == 0 {
 		return true
 	}
-	if oq.debugs != nil {
-		var msg []string
-		var flag = false
-		msg = append(msg, "or check result: false")
-		for i, c := range oq.checkers {
-			if c == nil {
-				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
-				continue
-			}
-			if c.Check(id) {
-				flag = true
-			}
-			msg = append(msg, c.DebugInfo()+"\t check result: "+strconv.FormatBool(c.Check(id)))
-		}
-		if !flag {
-			oq.debugs.Node[id] = append(oq.debugs.Node[id], msg)
-		} else {
-			msg[0] = "or check result: true"
-			oq.debugs.Node[id] = append(oq.debugs.Node[id], msg)
-		}
-		return flag
-	}
 	for _, v := range oq.checkers {
 		if v == nil {
 			continue
@@ -154,15 +131,15 @@ func (oq *OrQuery) check(id document.DocId) bool {
 	return false
 }
 
-func (oq *OrQuery) Marshal(idx *index.Indexer) map[string]interface{} {
+func (oq *OrQuery) Marshal() map[string]interface{} {
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, len(oq.h))
 	for _, v := range oq.h {
-		queryInfo = append(queryInfo, v.Marshal(idx))
+		queryInfo = append(queryInfo, v.Marshal())
 	}
 	if len(oq.checkers) != 0 {
 		for _, v := range oq.checkers {
-			checkInfo = append(checkInfo, v.Marshal(idx))
+			checkInfo = append(checkInfo, v.Marshal())
 		}
 		res["or_check"] = checkInfo
 	}
@@ -180,7 +157,7 @@ func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e o
 	var q []Query
 	var c []check.Checker
 	for i, v := range oq.h {
-		q = append(q, v.Unmarshal(idx, r[i], nil))
+		q = append(q, v.Unmarshal(idx, r[i], e))
 	}
 	if !ok {
 		return NewOrQuery(q, nil, 1)

@@ -2,14 +2,12 @@ package query
 
 import (
 	"errors"
-	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strconv"
 )
 
 type NotAndQuery struct {
@@ -137,28 +135,6 @@ func (naq *NotAndQuery) check(id document.DocId) bool {
 	if len(naq.checkers) == 0 {
 		return true
 	}
-	if naq.debugs != nil {
-		var msg []string
-		var flag = true
-		msg = append(msg, "not and check result: true")
-		for i, c := range naq.checkers {
-			if c == nil {
-				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
-				continue
-			}
-			if c.Check(id) {
-				flag = false
-			}
-			msg = append(msg, c.DebugInfo()+"\t check result: "+strconv.FormatBool(c.Check(id)))
-		}
-		if flag {
-			naq.debugs.Node[id] = append(naq.debugs.Node[id], msg)
-		} else {
-			msg[0] = "or check result: false"
-			naq.debugs.Node[id] = append(naq.debugs.Node[id], msg)
-		}
-		return flag
-	}
 	for _, v := range naq.checkers {
 		if v == nil {
 			continue
@@ -170,15 +146,15 @@ func (naq *NotAndQuery) check(id document.DocId) bool {
 	return true
 }
 
-func (naq *NotAndQuery) Marshal(idx *index.Indexer) map[string]interface{} {
+func (naq *NotAndQuery) Marshal() map[string]interface{} {
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, len(naq.queries))
 	for _, v := range naq.queries {
-		queryInfo = append(queryInfo, v.Marshal(idx))
+		queryInfo = append(queryInfo, v.Marshal())
 	}
 	if len(naq.checkers) != 0 {
 		for _, v := range naq.checkers {
-			checkInfo = append(checkInfo, v.Marshal(idx))
+			checkInfo = append(checkInfo, v.Marshal())
 		}
 		res["not_check"] = checkInfo
 	}

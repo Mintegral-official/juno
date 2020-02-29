@@ -67,15 +67,10 @@ func (nc *NotChecker) Check(id document.DocId) bool {
 	return !nc.e.In(nc.value)
 }
 
-func (nc *NotChecker) Marshal(idx *index.Indexer) map[string]interface{} {
-	storageIdx := idx.GetStorageIndex().(*index.StorageIndexer)
-	if len(storageIdx.GetFieldName()) == 0 {
-		return nil
-	}
-	fieldName := storageIdx.GetFieldName()
+func (nc *NotChecker) Marshal() map[string]interface{} {
 	res := make(map[string]interface{}, 1)
 	var tmp []interface{}
-	tmp = append(tmp, fieldName[0])
+	tmp = append(tmp, nc.si.(*datastruct.SkipListIterator).FieldName)
 	tmp = append(tmp, nc.value)
 	if nc.e != nil {
 		tmp = append(tmp, 1)
@@ -84,7 +79,6 @@ func (nc *NotChecker) Marshal(idx *index.Indexer) map[string]interface{} {
 	}
 	tmp = append(tmp, nc.transfer)
 	res["not_check"] = tmp
-	fieldName = append(fieldName[:0], fieldName[1:]...)
 	return res
 }
 

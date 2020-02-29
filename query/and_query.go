@@ -9,7 +9,6 @@ import (
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strconv"
 	"strings"
 )
 
@@ -64,51 +63,51 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	curIdx, lastIdx := aq.curIdx, aq.curIdx
-	res, err := aq.queries[aq.curIdx].GetGE(id)
+	target, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
-		return res, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
+		return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 	}
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
-		cur, err := aq.queries[curIdx].GetGE(res)
+		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
-			return cur, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
+			return cur, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 		}
-		if cur != res {
+		if cur != target {
 			lastIdx = curIdx
-			res = cur
+			target = cur
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
-			if res != 0 && aq.check(res) {
-				return res, nil
+			if target != 0 && aq.check(target) {
+				return target, nil
 			}
 			curIdx = (curIdx + 1) % len(aq.queries)
-			res, err = aq.queries[curIdx].Next()
+			target, err = aq.queries[curIdx].Next()
 			if err != nil {
-				return res, errors.New(aq.StringBuilder(256, curIdx, res, err.Error()))
+				return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 			}
 		}
 	}
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
-	res, err := aq.queries[0].Current()
+	target, err := aq.queries[0].Current()
 	if err != nil {
-		return res, err
+		return target, err
 	}
 	for i := 1; i < len(aq.queries); i++ {
-		tar, err := aq.queries[i].GetGE(res)
+		tar, err := aq.queries[i].GetGE(target)
 		if err != nil {
 			return tar, err
 		}
-		if tar != res {
-			return res, errors.New(fmt.Sprintf("%d in queries[%d] is different with %d in queries[%d]", res, i, tar, i+1))
+		if tar != target {
+			return target, errors.New(fmt.Sprintf("%d in queries[%d] is different with %d in queries[%d]", target, i, tar, i+1))
 		}
 	}
-	if aq.check(res) {
-		return res, nil
+	if aq.check(target) {
+		return target, nil
 	}
-	return res, err
+	return target, err
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {
@@ -128,28 +127,6 @@ func (aq *AndQuery) DebugInfo() *debug.Debug {
 func (aq *AndQuery) check(id document.DocId) bool {
 	if len(aq.checkers) == 0 {
 		return true
-	}
-	if aq.debugs != nil {
-		var msg []string
-		var flag = true
-		msg = append(msg, "and check result: true")
-		for i, c := range aq.checkers {
-			if c == nil {
-				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
-				continue
-			}
-			if !c.Check(id) {
-				flag = false
-			}
-			msg = append(msg, c.DebugInfo()+"\tcheck result: "+strconv.FormatBool(c.Check(id)))
-		}
-		if flag {
-			aq.debugs.Node[id] = append(aq.debugs.Node[id], msg)
-		} else {
-			msg[0] = "and check result: false"
-			aq.debugs.Node[id] = append(aq.debugs.Node[id], msg)
-		}
-		return flag
 	}
 	for _, c := range aq.checkers {
 		if c == nil {
@@ -171,15 +148,19 @@ func (aq *AndQuery) StringBuilder(cap int, value ...interface{}) string {
 	return b.String()
 }
 
-func (aq *AndQuery) Marshal(idx *index.Indexer) map[string]interface{} {
+func (aq *AndQuery) Marshal() map[string]interface{} {
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, len(aq.queries))
 	for _, v := range aq.queries {
-		queryInfo = append(queryInfo, v.Marshal(idx))
+		if m := v.Marshal(); m != nil {
+			queryInfo = append(queryInfo, m)
+		}
 	}
 	if len(aq.checkers) != 0 {
 		for _, v := range aq.checkers {
-			checkInfo = append(checkInfo, v.Marshal(idx))
+			if m := v.Marshal(); m != nil {
+				checkInfo = append(checkInfo, m)
+			}
 		}
 		res["and_check"] = checkInfo
 	}
@@ -223,6 +204,5 @@ func (aq *AndQuery) SetDebug(isDebug ...int) {
 		case *check.OrChecker:
 			v.(*check.OrChecker).SetDebug()
 		}
-
 	}
 }

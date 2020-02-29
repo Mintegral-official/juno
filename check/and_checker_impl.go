@@ -63,11 +63,11 @@ func (a *AndChecker) Check(id document.DocId) bool {
 	return true
 }
 
-func (a *AndChecker) Marshal(idx *index.Indexer) map[string]interface{} {
+func (a *AndChecker) Marshal() map[string]interface{} {
 	res := make(map[string]interface{}, 1)
 	var tmp []map[string]interface{}
 	for _, v := range a.c {
-		tmp = append(tmp, v.Marshal(idx))
+		tmp = append(tmp, v.Marshal())
 	}
 	res["and_check"] = tmp
 	return res

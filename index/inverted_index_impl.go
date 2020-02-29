@@ -6,13 +6,12 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"strconv"
+	"strings"
 	"sync"
 )
 
 type InvertedIndexer struct {
 	data   sync.Map
-	field  []string
-	value  []string
 	aDebug *debug.Debug
 }
 
@@ -35,8 +34,8 @@ func (i *InvertedIndexer) Count() (count int) {
 	return count
 }
 
-func (i *InvertedIndexer) GetValueById(id document.DocId) []string {
-	var str []string
+func (i *InvertedIndexer) GetValueById(id document.DocId) map[string][]string {
+	var res = make(map[string][]string, 16)
 	i.data.Range(func(key, value interface{}) bool {
 		v, ok := value.(*datastruct.SkipList)
 		if !ok {
@@ -46,10 +45,11 @@ func (i *InvertedIndexer) GetValueById(id document.DocId) []string {
 		if e == nil {
 			return true
 		}
-		str = append(str, key.(string))
+		keys := strings.Split(key.(string), SEP)
+		res[keys[0]] = append(res[keys[0]], keys[1])
 		return true
 	})
-	return str
+	return res
 }
 
 func (i *InvertedIndexer) Add(fieldName string, id document.DocId) (err error) {
@@ -106,9 +106,7 @@ func (i *InvertedIndexer) Delete(fieldName string) {
 }
 
 func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
-	var fieldName = name + "_" + value
-	i.field = append(i.field, name)
-	i.value = append(i.value, value)
+	var fieldName = name + SEP + value
 	if v, ok := i.data.Load(fieldName); ok {
 		sl, ok := v.(*datastruct.SkipList)
 		if ok {
@@ -129,12 +127,4 @@ func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 
 func (i *InvertedIndexer) DebugInfo() *debug.Debug {
 	return i.aDebug
-}
-
-func (i *InvertedIndexer) GetField() []string {
-	return i.field
-}
-
-func (i *InvertedIndexer) GetValue() []string {
-	return i.value
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
+	"strings"
 )
 
 type TermQuery struct {
@@ -38,10 +39,6 @@ func (tq *TermQuery) Next() (document.DocId, error) {
 	if element == nil {
 		return 0, helpers.ElementNotfound
 	}
-	if tq.debugs != nil {
-		tq.debugs.Node[element.Key()] = append(tq.debugs.Node[element.Key()],
-			[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: found id"})
-	}
 	return element.Key(), nil
 }
 
@@ -52,22 +49,7 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 
 	element := tq.iterator.GetGE(id)
 	if element == nil {
-		if tq.debugs != nil {
-			tq.debugs.Node[id] = append(tq.debugs.Node[id],
-				[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: not found"})
-		}
 		return 0, helpers.ElementNotfound
-	}
-	if tq.debugs != nil {
-		if element.Key() != id {
-			tq.debugs.Node[element.Key()] = append(tq.debugs.Node[element.Key()],
-				[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: found id"})
-			tq.debugs.Node[id] = append(tq.debugs.Node[id],
-				[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: not found"})
-		} else {
-			tq.debugs.Node[id] = append(tq.debugs.Node[id],
-				[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: found id"})
-		}
 	}
 	return element.Key(), nil
 }
@@ -80,10 +62,6 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 	if element == nil {
 		return 0, helpers.ElementNotfound
 	}
-	if tq.debugs != nil {
-		tq.debugs.Node[element.Key()] = append(tq.debugs.Node[element.Key()],
-			[]string{"field:" + tq.iterator.(*datastruct.SkipListIterator).FieldName, "reason: found id"})
-	}
 	return element.Key(), nil
 }
 
@@ -94,16 +72,10 @@ func (tq *TermQuery) DebugInfo() *debug.Debug {
 	return nil
 }
 
-func (tq *TermQuery) Marshal(idx *index.Indexer) map[string]interface{} {
-	invertIdx := idx.GetInvertedIndex().(*index.InvertedIndexer)
-	if len(invertIdx.GetField()) == 0 || len(invertIdx.GetValue()) == 0 {
-		return nil
-	}
-	field, value := invertIdx.GetField(), invertIdx.GetValue()
+func (tq *TermQuery) Marshal() map[string]interface{} {
 	res := make(map[string]interface{}, 1)
-	res["="] = []string{field[0], value[0]}
-	field = append(field[:0], field[1:]...)
-	value = append(value[:0], value[1:]...)
+	fields := strings.Split(tq.iterator.(*datastruct.SkipListIterator).FieldName, index.SEP)
+	res["="] = []string{fields[0], fields[1]}
 	return res
 }
 
@@ -119,8 +91,4 @@ func (tq *TermQuery) SetDebug(isDebug ...int) {
 	if len(isDebug) == 1 && isDebug[0] == 1 {
 		tq.debugs = debug.NewDebug("TermQuery")
 	}
-}
-
-func (tq *TermQuery) UnsetDebug() {
-	tq.debugs = nil
 }

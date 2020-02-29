@@ -9,7 +9,7 @@ import (
 type Checker interface {
 	Check(id document.DocId) bool
 	DebugInfo() string
-	Marshal(idx *index.Indexer) map[string]interface{}
+	Marshal() map[string]interface{}
 	Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Checker
 }
 
