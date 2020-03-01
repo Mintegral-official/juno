@@ -13,6 +13,6 @@ type InvertedIndex interface {
 	Delete(fieldName string)
 	Iterator(name, value string) datastruct.Iterator
 	Count() int
-	GetValueById(id document.DocId) []string
+	GetValueById(id document.DocId) map[string][]string
 	DebugInfo() *debug.Debug
 }

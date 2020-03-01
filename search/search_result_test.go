@@ -1,10 +1,14 @@
 package search
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/Mintegral-official/juno/check"
-	"github.com/Mintegral-official/juno/index"
+	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/operation"
+
+	//"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/query"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -15,32 +19,32 @@ func TestNewTermQuery1(t *testing.T) {
 	s1 := ss.GetInvertedIndex()
 	s2 := ss.GetStorageIndex()
 	Convey("Add", t, func() {
-		So(s1.Add("fieldName_1", 1), ShouldBeNil)
-		So(s1.Add("fieldName_1", 3), ShouldBeNil)
-		So(s1.Add("fieldName_1", 4), ShouldBeNil)
-		So(s1.Add("fieldName_1", 6), ShouldBeNil)
-		So(s1.Add("fieldName_1", 10), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 3), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 6), ShouldBeNil)
+		So(s1.Add("fieldName\0071", 10), ShouldBeNil)
 
-		So(s1.Add("fieldName_2", 3), ShouldBeNil)
-		So(s1.Add("fieldName_2", 1), ShouldBeNil)
-		So(s1.Add("fieldName_2", 4), ShouldBeNil)
-		So(s1.Add("fieldName_2", 6), ShouldBeNil)
+		So(s1.Add("fieldNeme\0072", 3), ShouldBeNil)
+		So(s1.Add("fieldNeme\0072", 1), ShouldBeNil)
+		So(s1.Add("fieldNeme\0072", 4), ShouldBeNil)
+		So(s1.Add("fieldNeme\0072", 6), ShouldBeNil)
 
-		So(s1.Add("fieldName_3", 3), ShouldBeNil)
-		So(s1.Add("fieldName_3", 1), ShouldBeNil)
-		So(s1.Add("fieldName_3", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0073", 3), ShouldBeNil)
+		So(s1.Add("fieldName\0073", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0073", 4), ShouldBeNil)
 
-		So(s1.Add("fieldName_4", 4), ShouldBeNil)
-		So(s1.Add("fieldName_4", 1), ShouldBeNil)
-		So(s1.Add("fieldName_4", 6), ShouldBeNil)
+		So(s1.Add("fieldName\0074", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0074", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0074", 6), ShouldBeNil)
 
-		So(s1.Add("fieldName_5", 3), ShouldBeNil)
-		So(s1.Add("fieldName_5", 1), ShouldBeNil)
-		So(s1.Add("fieldName_5", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0075", 3), ShouldBeNil)
+		So(s1.Add("fieldName\0075", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0075", 4), ShouldBeNil)
 
-		So(s1.Add("fieldName_6", 4), ShouldBeNil)
-		So(s1.Add("fieldName_6", 1), ShouldBeNil)
-		So(s1.Add("fieldName_6", 6), ShouldBeNil)
+		So(s1.Add("fieldName\0076", 4), ShouldBeNil)
+		So(s1.Add("fieldName\0076", 1), ShouldBeNil)
+		So(s1.Add("fieldName\0076", 6), ShouldBeNil)
 
 		So(s2.Add("fieldName", 3, 3), ShouldBeNil)
 		So(s2.Add("fieldName", 4, 3), ShouldBeNil)
@@ -50,22 +54,57 @@ func TestNewTermQuery1(t *testing.T) {
 
 		q := query.NewAndQuery([]query.Query{
 			query.NewTermQuery(s1.Iterator("fieldName", "1")),
-			query.NewTermQuery(s1.Iterator("fieldName", "2")),
+			query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
 			query.NewTermQuery(s1.Iterator("fieldName", "3")),
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(s1.Iterator("fieldName", "1")),
+				query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
+				query.NewTermQuery(s1.Iterator("fieldName", "3")),
+				query.NewOrQuery([]query.Query{
+					query.NewTermQuery(s1.Iterator("fieldName", "1")),
+					query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
+					query.NewTermQuery(s1.Iterator("fieldName", "3")),
+					query.NewTermQuery(s1.Iterator("fieldName", "4")),
+				}, []check.Checker{
+					check.NewChecker(s2.Iterator("fieldName"), 2, operation.EQ, nil, false),
+					check.NewAndChecker([]check.Checker{
+						check.NewChecker(s2.Iterator("fieldName"), 2, operation.EQ, nil, false),
+						check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+					}),
+				}),
+			}, []check.Checker{
+				check.NewInChecker(s2.Iterator("fieldName"), []int{2, 3, 4, 5}, nil, false),
+				check.NewOrChecker([]check.Checker{
+					check.NewChecker(s2.Iterator("fieldName"), 2, operation.NE, nil, false),
+					check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+				}),
+			}),
 		}, []check.Checker{
-			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
-			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
-			check.NewAndChecker([]check.Checker{
-				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			check.NewInChecker(s2.Iterator("fieldName"), []int{2, 3, 4}, nil, false),
+			check.NewOrChecker([]check.Checker{
+				check.NewChecker(s2.Iterator("fieldName"), 2, operation.GT, nil, false),
 				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
 			}),
 		})
+		fmt.Println(q.Current())
+		fmt.Println(q.Next())
+		fmt.Println(q.Next())
+		fmt.Println(q.Next())
+		fmt.Println(q.Next())
+		fmt.Println(q.Next())
+		r, _ := json.Marshal(q.Marshal())
+		fmt.Println(string(r))
+		aaa := q.Unmarshal(ss, q.Marshal(), nil)
+		fmt.Println(aaa.Current())
+		fmt.Println(aaa.Next())
+		fmt.Println(aaa.Next())
+		fmt.Println(aaa.Next())
+		fmt.Println(aaa.Next())
+		//	fmt.Println(string(r))
 
-		se := NewSearcher()
-		se.Debug(ss, q)
-		fmt.Println(se.Docs)                // id列表
-		fmt.Println(se.Time)                // 耗时 debug模式不考虑性能
-		fmt.Println(se.QueryDebug.String()) // debug查询
-		// se.DebugInfo(ss, q, ids)  ids：指定查找的id列表
+		sea := NewSearcher()
+		aaaa := sea.Debug(ss, q, nil, []document.DocId{document.DocId(10)})
+		bbb, _ := json.Marshal(aaaa)
+		fmt.Println(string(bbb))
 	})
 }

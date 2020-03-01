@@ -157,7 +157,7 @@ func TestAndQuery_Next(t *testing.T) {
 
 	Convey("and query next1", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
-		v, e := a.Current()
+		v, e := a.Next()
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
@@ -176,7 +176,7 @@ func TestAndQuery_Next(t *testing.T) {
 
 	Convey("and query next2", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
-		v, e := a.Current()
+		v, e := a.Next()
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 

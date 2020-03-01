@@ -63,11 +63,11 @@ func (o *OrChecker) Check(id document.DocId) bool {
 	return false
 }
 
-func (o *OrChecker) Marshal(idx *index.Indexer) map[string]interface{} {
+func (o *OrChecker) Marshal() map[string]interface{} {
 	res := make(map[string]interface{}, 1)
 	var tmp []map[string]interface{}
 	for _, v := range o.c {
-		tmp = append(tmp, v.Marshal(idx))
+		tmp = append(tmp, v.Marshal())
 	}
 	res["or_check"] = tmp
 	return res

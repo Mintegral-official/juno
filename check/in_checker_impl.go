@@ -66,15 +66,10 @@ func (i *InChecker) Check(id document.DocId) bool {
 	return i.e.In(i.value)
 }
 
-func (i *InChecker) Marshal(idx *index.Indexer) map[string]interface{} {
-	storageIdx := idx.GetStorageIndex().(*index.StorageIndexer)
-	if len(storageIdx.GetFieldName()) == 0 {
-		return nil
-	}
-	fieldName := storageIdx.GetFieldName()
+func (i *InChecker) Marshal() map[string]interface{} {
 	res := make(map[string]interface{}, 1)
 	var tmp []interface{}
-	tmp = append(tmp, fieldName[0])
+	tmp = append(tmp, i.si.(*datastruct.SkipListIterator).FieldName)
 	tmp = append(tmp, i.value)
 	if i.e != nil {
 		tmp = append(tmp, 1)
@@ -83,7 +78,6 @@ func (i *InChecker) Marshal(idx *index.Indexer) map[string]interface{} {
 	}
 	tmp = append(tmp, i.transfer)
 	res["in_check"] = tmp
-	fieldName = append(fieldName[:0], fieldName[1:]...)
 	return res
 }
 

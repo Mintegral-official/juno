@@ -113,7 +113,7 @@ func TestUtilCheck(t *testing.T) {
 		So(c.Check(1), ShouldBeFalse)
 		So(c.Check(8), ShouldBeTrue)
 		So(c.Check(9), ShouldBeTrue)
-		tmp := c.Marshal(ss)
+		tmp := c.Marshal()
 		res, _ := json.Marshal(tmp)
 		fmt.Println(string(res))
 		cc := c.Unmarshal(ss, tmp, nil)

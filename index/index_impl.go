@@ -14,6 +14,8 @@ import (
 	"strings"
 )
 
+const SEP = "\007"
+
 type Indexer struct {
 	invertedIndex   InvertedIndex
 	storageIndex    StorageIndex
@@ -67,10 +69,10 @@ func (i *Indexer) UnsetDebug() {
 	i.aDebug = debug.NewDebug(i.GetName())
 }
 
-func (i *Indexer) GetValueById(id document.DocId) map[string][]string {
-	res := make(map[string][]string, 2)
-	res["invert"] = i.GetInvertedIndex().GetValueById(id)
-	res["storage"] = i.GetInvertedIndex().GetValueById(id)
+func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
+	var res  [2]map[string][]string
+	res[0] = i.GetInvertedIndex().GetValueById(id)
+	res[1] = i.GetStorageIndex().GetValueById(id)
 	return res
 }
 
@@ -164,7 +166,7 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 	case []string:
 		value, _ := field.Value.([]string)
 		for _, v := range value {
-			if err = i.invertedIndex.Add(field.Name+"_"+v, id); err != nil {
+			if err = i.invertedIndex.Add(field.Name+SEP+v, id); err != nil {
 				i.WarnStatus(field.Name, v, err.Error())
 				return err
 			}
@@ -175,7 +177,7 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 	case []int64:
 		value, _ := field.Value.([]int64)
 		for _, v := range value {
-			if err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(v, 10), id); err != nil {
+			if err = i.invertedIndex.Add(field.Name+SEP+strconv.FormatInt(v, 10), id); err != nil {
 				i.WarnStatus(field.Name, v, err.Error())
 				return err
 			}
@@ -185,7 +187,7 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 		}
 	case string:
 		value, _ := field.Value.(string)
-		if err = i.invertedIndex.Add(field.Name+"_"+value, id); err != nil {
+		if err = i.invertedIndex.Add(field.Name+SEP+value, id); err != nil {
 			i.WarnStatus(field.Name, value, err.Error())
 			return err
 		}
@@ -194,7 +196,7 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 		i.count++
 	case int64:
 		value, _ := field.Value.(int64)
-		if err = i.invertedIndex.Add(field.Name+"_"+strconv.FormatInt(value, 10), id); err != nil {
+		if err = i.invertedIndex.Add(field.Name+SEP+strconv.FormatInt(value, 10), id); err != nil {
 			i.WarnStatus(field.Name, value, err.Error())
 			return err
 		}
@@ -220,7 +222,7 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 	case []string:
 		value, _ := field.Value.([]string)
 		for _, v := range value {
-			i.invertedIndex.Del(field.Name+"_"+v, id)
+			i.invertedIndex.Del(field.Name+SEP+v, id)
 			if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
 				i.bitmap.Del(docId.(document.DocId))
 			}
@@ -228,20 +230,20 @@ func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
 	case []int64:
 		value, _ := field.Value.([]int64)
 		for _, v := range value {
-			i.invertedIndex.Del(field.Name+"_"+strconv.FormatInt(v, 10), id)
+			i.invertedIndex.Del(field.Name+SEP+strconv.FormatInt(v, 10), id)
 			if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
 				i.bitmap.Del(docId.(document.DocId))
 			}
 		}
 	case string:
 		value, _ := field.Value.(string)
-		i.invertedIndex.Del(field.Name+"_"+value, id)
+		i.invertedIndex.Del(field.Name+SEP+value, id)
 		if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
 			i.bitmap.Del(docId.(document.DocId))
 		}
 	case int64:
 		value, _ := field.Value.(int64)
-		i.invertedIndex.Del(field.Name+"_"+strconv.FormatInt(value, 10), id)
+		i.invertedIndex.Del(field.Name+SEP+strconv.FormatInt(value, 10), id)
 		if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
 			i.bitmap.Del(docId.(document.DocId))
 		}
