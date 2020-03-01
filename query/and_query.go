@@ -34,7 +34,7 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 
 func (aq *AndQuery) Next() (document.DocId, error) {
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
-	target, err := aq.queries[curIdx].Next()
+	target, err := aq.queries[curIdx].Current()
 	if err != nil {
 		return target, helpers.NoMoreData
 	}
@@ -50,6 +50,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
 			if aq.check(target) {
+				_, _ = aq.queries[0].Next()
 				return target, nil
 			}
 			curIdx = (curIdx + 1) % len(aq.queries)
