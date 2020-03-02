@@ -111,8 +111,9 @@ func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 	if s.aDebug != nil {
 		s.aDebug.AddDebugMsg("index: " + fieldName + " is nil")
 	}
-	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-	return sl.Iterator()
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel).Iterator()
+	sl.FieldName = fieldName
+	return sl
 }
 
 func (s *StorageIndexer) DebugInfo() *debug.Debug {

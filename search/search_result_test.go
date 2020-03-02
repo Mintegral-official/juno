@@ -56,6 +56,7 @@ func TestNewTermQuery1(t *testing.T) {
 			query.NewTermQuery(s1.Iterator("fieldName", "1")),
 			query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
 			query.NewTermQuery(s1.Iterator("fieldName", "3")),
+			query.NewTermQuery(s1.Iterator("AAAAAAAA", "s")),
 			query.NewAndQuery([]query.Query{
 				query.NewTermQuery(s1.Iterator("fieldName", "1")),
 				query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
