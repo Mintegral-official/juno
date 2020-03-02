@@ -163,25 +163,52 @@ func (naq *NotAndQuery) Marshal() map[string]interface{} {
 }
 
 func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
-	and, ok := res["not"]
+	notAnd, ok := res["not"]
 	if !ok {
 		return nil
 	}
 	notCheck, ok := res["not_check"]
-	r := and.([]map[string]interface{})
+	r := notAnd.([]map[string]interface{})
 	var q []Query
 	var c []check.Checker
-	for i, v := range naq.queries {
-		q = append(q, v.Unmarshal(idx, r[i], nil))
+	for _, v := range r {
+		if _, ok := v["and"]; ok {
+			var tmp = &AndQuery{}
+			q = append(q, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["or"]; ok {
+			var tmp = &OrQuery{}
+			q = append(q, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["not"]; ok {
+			var tmp = &NotAndQuery{}
+			q = append(q, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["="]; ok {
+			var tmp = &TermQuery{}
+			q = append(q, tmp.Unmarshal(idx, v, e))
+		}
 	}
 	if !ok {
-		return NewNotAndQuery(q, nil, 1)
+		return NewNotAndQuery(q, nil)
 	}
 	checks := notCheck.([]map[string]interface{})
-	for i, v := range naq.checkers {
-		c = append(c, v.Unmarshal(idx, checks[i], e))
+	for _, v := range checks {
+		if _, ok := v["and_check"]; ok {
+			var tmp = &check.AndChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["or_check"]; ok {
+			var tmp = &check.OrChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["in_check"]; ok {
+			var tmp = &check.InChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["not_check"]; ok {
+			var tmp = &check.NotChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["check"]; ok {
+			var tmp = &check.CheckerImpl{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		}
 	}
-	return NewNotAndQuery(q, c, 1)
+	return NewNotAndQuery(q, c)
 }
 
 func (naq *NotAndQuery) SetDebug(isDebug ...int) {

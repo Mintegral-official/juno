@@ -5,7 +5,6 @@ import (
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"github.com/Mintegral-official/juno/query"
@@ -16,6 +15,7 @@ import (
 type Searcher struct {
 	Docs       []document.DocId
 	Time       time.Duration
+	FilterInfo map[document.DocId]map[string]interface{}
 	IndexDebug *debug.Debug
 	QueryDebug *debug.Debug
 }
@@ -33,13 +33,11 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	}
 	now := time.Now()
 	id, err := query.Next()
-	for err != helpers.NoMoreData {
-		if err == nil {
-			if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
-				continue
-			}
-			s.Docs = append(s.Docs, id)
+	for err == nil {
+		if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
+			continue
 		}
+		s.Docs = append(s.Docs, id)
 		id, err = query.Next()
 	}
 	s.Time = time.Since(now)
@@ -47,8 +45,10 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	s.QueryDebug = query.DebugInfo()
 }
 
-func (s *Searcher) Debug(idx *index.Indexer, q query.Query, e operation.Operation, ids []document.DocId) map[document.DocId]map[string]interface{} {
-	queryMarshal := q.Marshal()
+func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operation.Operation, ids []document.DocId) {
+	uq := query.UnmarshalQuery{}
+	s.Search(idx, uq.Unmarshal(idx, q, e))
+	queryMarshal := q
 	var res = make(map[document.DocId]map[string]interface{}, len(ids))
 	for _, id := range ids {
 		for k, v := range queryMarshal {
@@ -56,15 +56,13 @@ func (s *Searcher) Debug(idx *index.Indexer, q query.Query, e operation.Operatio
 			case "and", "or", "not", "and_check", "or_check":
 				debugInfo(v, idx, id, e)
 			case "=":
-				invertValue := idx.GetValueById(id)[0]
-				if _, ok := invertValue[v.([]string)[0]]; !ok || len(invertValue[v.([]string)[0]]) == 0 {
+				var termQuery = &query.TermQuery{}
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id);
+					err != nil || res != id {
 					queryMarshal[k] = append(v.([]string), "id not found")
-				}
-				for i, iv := range invertValue[v.([]string)[0]] {
-					if iv == v.([]string)[1] {
+				} else {
+					if res == id {
 						queryMarshal[k] = append(v.([]string), "id found")
-					} else if i == len(invertValue[v.([]string)[0]])-1 {
-						queryMarshal[k] = append(v.([]string), "id not found")
 					}
 				}
 			case "check":
@@ -83,7 +81,7 @@ func (s *Searcher) Debug(idx *index.Indexer, q query.Query, e operation.Operatio
 		}
 		res[id] = queryMarshal
 	}
-	return res
+	s.FilterInfo = res
 }
 
 func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operation.Operation) {
@@ -93,16 +91,12 @@ func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operati
 			case "and", "or", "not", "and_check", "or_check":
 				debugInfo(v, idx, id, e)
 			case "=":
-				invertValue := idx.GetValueById(id)[0]
-				if _, ok := invertValue[v.([]string)[0]]; !ok || len(invertValue[v.([]string)[0]]) == 0 {
+				var termQuery = &query.TermQuery{}
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id);
+					err != nil || res != id {
 					value[k] = append(v.([]string), "id not found")
-				}
-				for i, iv := range invertValue[v.([]string)[0]] {
-					if iv == v.([]string)[1] {
-						value[k] = append(v.([]string), "id found")
-					} else if i == len(invertValue[v.([]string)[0]])-1 {
-						value[k] = append(v.([]string), "id not found")
-					}
+				} else if res == id {
+					value[k] = append(v.([]string), "id found")
 				}
 			case "check":
 				var c = &check.CheckerImpl{}
