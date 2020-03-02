@@ -121,8 +121,9 @@ func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 	if i.aDebug != nil {
 		i.aDebug.AddDebugMsg("index: " + fieldName + " is nil")
 	}
-	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-	return sl.Iterator()
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel).Iterator()
+	sl.FieldName = fieldName
+	return sl
 }
 
 func (i *InvertedIndexer) DebugInfo() *debug.Debug {
