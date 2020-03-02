@@ -80,8 +80,23 @@ func (o *OrChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}, e 
 	}
 	value := v.([]map[string]interface{})
 	var c []Checker
-	for i, v := range o.c {
-		c = append(c, v.Unmarshal(idx, value[i], e))
+	for _, v := range value {
+		if _, ok := v["and_check"]; ok {
+			var tmp = &AndChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["or_check"]; ok {
+			var tmp = &OrChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["in_check"]; ok {
+			var tmp = &InChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["not_check"]; ok {
+			var tmp = &NotChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["check"]; ok {
+			var tmp = CheckerImpl{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
+		}
 	}
 	return NewOrChecker(c)
 }
