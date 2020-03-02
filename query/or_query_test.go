@@ -26,9 +26,9 @@ func TestNewOrQuery_Next1(t *testing.T) {
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
-		//v, e = a.Next()
-		//So(v, ShouldEqual, 10)
-		//So(e, ShouldBeNil)
+		v, e = a.Next()
+		So(v, ShouldEqual, 10)
+		So(e, ShouldBeNil)
 
 		v, e = a.Next()
 		So(v, ShouldEqual, 0)

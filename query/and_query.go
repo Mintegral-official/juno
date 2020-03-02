@@ -105,10 +105,7 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 			return target, errors.New(fmt.Sprintf("%d in queries[%d] is different with %d in queries[%d]", target, i, tar, i+1))
 		}
 	}
-	if aq.check(target) {
-		return target, nil
-	}
-	return target, err
+	return target, nil
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {
