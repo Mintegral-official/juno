@@ -2,14 +2,12 @@ package query
 
 import (
 	"container/heap"
-	"errors"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strconv"
 )
 
 type OrQuery struct {
@@ -96,10 +94,7 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 	if err != nil {
 		return res, err
 	}
-	if oq.check(res) {
-		return res, nil
-	}
-	return res, errors.New(strconv.FormatInt(int64(res), 10) + " has been filtered out")
+	return res, nil
 }
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {

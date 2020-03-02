@@ -205,6 +205,26 @@ func TestAndQuery_Current(t *testing.T) {
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
+		v, e = a.Next()
+		So(v, ShouldEqual, 1)
+		So(e, ShouldBeNil)
+
+		v, e = a.Next()
+		So(v, ShouldEqual, 3)
+		So(e, ShouldBeNil)
+
+		v, e = a.Next()
+		So(v, ShouldEqual, 6)
+		So(e, ShouldBeNil)
+
+		v, e = a.Next()
+		So(v, ShouldEqual, 10)
+		So(e, ShouldBeNil)
+
+		v, e = a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+
 	})
 }
 
