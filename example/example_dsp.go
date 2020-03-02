@@ -119,31 +119,36 @@ package main
 ////  len(condition.BlackOfferList) > 0 campaign.campaignId not in condition.BlackOfferList
 //func campaignIdQuery(idx *index.Indexer, cond *CampaignCondition) query.Query {
 //	invertIdx := idx.GetInvertedIndex()
-//	var oq, naq []query.Query
+//	var whiteOq, blackOq []query.Query
 //	if len(cond.WhiteOfferList) > 0 {
 //		for k, v := range cond.WhiteOfferList {
 //			if !v {
 //				continue
 //			}
-//			oq = append(oq, query.NewTermQuery(invertIdx.Iterator("CampaignId", k)))
+//			whiteOq = append(whiteOq, query.NewTermQuery(invertIdx.Iterator("CampaignId", strconv.FormatInt(k, 10))))
 //		}
 //	}
-//	if len(oq) != 0 {
-//		naq = append(naq, query.NewOrQuery(oq, nil))
+//	if len(whiteOq) != 0 {
+//		return nil
+//
 //	}
 //	if len(cond.BlackOfferList) > 0 {
 //		for k, v := range cond.BlackOfferList {
 //			if !v {
 //				continue
 //			}
-//			naq = append(naq, query.NewTermQuery(invertIdx.Iterator("CampaignId", k)))
+//			blackOq = append(blackOq, query.NewTermQuery(invertIdx.Iterator("CampaignId", strconv.FormatInt(k, 10))))
 //		}
 //	}
-//	if len(naq) == 0 {
-//		return nil
+//	if len(blackOq) == 0 {
+//		return query.NewOrQuery(whiteOq, nil)
 //	}
-//	return query.NewNotAndQuery(naq, nil)
+//	return query.NewNotAndQuery([]query.Query{
+//		query.NewOrQuery(whiteOq, nil),
+//		query.NewOrQuery(blackOq, nil),
+//	}, nil)
 //}
+
 //
 //// campaignType
 //// condition.ForbidApk == true campaign.CampaignType != 3  (mvutil.CAMPAIGN_TYPE_APK)
