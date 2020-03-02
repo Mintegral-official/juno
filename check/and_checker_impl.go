@@ -1,12 +1,10 @@
 package check
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strconv"
 )
 
 type AndChecker struct {
@@ -29,28 +27,6 @@ func NewAndChecker(c []Checker, isDebug ...int) *AndChecker {
 func (a *AndChecker) Check(id document.DocId) bool {
 	if a == nil {
 		return true
-	}
-	if a.aDebug != nil {
-		var msg []string
-		var flag = true
-		msg = append(msg, "and checker: true")
-		for i, c := range a.c {
-			if c == nil {
-				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
-				continue
-			}
-			if c.Check(id) {
-				flag = false
-			}
-			msg = append(msg, c.DebugInfo()+"\tis checked: "+strconv.FormatBool(c.Check(id)))
-		}
-		if flag {
-			a.aDebug.Node[id] = append(a.aDebug.Node[id], msg)
-		} else {
-			msg[0] = "and check result: false"
-			a.aDebug.Node[id] = append(a.aDebug.Node[id], msg)
-		}
-		return flag
 	}
 	for _, cValue := range a.c {
 		if cValue == nil {
@@ -98,7 +74,7 @@ func (a *AndChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}, e
 			c = append(c, tmp.Unmarshal(idx, v, e))
 		}
 	}
-	return NewAndChecker(c, 1)
+	return NewAndChecker(c)
 }
 
 func (a *AndChecker) DebugInfo() string {
