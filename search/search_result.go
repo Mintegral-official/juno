@@ -58,8 +58,7 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operati
 				debugInfo(v, idx, id, e, c)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id);
-					err != nil {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id); err != nil {
 					queryMarshal[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					queryMarshal[k] = append(v.([]string), "id found")
@@ -87,7 +86,7 @@ func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operati
 	for _, value := range res.([]map[string]interface{}) {
 		for k, v := range value {
 			switch k {
-			case "and", "and_check":
+			case "and":
 				f := true
 				debugInfo(v, idx, id, e, c)
 				for _, v := range c {
@@ -96,7 +95,7 @@ func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operati
 					}
 				}
 				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
-			case "or", "or_check":
+			case "or":
 				f := false
 				debugInfo(v, idx, id, e, c)
 				for _, v := range c {
@@ -106,23 +105,23 @@ func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operati
 					}
 				}
 				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
-			case "not", "not_and_check":
+			case "not":
 				f := true
 				debugInfo(v, idx, id, e, c)
 				for i := range c {
 					if i == 0 {
 						if c[i] != 1 {
 							f = false
-							break
 						}
 					} else {
 						if c[i] == 1 {
 							f = false
-							break
 						}
 					}
 				}
 				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
+			case "and_check", "or_check", "not_and_check":
+				debugInfo(v, idx, id, e, c)
 			case "=":
 				var termQuery = &query.TermQuery{}
 				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id); err != nil {
