@@ -210,6 +210,9 @@ func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e 
 		} else if _, ok := v["check"]; ok {
 			var tmp = &check.CheckerImpl{}
 			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["not_and_check"]; ok {
+			var tmp = check.NotAndChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
 		}
 	}
 	return NewAndQuery(q, c)
@@ -228,6 +231,8 @@ func (aq *AndQuery) SetDebug(isDebug ...int) {
 			v.(*check.AndChecker).SetDebug()
 		case *check.OrChecker:
 			v.(*check.OrChecker).SetDebug()
+		case *check.NotAndChecker:
+			v.(*check.NotAndChecker).SetDebug()
 		}
 	}
 }

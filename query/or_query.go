@@ -186,6 +186,9 @@ func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e o
 		} else if _, ok := v["check"]; ok {
 			var tmp = &check.CheckerImpl{}
 			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["not_and_check"]; ok {
+			var tmp = check.NotAndChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
 		}
 	}
 	return NewOrQuery(q, c)
@@ -204,6 +207,8 @@ func (oq *OrQuery) SetDebug(isDebug ...int) {
 			v.(*check.AndChecker).SetDebug()
 		case *check.OrChecker:
 			v.(*check.OrChecker).SetDebug()
+		case *check.NotAndChecker:
+			v.(*check.NotAndChecker).SetDebug()
 		}
 	}
 }

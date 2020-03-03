@@ -95,14 +95,10 @@ func TestNewTermQuery1(t *testing.T) {
 		fmt.Println(q.Next())
 		r, _ := json.Marshal(q.Marshal())
 		fmt.Println(string(r))
-		var uq = query.UnmarshalQuery{}
-		aaa := uq.Unmarshal(ss, q.Marshal(), nil)
-		fmt.Println(aaa.Current())
-		fmt.Println(aaa.Next())
-		fmt.Println(aaa.Next())
-		fmt.Println(aaa.Next())
-		fmt.Println(aaa.Next())
-		fmt.Println(string(r))
+		sq := NewSearcher()
+		sq.Debug(ss, q.Marshal(), nil, []document.DocId{document.DocId(10)})
+		bb, _ := json.Marshal(sq.FilterInfo)
+		fmt.Println(string(bb))
 
 		//sea := NewSearcher()
 		//sea.Debug(ss, q.Marshal(), nil, []document.DocId{document.DocId(10)})
@@ -119,18 +115,12 @@ func TestNewTermQuery1(t *testing.T) {
 			query.NewTermQuery(s1.Iterator("fieldName", "1")),
 			query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
 			query.NewTermQuery(s1.Iterator("fieldName", "3")),
-			query.NewOrQuery([]query.Query{
+			query.NewNotAndQuery([]query.Query{
 				query.NewTermQuery(s1.Iterator("fieldName", "1")),
 				query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
 				query.NewTermQuery(s1.Iterator("fieldName", "3")),
 				query.NewTermQuery(s1.Iterator("fieldName", "4")),
-			}, []check.Checker{
-				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
-				check.NewAndChecker([]check.Checker{
-					check.NewChecker(s2.Iterator("fieldName"), 2, operation.GT, nil, false),
-					check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
-				}),
-			}),
+			}, nil),
 		}, nil)
 		//[]check.Checker{
 		//	check.NewChecker(s2.Iterator("fieldName"), 2, operation.GT, nil, false),
