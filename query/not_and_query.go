@@ -37,12 +37,6 @@ label:
 		if err != nil {
 			return target, helpers.NoMoreData
 		}
-		if len(naq.queries) == 1 {
-			_, _ = naq.queries[0].Next()
-			if naq.check(target) {
-				return target, nil
-			}
-		}
 		for i := 1; i < len(naq.queries); i++ {
 			cur, err := naq.queries[i].GetGE(target)
 			if target == cur {
@@ -156,7 +150,7 @@ func (naq *NotAndQuery) Marshal() map[string]interface{} {
 		for _, v := range naq.checkers {
 			checkInfo = append(checkInfo, v.Marshal())
 		}
-		res["not_check"] = checkInfo
+		res["not_and_check"] = checkInfo
 	}
 	res["not"] = queryInfo
 	return res
@@ -167,7 +161,7 @@ func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}
 	if !ok {
 		return nil
 	}
-	notCheck, ok := res["not_check"]
+	notCheck, ok := res["not_and_check"]
 	r := notAnd.([]map[string]interface{})
 	var q []Query
 	var c []check.Checker
@@ -206,6 +200,9 @@ func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}
 		} else if _, ok := v["check"]; ok {
 			var tmp = &check.CheckerImpl{}
 			c = append(c, tmp.Unmarshal(idx, v, e))
+		} else if _, ok := v["not_and_check"]; ok {
+			var tmp = &check.NotAndChecker{}
+			c = append(c, tmp.Unmarshal(idx, v, e))
 		}
 	}
 	return NewNotAndQuery(q, c)
@@ -224,6 +221,8 @@ func (naq *NotAndQuery) SetDebug(isDebug ...int) {
 			v.(*check.AndChecker).SetDebug()
 		case *check.OrChecker:
 			v.(*check.OrChecker).SetDebug()
+		case *check.NotAndChecker:
+			v.(*check.NotAndChecker).SetDebug()
 		}
 	}
 }

@@ -51,19 +51,17 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operati
 	queryMarshal := q
 	var res = make(map[document.DocId]map[string]interface{}, len(ids))
 	for _, id := range ids {
+		var c []int
 		for k, v := range queryMarshal {
 			switch k {
-			case "and", "or", "not", "and_check", "or_check":
-				debugInfo(v, idx, id, e)
+			case "and", "or", "not", "and_check", "or_check", "not_and_check":
+				debugInfo(v, idx, id, e, c)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id);
-					err != nil || res != id {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id); err != nil {
 					queryMarshal[k] = append(v.([]string), "id not found")
-				} else {
-					if res == id {
-						queryMarshal[k] = append(v.([]string), "id found")
-					}
+				} else if res == id {
+					queryMarshal[k] = append(v.([]string), "id found")
 				}
 			case "check":
 				var c = &check.CheckerImpl{}
@@ -84,32 +82,82 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operati
 	s.FilterInfo = res
 }
 
-func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operation.Operation) {
+func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operation.Operation, c []int) {
 	for _, value := range res.([]map[string]interface{}) {
 		for k, v := range value {
 			switch k {
-			case "and", "or", "not", "and_check", "or_check":
-				debugInfo(v, idx, id, e)
+			case "and":
+				f := true
+				debugInfo(v, idx, id, e, c)
+				for _, v := range c {
+					if v != 1 {
+						f = false
+					}
+				}
+				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
+			case "or":
+				f := false
+				debugInfo(v, idx, id, e, c)
+				for _, v := range c {
+					if v == 1 {
+						f = true
+						break
+					}
+				}
+				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
+			case "not":
+				f := true
+				debugInfo(v, idx, id, e, c)
+				for i := range c {
+					if i == 0 {
+						if c[i] != 1 {
+							f = false
+						}
+					} else {
+						if c[i] == 1 {
+							f = false
+						}
+					}
+				}
+				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
+			case "and_check", "or_check", "not_and_check":
+				debugInfo(v, idx, id, e, c)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id);
-					err != nil || res != id {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id); err != nil {
 					value[k] = append(v.([]string), "id not found")
+					c = append(c, 0)
 				} else if res == id {
 					value[k] = append(v.([]string), "id found")
+					c = append(c, 1)
 				}
 			case "check":
-				var c = &check.CheckerImpl{}
+				var chk = &check.CheckerImpl{}
+				if chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id) {
+					c = append(c, 1)
+				} else {
+					c = append(c, 0)
+				}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
 			case "in_check":
-				var c = &check.InChecker{}
+				var chk = &check.InChecker{}
+				if chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id) {
+					c = append(c, 1)
+				} else {
+					c = append(c, 0)
+				}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
 			case "not_check":
-				var c = &check.NotChecker{}
+				var chk = &check.CheckerImpl{}
+				if chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id) {
+					c = append(c, 1)
+				} else {
+					c = append(c, 0)
+				}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
 			}
 		}
 	}
