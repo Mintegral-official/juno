@@ -52,57 +52,57 @@ func TestNewTermQuery1(t *testing.T) {
 		So(s2.Add("fieldName", 1, 3), ShouldBeNil)
 		So(s2.Add("fieldName", 10, 3), ShouldBeNil)
 
-		//q := query.NewAndQuery([]query.Query{
-		//	query.NewTermQuery(s1.Iterator("fieldName", "1")),
-		//	query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
-		//	query.NewTermQuery(s1.Iterator("fieldName", "3")),
-		//	//query.NewTermQuery(s1.Iterator("AAAAAAAA", "s")),
-		//	query.NewAndQuery([]query.Query{
-		//		query.NewTermQuery(s1.Iterator("fieldName", "1")),
-		//		query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
-		//		query.NewTermQuery(s1.Iterator("fieldName", "3")),
-		//		query.NewOrQuery([]query.Query{
-		//			query.NewTermQuery(s1.Iterator("fieldName", "1")),
-		//			query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
-		//			query.NewTermQuery(s1.Iterator("fieldName", "3")),
-		//			query.NewTermQuery(s1.Iterator("fieldName", "4")),
-		//		}, []check.Checker{
-		//			check.NewChecker(s2.Iterator("fieldName"), 2, operation.EQ, nil, false),
-		//			check.NewAndChecker([]check.Checker{
-		//				check.NewChecker(s2.Iterator("fieldName"), 2, operation.EQ, nil, false),
-		//				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
-		//			}),
-		//		}),
-		//	}, []check.Checker{
-		//		check.NewInChecker(s2.Iterator("fieldName"), []int{2, 3, 4, 5}, nil, false),
-		//		check.NewOrChecker([]check.Checker{
-		//			check.NewChecker(s2.Iterator("fieldName"), 2, operation.NE, nil, false),
-		//			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
-		//		}),
-		//	}),
-		//}, []check.Checker{
-		//	check.NewInChecker(s2.Iterator("fieldName"), []int{2, 3, 4}, nil, false),
-		//	check.NewOrChecker([]check.Checker{
-		//		check.NewChecker(s2.Iterator("fieldName"), 2, operation.GT, nil, false),
-		//		check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
-		//	}),
-		//})
-		//fmt.Println(q.Current())
-		//fmt.Println(q.Next())
-		//fmt.Println(q.Next())
-		//fmt.Println(q.Next())
-		//fmt.Println(q.Next())
-		//fmt.Println(q.Next())
-		//r, _ := json.Marshal(q.Marshal())
-		//fmt.Println(string(r))
-		//var uq = query.UnmarshalQuery{}
-		//aaa := uq.Unmarshal(ss, q.Marshal(), nil)
-		//fmt.Println(aaa.Current())
-		//fmt.Println(aaa.Next())
-		//fmt.Println(aaa.Next())
-		//fmt.Println(aaa.Next())
-		//fmt.Println(aaa.Next())
-		//	fmt.Println(string(r))
+		q := query.NewAndQuery([]query.Query{
+			query.NewTermQuery(s1.Iterator("fieldName", "1")),
+			query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
+			query.NewTermQuery(s1.Iterator("fieldName", "3")),
+			//query.NewTermQuery(s1.Iterator("AAAAAAAA", "s")),
+			query.NewAndQuery([]query.Query{
+				query.NewTermQuery(s1.Iterator("fieldName", "1")),
+				query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
+				query.NewTermQuery(s1.Iterator("fieldName", "3")),
+				query.NewOrQuery([]query.Query{
+					query.NewTermQuery(s1.Iterator("fieldName", "1")),
+					query.NewTermQuery(s1.Iterator("fieldNeme", "2")),
+					query.NewTermQuery(s1.Iterator("fieldName", "3")),
+					query.NewTermQuery(s1.Iterator("fieldName", "4")),
+				}, []check.Checker{
+					check.NewChecker(s2.Iterator("fieldName"), 2, operation.EQ, nil, false),
+					check.NewAndChecker([]check.Checker{
+						check.NewChecker(s2.Iterator("fieldName"), 2, operation.EQ, nil, false),
+						check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+					}),
+				}),
+			}, []check.Checker{
+				check.NewInChecker(s2.Iterator("fieldName"), []int{2, 3, 4, 5}, nil, false),
+				check.NewOrChecker([]check.Checker{
+					check.NewChecker(s2.Iterator("fieldName"), 2, operation.NE, nil, false),
+					check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+				}),
+			}),
+		}, []check.Checker{
+			check.NewInChecker(s2.Iterator("fieldName"), []int{2, 3, 4}, nil, false),
+			check.NewOrChecker([]check.Checker{
+				check.NewChecker(s2.Iterator("fieldName"), 2, operation.GT, nil, false),
+				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+			}),
+		})
+		fmt.Println(q.Current())
+		fmt.Println(q.Next())
+		fmt.Println(q.Next())
+		fmt.Println(q.Next())
+		fmt.Println(q.Next())
+		fmt.Println(q.Next())
+		r, _ := json.Marshal(q.Marshal())
+		fmt.Println(string(r))
+		var uq = query.UnmarshalQuery{}
+		aaa := uq.Unmarshal(ss, q.Marshal(), nil)
+		fmt.Println(aaa.Current())
+		fmt.Println(aaa.Next())
+		fmt.Println(aaa.Next())
+		fmt.Println(aaa.Next())
+		fmt.Println(aaa.Next())
+		fmt.Println(string(r))
 
 		//sea := NewSearcher()
 		//sea.Debug(ss, q.Marshal(), nil, []document.DocId{document.DocId(10)})
@@ -125,19 +125,24 @@ func TestNewTermQuery1(t *testing.T) {
 				query.NewTermQuery(s1.Iterator("fieldName", "3")),
 				query.NewTermQuery(s1.Iterator("fieldName", "4")),
 			}, []check.Checker{
+				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
 				check.NewAndChecker([]check.Checker{
 					check.NewChecker(s2.Iterator("fieldName"), 2, operation.GT, nil, false),
 					check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
 				}),
-				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
 			}),
-		}, []check.Checker{
-			check.NewChecker(s2.Iterator("fieldName"), 2, operation.GT, nil, false),
-			check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
-			check.NewInChecker(s2.Iterator("fieldName"), []int{2, 3, 4}, nil, false),
-		})
+		}, nil)
+		//[]check.Checker{
+		//	check.NewChecker(s2.Iterator("fieldName"), 2, operation.GT, nil, false),
+		//	check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
+		//	check.NewInChecker(s2.Iterator("fieldName"), []int{2, 3, 4}, nil, false),
+		//})
 
 		sea := NewSearcher()
+		sea.Search(ss, qq)
+		fmt.Println(sea.Docs)
+		sea = NewSearcher()
+
 		sea.Debug(ss, qq.Marshal(), nil, []document.DocId{document.DocId(10)})
 		bbb, _ := json.Marshal(sea.FilterInfo)
 		fmt.Println(string(bbb))

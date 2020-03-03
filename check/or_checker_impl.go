@@ -1,12 +1,10 @@
 package check
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strconv"
 )
 
 type OrChecker struct {
@@ -29,28 +27,6 @@ func NewOrChecker(c []Checker, isDebug ...int) *OrChecker {
 func (o *OrChecker) Check(id document.DocId) bool {
 	if o == nil {
 		return true
-	}
-	if o.aDebug != nil {
-		var msg []string
-		var flag = false
-		msg = append(msg, "or checker: false")
-		for i, c := range o.c {
-			if c == nil {
-				msg = append(msg, fmt.Sprintf("check[%d] is nil", i))
-				continue
-			}
-			if c.Check(id) {
-				flag = true
-			}
-			msg = append(msg, c.DebugInfo()+"\tis checked: "+strconv.FormatBool(c.Check(id)))
-		}
-		if !flag {
-			o.aDebug.Node[id] = append(o.aDebug.Node[id], msg)
-		} else {
-			msg[0] = "and check result: true"
-			o.aDebug.Node[id] = append(o.aDebug.Node[id], msg)
-		}
-		return flag
 	}
 	for _, cValue := range o.c {
 		if cValue == nil {
