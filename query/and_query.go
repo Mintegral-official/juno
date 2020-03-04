@@ -53,7 +53,7 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 }
 
 func (aq *AndQuery) Next() (document.DocId, error) {
-	lastIdx, curIdx := aq.curIdx, aq.curIdx
+	lastIdx, curIdx := 0, 0
 	target, err := aq.queries[curIdx].Current()
 	if err != nil {
 		return target, helpers.NoMoreData
@@ -62,6 +62,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
+			aq.curIdx = curIdx
 			return cur, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 		}
 		if cur != target {
@@ -83,7 +84,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 }
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	curIdx, lastIdx := aq.curIdx, aq.curIdx
+	curIdx, lastIdx := 0, 0
 	target, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
 		return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
@@ -92,6 +93,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
+			aq.curIdx = curIdx
 			return cur, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 		}
 		if cur != target {
@@ -112,7 +114,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
-	return aq.queries[0].Current()
+	return aq.queries[aq.curIdx].Current()
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {

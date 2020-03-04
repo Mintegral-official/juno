@@ -241,12 +241,12 @@ func TestNewOrQuery(t *testing.T) {
 		}, nil),
 	}, nil)
 
-	fmt.Println(q.Next())  // 4
-	fmt.Println(q.Next())  // 10
-	fmt.Println(q.Next())  // 0
-	fmt.Println(q.Next())  // 0
-	fmt.Println(q.Next())  // 0
-	fmt.Println(q.Next())  // 0
+	fmt.Println(q.Next()) // 4
+	fmt.Println(q.Next()) // 10
+	fmt.Println(q.Next()) // 0
+	fmt.Println(q.Next()) // 0
+	fmt.Println(q.Next()) // 0
+	fmt.Println(q.Next()) // 0
 }
 
 func TestNewOrQuery2(t *testing.T) {
@@ -283,6 +283,41 @@ func TestNewOrQuery2(t *testing.T) {
 	fmt.Println(q.Next())
 	fmt.Println(q.Next())
 	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+}
+
+func TestNewAndQuery3(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(2), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl2.Add(document.DocId(1), [1]byte{})
+	sl2.Add(document.DocId(4), [1]byte{})
+	sl2.Add(document.DocId(6), [1]byte{})
+	sl2.Add(document.DocId(3), [1]byte{})
+
+	q := NewAndQuery([]Query{
+		NewTermQuery(sl.Iterator()),
+		NewTermQuery(sl1.Iterator()),
+		NewTermQuery(sl2.Iterator()),
+	}, nil)
+
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Current())
 	fmt.Println(q.Next())
 	fmt.Println(q.Next())
 }
