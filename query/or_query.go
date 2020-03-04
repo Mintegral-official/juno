@@ -90,11 +90,7 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 		return 0, helpers.NoMoreData
 	}
 	q := top.(Query)
-	res, err := q.Current()
-	if err != nil {
-		return res, err
-	}
-	return res, nil
+	return q.Current()
 }
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {

@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
@@ -183,4 +184,105 @@ func TestNewOrQuery_Next2(t *testing.T) {
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})
+}
+
+func TestNewAndQuery(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(1), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	q := NewOrQuery([]Query{
+		NewTermQuery(sl.Iterator()),
+		NewTermQuery(sl1.Iterator()),
+	}, nil)
+
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+}
+
+func TestNewOrQuery(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(1), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	q := NewOrQuery([]Query{
+		NewNotAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, nil),
+		NewNotAndQuery([]Query{
+			NewTermQuery(sl1.Iterator()),
+			NewTermQuery(sl.Iterator()),
+		}, nil),
+	}, nil)
+
+	fmt.Println(q.Next())  // 4
+	fmt.Println(q.Next())  // 10
+	fmt.Println(q.Next())  // 0
+	fmt.Println(q.Next())  // 0
+	fmt.Println(q.Next())  // 0
+	fmt.Println(q.Next())  // 0
+}
+
+func TestNewOrQuery2(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(2), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl2.Add(document.DocId(1), [1]byte{})
+	sl2.Add(document.DocId(4), [1]byte{})
+	sl2.Add(document.DocId(6), [1]byte{})
+	sl2.Add(document.DocId(3), [1]byte{})
+	q := NewOrQuery([]Query{
+		NewTermQuery(sl.Iterator()),
+		NewAndQuery([]Query{
+			NewTermQuery(sl1.Iterator()),
+			NewTermQuery(sl2.Iterator()),
+		}, nil),
+	}, nil)
+
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
 }

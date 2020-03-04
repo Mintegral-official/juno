@@ -1,7 +1,6 @@
 package query
 
 import (
-	"errors"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -25,90 +24,98 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (
 	if len(queries) == 0 {
 		return naq
 	}
-	naq.queries = queries
 	naq.checkers = checkers
-	return naq
-}
+	if len(queries) == 1 {
+		naq.queries = queries
+	} else {
+		naq.queries = append(naq.queries, queries[0])
+		naq.queries = append(naq.queries, NewOrQuery(queries[1:], nil))
+	}
 
-func (naq *NotAndQuery) Next() (document.DocId, error) {
-label:
 	for {
 		target, err := naq.queries[0].Current()
 		if err != nil {
-			return target, helpers.NoMoreData
+			return naq
 		}
-		for i := 1; i < len(naq.queries); i++ {
-			cur, err := naq.queries[i].GetGE(target)
-			if target == cur {
-				_, _ = naq.queries[0].Next()
-				goto label
+		if len(naq.queries) == 1 {
+			for !naq.check(target) {
+				target, err = naq.queries[0].Next()
 			}
-			if (target != cur || err != nil) && i == len(naq.queries)-1 {
-				_, _ = naq.queries[0].Next()
-				for !naq.check(target) {
-					target, err = naq.queries[0].Current()
-					if err != nil {
-						return target, err
-					}
-					_, _ = naq.queries[0].Next()
-				}
-				return target, nil
+			return naq
+		}
+		for {
+			tar, err := naq.queries[1].GetGE(target)
+			if err != nil {
+				return naq
 			}
+			if tar == target {
+				target, err = queries[0].Next()
+				continue
+			}
+			break
+		}
+		return naq
+	}
+}
+
+func (naq *NotAndQuery) Next() (document.DocId, error) {
+	if len(naq.queries) == 0 {
+		return 0, helpers.NoMoreData
+	}
+	target, err := naq.queries[0].Current()
+	if len(naq.queries) == 1 {
+		for err == nil && !naq.check(target) {
+			target, err = naq.queries[0].Next()
+		}
+		_, _ = naq.queries[0].Next()
+		return target, nil
+	}
+
+	if err != nil {
+		return 0, helpers.NoMoreData
+	}
+	for {
+		cur, err := naq.queries[1].GetGE(target)
+		if cur != target {
+			for err == nil && !naq.check(target) {
+				target, err = naq.queries[0].Next()
+			}
+			_, _ = naq.queries[0].Next()
+			return target, nil
 		}
 		target, err = naq.queries[0].Next()
 	}
 }
 
 func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	for {
-		target, err := naq.queries[0].GetGE(id)
-		if err != nil {
-			return target, helpers.NoMoreData
+	if len(naq.queries) == 0 {
+		return 0, helpers.NoMoreData
+	}
+	target, err := naq.queries[0].GetGE(id)
+	if len(naq.queries) == 1 {
+		for err == nil && !naq.check(target) {
+			target, err = naq.queries[0].Next()
 		}
-		if len(naq.queries) == 1 {
-			for !naq.check(target) {
+		return target, err
+	}
+
+	if err != nil {
+		return 0, helpers.NoMoreData
+	}
+	for {
+		cur, err := naq.queries[1].GetGE(target)
+		if cur != target {
+			for err == nil && !naq.check(target) {
 				target, err = naq.queries[0].Next()
 			}
 			return target, nil
 		}
-		for i := 1; i < len(naq.queries); i++ {
-			if _, err := naq.queries[i].Current(); err != nil {
-				for !naq.check(target) {
-					target, err = naq.queries[0].Next()
-				}
-				return target, nil
-			}
-			cur, err := naq.queries[i].GetGE(target)
-			if (target != cur || err != nil) && i == len(naq.queries)-1 {
-				if naq.check(target) {
-					return target, nil
-				}
-			}
-		}
-		_, _ = naq.queries[0].Next()
+		target, err = naq.queries[0].Next()
 	}
 }
 
 func (naq *NotAndQuery) Current() (document.DocId, error) {
-	res, err := naq.queries[0].Current()
-	if err != nil {
-		return res, err
-	}
-	for i := 1; i < len(naq.queries); i++ {
-		tar, err := naq.queries[i].GetGE(res)
-		_, _ = naq.queries[0].Next()
-		if err != nil {
-			continue
-		}
-		if tar == res {
-			return res, errors.New("this target is not result")
-		} else if i == len(naq.queries)-1 {
-			if naq.check(res) {
-				return res, nil
-			}
-		}
-	}
-	return 0, nil
+	return naq.queries[0].Current()
 }
 
 func (naq *NotAndQuery) DebugInfo() *debug.Debug {

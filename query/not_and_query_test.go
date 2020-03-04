@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	. "github.com/smartystreets/goconvey/convey"
@@ -179,4 +180,42 @@ func TestNewNotAndQuery_GetGE2(t *testing.T) {
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})
+}
+
+func TestNewAndQuery2(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+	sl.Add(document.DocId(11), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(1), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl2.Add(document.DocId(1), [1]byte{})
+	sl2.Add(document.DocId(4), [1]byte{})
+	sl2.Add(document.DocId(6), [1]byte{})
+	sl2.Add(document.DocId(9), [1]byte{})
+
+	q := NewNotAndQuery([]Query{
+		NewTermQuery(sl.Iterator()),
+		NewTermQuery(sl1.Iterator()),
+		NewOrQuery([]Query{
+			NewTermQuery(sl2.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, nil),
+	}, nil)
+
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
+	fmt.Println(q.Next())
 }

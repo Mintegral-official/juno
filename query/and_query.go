@@ -29,7 +29,27 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 	}
 	aq.queries = queries
 	aq.checkers = checkers
-	return aq
+	for {
+		target, err := aq.queries[0].Current()
+		if err != nil {
+			return aq
+		}
+		if len(aq.queries) == 1 {
+			for !aq.check(target) {
+				target, err = aq.queries[0].Next()
+			}
+			return aq
+		}
+		for i := 1; i < len(aq.queries); i++ {
+			tar, _ := aq.queries[i].GetGE(target)
+			if tar != target {
+				_, _ = aq.queries[0].Next()
+				break
+			} else if i == len(aq.queries)-1 {
+				return aq
+			}
+		}
+	}
 }
 
 func (aq *AndQuery) Next() (document.DocId, error) {
@@ -56,7 +76,7 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 			curIdx = (curIdx + 1) % len(aq.queries)
 			target, err = aq.queries[curIdx].Next()
 			if err != nil {
-				return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+				return target, helpers.NoMoreData
 			}
 		}
 	}
@@ -79,7 +99,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			target = cur
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
-			if target != 0 && aq.check(target) {
+			if aq.check(target) {
 				return target, nil
 			}
 			curIdx = (curIdx + 1) % len(aq.queries)
@@ -92,20 +112,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
-	target, err := aq.queries[0].Current()
-	if err != nil {
-		return target, err
-	}
-	for i := 1; i < len(aq.queries); i++ {
-		tar, err := aq.queries[i].GetGE(target)
-		if err != nil {
-			return tar, err
-		}
-		if tar != target {
-			return target, errors.New(fmt.Sprintf("%d in queries[%d] is different with %d in queries[%d]", target, i, tar, i+1))
-		}
-	}
-	return target, nil
+	return aq.queries[0].Current()
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {
