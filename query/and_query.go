@@ -6,7 +6,6 @@ import (
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"strings"
@@ -36,14 +35,16 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 		}
 		if len(aq.queries) == 1 {
 			for !aq.check(target) {
-				target, err = aq.queries[0].Next()
+				aq.queries[0].Next()
+				target, err = aq.queries[0].Current()
 			}
 			return aq
 		}
 		for i := 1; i < len(aq.queries); i++ {
 			tar, _ := aq.queries[i].GetGE(target)
 			if tar != target {
-				_, _ = aq.queries[0].Next()
+				aq.queries[0].Next()
+				_, _ = aq.queries[0].Current()
 				break
 			} else if i == len(aq.queries)-1 {
 				return aq
@@ -52,18 +53,18 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 	}
 }
 
-func (aq *AndQuery) Next() (document.DocId, error) {
+func (aq *AndQuery) Next() {
 	lastIdx, curIdx := 0, 0
 	target, err := aq.queries[curIdx].Current()
 	if err != nil {
-		return target, helpers.NoMoreData
+		return
 	}
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
 			aq.curIdx = curIdx
-			return cur, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+			return
 		}
 		if cur != target {
 			lastIdx = curIdx
@@ -71,13 +72,15 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
 			if aq.check(target) {
-				_, _ = aq.queries[0].Next()
-				return target, nil
+				aq.queries[0].Next()
+				_, _ = aq.queries[0].Current()
+				return
 			}
 			curIdx = (curIdx + 1) % len(aq.queries)
-			target, err = aq.queries[curIdx].Next()
+			aq.queries[curIdx].Next()
+			target, err = aq.queries[curIdx].Current()
 			if err != nil {
-				return target, helpers.NoMoreData
+				return
 			}
 		}
 	}
@@ -105,7 +108,8 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 				return target, nil
 			}
 			curIdx = (curIdx + 1) % len(aq.queries)
-			target, err = aq.queries[curIdx].Next()
+			aq.queries[curIdx].Next()
+			target, err = aq.queries[curIdx].Current()
 			if err != nil {
 				return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 			}

@@ -36,7 +36,7 @@ func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) (oq *
 	return oq
 }
 
-func (oq *OrQuery) Next() (document.DocId, error) {
+func (oq *OrQuery) Next() {
 	for target, err := oq.Current(); err == nil; {
 		oq.next()
 		if oq.check(target) {
@@ -47,18 +47,17 @@ func (oq *OrQuery) Next() (document.DocId, error) {
 				oq.next()
 				cur, err = oq.Current()
 			}
-			return target, nil
+			return
 		}
 		target, err = oq.Current()
 	}
-	return 0, helpers.NoMoreData
 }
 
 func (oq *OrQuery) next() {
 	top := oq.h.Top()
 	if top != nil {
 		q := top.(Query)
-		_, _ = q.Next()
+		q.Next()
 		heap.Fix(&oq.h, 0)
 	}
 }
@@ -79,7 +78,7 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 		target, err = oq.Current()
 	}
 	for err == nil && !oq.check(target) {
-		target, err = oq.Next()
+		oq.Next()
 	}
 	return target, err
 }

@@ -157,34 +157,41 @@ func TestAndQuery_Next(t *testing.T) {
 
 	Convey("and query next1", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
-		v, e := a.Next()
+		v, e := a.Current()
+		a.Next()
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 3)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
 	})
 
 	Convey("and query next2", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
-		v, e := a.Next()
+		v, e := a.Current()
+		a.Next()
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 
@@ -205,23 +212,28 @@ func TestAndQuery_Current(t *testing.T) {
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 3)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 
@@ -287,15 +299,17 @@ func BenchmarkAndQuery_Next(b *testing.B) {
 		}),
 	}, []check.Checker{
 		check.NewInChecker(a.Iterator(), r1, nil, false),
-	}, )
+	})
 	c := 0
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		_, err := s.Next()
+		_, err := s.Current()
+		s.Next()
 		for err == nil {
 			c++
-			_, err = s.Next()
+			_, err = s.Current()
+			s.Next()
 		}
 	}
 	b.StopTimer()

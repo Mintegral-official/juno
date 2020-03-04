@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
 	. "github.com/smartystreets/goconvey/convey"
@@ -18,16 +17,23 @@ func TestNewNotAndQuery_Next1(t *testing.T) {
 
 	Convey("not and query next1", t, func() {
 		a := NewNotAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
-		v, e := a.Next()
+		v, e := a.Current()
+		a.Next()
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
-		v, e = a.Next()
+
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 3)
 		So(e, ShouldBeNil)
-		v, e = a.Next()
+
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 6)
 		So(e, ShouldBeNil)
-		v, e = a.Next()
+
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
 	})
@@ -55,14 +61,16 @@ func TestNewNotAndQuery_Next2(t *testing.T) {
 		a := NewNotAndQuery([]Query{
 			NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator()),
 		}, nil)
-		v, e := a.Next()
+		v, e := a.Current()
+		a.Next()
 		//So(v, ShouldEqual, 3)
 		//So(e, ShouldBeNil)
 		//v, e = a.Next()
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})
@@ -205,17 +213,18 @@ func TestNewAndQuery2(t *testing.T) {
 	sl2.Add(document.DocId(6), [1]byte{})
 	sl2.Add(document.DocId(9), [1]byte{})
 
-	q := NewNotAndQuery([]Query{
-		NewTermQuery(sl.Iterator()),
-		NewTermQuery(sl1.Iterator()),
-		NewOrQuery([]Query{
-			NewTermQuery(sl2.Iterator()),
-			NewTermQuery(sl1.Iterator()),
-		}, nil),
-	}, nil)
-
-	fmt.Println(q.Next())
-	fmt.Println(q.Next())
-	fmt.Println(q.Next())
-	fmt.Println(q.Next())
+	//TODO
+	//q := NewNotAndQuery([]Query{
+	//	NewTermQuery(sl.Iterator()),
+	//	NewTermQuery(sl1.Iterator()),
+	//	NewOrQuery([]Query{
+	//		NewTermQuery(sl2.Iterator()),
+	//		NewTermQuery(sl1.Iterator()),
+	//	}, nil),
+	//}, nil)
+	//
+	//fmt.Println(q.Next())
+	//fmt.Println(q.Next())
+	//fmt.Println(q.Next())
+	//fmt.Println(q.Next())
 }

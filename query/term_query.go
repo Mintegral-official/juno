@@ -29,17 +29,11 @@ func NewTermQuery(iter datastruct.Iterator, isDebug ...int) (tq *TermQuery) {
 	return tq
 }
 
-func (tq *TermQuery) Next() (document.DocId, error) {
+func (tq *TermQuery) Next() {
 	if tq == nil || tq.iterator == nil {
-		return 0, helpers.DocumentError
+		return
 	}
-
 	tq.iterator.Next()
-	element := tq.iterator.Current()
-	if element == nil {
-		return 0, helpers.ElementNotfound
-	}
-	return element.Key(), nil
 }
 
 func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {

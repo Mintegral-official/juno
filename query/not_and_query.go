@@ -39,7 +39,8 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (
 		}
 		if len(naq.queries) == 1 {
 			for !naq.check(target) {
-				target, err = naq.queries[0].Next()
+				target, err = naq.queries[0].Current()
+				naq.queries[0].Next()
 			}
 			return naq
 		}
@@ -49,7 +50,8 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (
 				return naq
 			}
 			if tar == target {
-				target, err = queries[0].Next()
+				target, err = queries[0].Current()
+				naq.queries[0].Next()
 				continue
 			}
 			break
@@ -58,32 +60,34 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (
 	}
 }
 
-func (naq *NotAndQuery) Next() (document.DocId, error) {
+func (naq *NotAndQuery) Next() {
 	if len(naq.queries) == 0 {
-		return 0, helpers.NoMoreData
+		return
 	}
 	target, err := naq.queries[0].Current()
 	if len(naq.queries) == 1 {
 		for err == nil && !naq.check(target) {
-			target, err = naq.queries[0].Next()
+			naq.queries[0].Next()
+			target, err = naq.queries[0].Current()
 		}
-		_, _ = naq.queries[0].Next()
-		return target, nil
+		naq.queries[0].Next()
 	}
 
 	if err != nil {
-		return 0, helpers.NoMoreData
+		return
 	}
 	for {
 		cur, err := naq.queries[1].GetGE(target)
 		if cur != target {
 			for err == nil && !naq.check(target) {
-				target, err = naq.queries[0].Next()
+				naq.queries[0].Next()
+				target, err = naq.queries[0].Current()
 			}
-			_, _ = naq.queries[0].Next()
-			return target, nil
+			naq.queries[0].Next()
+			return
 		}
-		target, err = naq.queries[0].Next()
+		naq.queries[0].Next()
+		target, err = naq.queries[0].Current()
 	}
 }
 
@@ -94,7 +98,8 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	target, err := naq.queries[0].GetGE(id)
 	if len(naq.queries) == 1 {
 		for err == nil && !naq.check(target) {
-			target, err = naq.queries[0].Next()
+			naq.queries[0].Next()
+			target, err = naq.queries[0].Current()
 		}
 		return target, err
 	}
@@ -106,11 +111,13 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		cur, err := naq.queries[1].GetGE(target)
 		if cur != target {
 			for err == nil && !naq.check(target) {
-				target, err = naq.queries[0].Next()
+				naq.queries[0].Next()
+				target, err = naq.queries[0].Current()
 			}
 			return target, nil
 		}
-		target, err = naq.queries[0].Next()
+		target, err = naq.queries[0].Current()
+		naq.queries[0].Next()
 	}
 }
 

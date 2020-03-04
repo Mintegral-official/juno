@@ -29,39 +29,20 @@ func TestNewTermQuery(t *testing.T) {
 
 		tq.SetDebug(1)
 		fmt.Println(tq.Current())
-		fmt.Println(tq.Next())
-		fmt.Println(tq.Next())
-		fmt.Println(tq.Next())
-		fmt.Println(tq.Next())
+		for i := 0; i < 4; i++ {
+			tq.Next()
+			fmt.Println(tq.Current())
+		}
 		fmt.Println(tq.DebugInfo())
-		//jf := &JSONFormatter{}
-		//str, \007 := jf.Marshal(res) // 转换成json的形式
-		//fmt.Println(str)
-		//rr1, \007 := jf.Unmarshal(str) // 反序列化
-		//sss := tq.Unmarshal(ss, rr1, nil)
 
 		sss := tq.Unmarshal(ss, res, nil)
 		fmt.Println(sss.Current())
-		fmt.Println(sss.Next())
-		fmt.Println(sss.Next())
-		fmt.Println(sss.Next())
+		for i := 0; i < 4; i++ {
+			tq.Next()
+			fmt.Println(tq.Current())
+		}
 		fmt.Println(sss.DebugInfo())
-		//aq := NewAndQuery([]Query{
-		//	NewTermQuery(s.Iterator("fieldName", "10")),
-		//	NewTermQuery(s.Iterator("fieldName", "1")),
-		//	NewTermQuery(s.Iterator("fieldName", "100")),
-		//	NewOrQuery([]Query{
-		//		NewTermQuery(s.Iterator("fieldName", "111")),
-		//		NewTermQuery(s.Iterator("fieldName", "123")),
-		//	}, nil),
-		//	NewNotAndQuery([]Query{
-		//		NewTermQuery(s.Iterator("fieldName", "111456")),
-		//		NewTermQuery(s.Iterator("fieldName", "123111")),
-		//	}, nil),
-		//}, nil)
-		////fmt.Println(aq.Marshal(ss))
-		//res, \007 := json.Marshal(aq.Marshal(ss))
-		//fmt.Println(string(res))
+
 	})
 }
 
@@ -95,10 +76,10 @@ func TestTermQuery_Current(t *testing.T) {
 		fmt.Println(res)
 
 		tq.SetDebug(1)
-		fmt.Println(tq.Next())
-		fmt.Println(tq.Next())
-		fmt.Println(tq.Next())
-		fmt.Println(tq.Next())
+		//fmt.Println(tq.Next())
+		//fmt.Println(tq.Next())
+		//fmt.Println(tq.Next())
+		//fmt.Println(tq.Next())
 		fmt.Println(s.GetValueById(document.DocId(5)))
 		fmt.Println(s.GetValueById(document.DocId(6)))
 		fmt.Println(s.GetValueById(document.DocId(7)))
@@ -160,10 +141,10 @@ func TestNewTermQuery1(t *testing.T) {
 		q.SetDebug(1)
 
 		fmt.Println(q.Current())
-		fmt.Println(q.Next())
-		fmt.Println(q.Next())
-		fmt.Println(q.Next())
-		fmt.Println(q.Next())
+		//fmt.Println(q.Next())
+		//fmt.Println(q.Next())
+		//fmt.Println(q.Next())
+		//fmt.Println(q.Next())
 
 		fmt.Println(q.DebugInfo())
 
@@ -175,10 +156,10 @@ func TestNewTermQuery1(t *testing.T) {
 
 		rr := q.Unmarshal(ss, res, nil)
 		fmt.Println(rr.Current())
-		fmt.Println(rr.Next())
-		fmt.Println(rr.Next())
-		fmt.Println(rr.Next())
-		fmt.Println(rr.Next())
+		//fmt.Println(rr.Next())
+		//fmt.Println(rr.Next())
+		//fmt.Println(rr.Next())
+		//fmt.Println(rr.Next())
 		fmt.Println(rr.DebugInfo())
 	})
 }
@@ -188,10 +169,10 @@ func TestNewExpression(t *testing.T) {
 	var b = [][]string{{"field:fieldName\0076", "reason: found id"}}
 	fmt.Println(reflect.DeepEqual(a[0], b[0]))
 	fmt.Println(helpers.CompareSlice(a, b))
-	r := "hello"+ "\007"+"world"
+	r := "hello" + "\007" + "world"
 	fmt.Println(len(r))
-	fmt.Println("----"+ "\007"+"---")
-	fmt.Println("----"+" "+"---")
+	fmt.Println("----" + "\007" + "---")
+	fmt.Println("----" + " " + "---")
 	fmt.Println(r[5])
 	fmt.Println(strings.Split(r, "\007"))
 }
