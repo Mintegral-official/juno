@@ -26,35 +26,43 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 	if len(queries) == 0 {
 		return aq
 	}
+	aq.curIdx = 0
 	aq.queries = queries
 	aq.checkers = checkers
-	for {
-		target, err := aq.queries[0].Current()
-		if err != nil {
-			return aq
-		}
-		if len(aq.queries) == 1 {
-			for !aq.check(target) {
-				aq.queries[0].Next()
-				target, err = aq.queries[0].Current()
-			}
-			return aq
-		}
-		for i := 1; i < len(aq.queries); i++ {
-			tar, _ := aq.queries[i].GetGE(target)
-			if tar != target {
-				aq.queries[0].Next()
-				_, _ = aq.queries[0].Current()
-				break
-			} else if i == len(aq.queries)-1 {
-				return aq
-			}
-		}
-	}
+	aq.next()
+	return aq
+	//for {
+	//	target, err := aq.queries[0].Current()
+	//	if err != nil {
+	//		return aq
+	//	}
+	//	if len(aq.queries) == 1 {
+	//		for !aq.check(target) {
+	//			aq.queries[0].Next()
+	//			target, err = aq.queries[0].Current()
+	//		}
+	//		return aq
+	//	}
+	//	for i := 1; i < len(aq.queries); i++ {
+	//		tar, _ := aq.queries[i].GetGE(target)
+	//		if tar != target {
+	//			aq.queries[0].Next()
+	//			_, _ = aq.queries[0].Current()
+	//			break
+	//		} else if i == len(aq.queries)-1 {
+	//			return aq
+	//		}
+	//	}
+	//}
 }
 
 func (aq *AndQuery) Next() {
-	lastIdx, curIdx := 0, 0
+	aq.queries[aq.curIdx].Next()
+	aq.next()
+}
+
+func (aq *AndQuery) next() {
+	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Current()
 	if err != nil {
 		return
@@ -72,14 +80,13 @@ func (aq *AndQuery) Next() {
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
 			if aq.check(target) {
-				aq.queries[0].Next()
-				_, _ = aq.queries[0].Current()
 				return
 			}
 			curIdx = (curIdx + 1) % len(aq.queries)
 			aq.queries[curIdx].Next()
 			target, err = aq.queries[curIdx].Current()
 			if err != nil {
+				aq.curIdx = curIdx
 				return
 			}
 		}

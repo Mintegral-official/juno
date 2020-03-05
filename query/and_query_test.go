@@ -240,6 +240,44 @@ func TestAndQuery_Current(t *testing.T) {
 	})
 }
 
+func TestAndQuery_Next3(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(2), [1]byte{})
+	sl.Add(document.DocId(3), [1]byte{})
+	sl.Add(document.DocId(6), [1]byte{})
+	sl.Add(document.DocId(10), [1]byte{})
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(1), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl2.Add(document.DocId(1), [1]byte{})
+	sl2.Add(document.DocId(3), [1]byte{})
+	sl2.Add(document.DocId(6), [1]byte{})
+	sl2.Add(document.DocId(9), [1]byte{})
+
+	Convey("and query current", t, func() {
+		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator())}, nil)
+
+		v, e := a.Current()
+		So(v, ShouldEqual, 6)
+		So(e, ShouldEqual, nil)
+
+		a.Next()
+
+		v, e = a.Current()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+
+	})
+}
+
 func add1(s *datastruct.SkipList, a []int) {
 	for i := 0; i < 200000; i++ {
 		s.Add(document.DocId(a[i]), i%248)

@@ -61,11 +61,9 @@ func TestNewNotAndQuery_Next2(t *testing.T) {
 		a := NewNotAndQuery([]Query{
 			NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator()),
 		}, nil)
+
 		v, e := a.Current()
 		a.Next()
-		//So(v, ShouldEqual, 3)
-		//So(e, ShouldBeNil)
-		//v, e = a.Next()
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
 
