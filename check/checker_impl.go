@@ -1,7 +1,6 @@
 package check
 
 import (
-	"errors"
 	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
@@ -50,29 +49,30 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	element := c.si.GetGE(id)
 	if element == nil {
 		if c.aDebug != nil {
-			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, Field: %s, Value:%v, reason: %v",
-				id, c.si.(*datastruct.SkipListIterator).FieldName, c.value, helpers.ElementNotfound))
+			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, field: %s, value:%v, operation: %s, reason: %s",
+				id, c.si.(*datastruct.SkipListIterator).FieldName, c.value, OpMap[c.op], helpers.ElementNotfound))
 		}
 		return false
 	}
 	key, v := element.Key(), element.Value()
 	if key != id || v == nil {
 		if c.aDebug != nil {
-			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE ID %d,: Field: %s, FieldValue: %v, Value: %v, reason: %v",
-				id, key, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, errors.New("")))
+			c.aDebug.AddDebugMsg(fmt.Sprintf(
+				"docID: %d, GetGE ID %d, field: %s, fieldValue: %v, value: %v, operation: %s, reason: %s",
+				id, key, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, OpMap[c.op], ))
 		}
 		return false
 	}
 	if c.transfer {
-		if c.aDebug != nil && !UtilCheck(c.value, c.op, v, c.e) {
-			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d Field: %s, FieldValue: %v, Value:%v, reason: %v",
-				id, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, errors.New("id not equal")))
+		if c.aDebug != nil {
+			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d field: %s, fieldValue: %v, value:%v, operation: %s",
+				id, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, OpMap[c.op]))
 		}
 		return UtilCheck(c.value, c.op, v, c.e)
 	}
-	if c.aDebug != nil && !UtilCheck(v, c.op, c.value, c.e) {
-		c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE ID %d,: Name: %s, reason: %v",
-			id, key, c.si.(*datastruct.SkipListIterator).FieldName, errors.New("id not equal")))
+	if c.aDebug != nil {
+		c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE ID %d,: field: %s, fieldValue: %v, value:%v operation: %s",
+			id, key, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, OpMap[c.op]))
 	}
 	return UtilCheck(v, c.op, c.value, c.e)
 }

@@ -1,6 +1,7 @@
 package check
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -44,25 +45,49 @@ func (i *InChecker) Check(id document.DocId) bool {
 	}
 	element := i.si.GetGE(id)
 	if element == nil {
+		if i.aDebug != nil {
+			i.aDebug.AddDebugMsg(fmt.Sprintf("docId: %d, field: %s, value: %v",
+				id, i.si.(*datastruct.SkipListIterator).FieldName, i.value))
+		}
 		return false
 	}
 	key, v := element.Key(), element.Value()
 	if key != id || v == nil {
+		if i.aDebug != nil {
+			i.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE ID %d,: field: %s, fieldValue: %v, value: %v",
+				id, key, i.si.(*datastruct.SkipListIterator).FieldName, v, i.value))
+		}
 		return false
 	}
 	if i.e == nil {
 		if i.transfer {
 			o := operation.Operations{FieldValue: i.value}
+			if i.aDebug != nil {
+				i.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, field: %s, fieldValue: %v, value: %v",
+					id, i.si.(*datastruct.SkipListIterator).FieldName, v, i.value))
+			}
 			return o.In(v)
 		}
 		o := operation.Operations{FieldValue: v}
+		if i.aDebug != nil {
+			i.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, field: %s, fieldValue: %v, value: %v",
+				id, i.si.(*datastruct.SkipListIterator).FieldName, v, i.value))
+		}
 		return o.In(i.value)
 	}
 	if i.transfer {
 		i.e.SetValue(i.value)
+		if i.aDebug != nil {
+			i.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, Field: %s, FieldValue: %v, Value: %v",
+				id, i.si.(*datastruct.SkipListIterator).FieldName, v, i.value))
+		}
 		return i.e.In(v)
 	}
 	i.e.SetValue(v)
+	if i.aDebug != nil {
+		i.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, Field: %s, FieldValue: %v, Value: %v",
+			id, i.si.(*datastruct.SkipListIterator).FieldName, v, i.value))
+	}
 	return i.e.In(i.value)
 }
 
