@@ -78,6 +78,7 @@ func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
 	mib.end = time.Now().UnixNano()
 	if err != nil {
 		mib.WarnStatus("base load failed: "+err.Error(), mib.end-mib.start)
+		return err
 	} else {
 		mib.InfoStatus("base load success", mib.end-mib.start)
 	}
