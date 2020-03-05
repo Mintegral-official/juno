@@ -1,11 +1,20 @@
 package query
 
 import (
+	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/operation"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
+
+func TestNotAndQuery_Next(t *testing.T) {
+	a := NewNotAndQuery([]Query{}, nil)
+	Convey("not and query", t, func() {
+		So(a, ShouldBeNil)
+	})
+}
 
 func TestNewNotAndQuery_Next1(t *testing.T) {
 	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
@@ -17,18 +26,17 @@ func TestNewNotAndQuery_Next1(t *testing.T) {
 
 	Convey("not and query next1", t, func() {
 		a := NewNotAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
-		v, e := a.Next()
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-		v, e = a.Next()
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
-		v, e = a.Next()
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-		v, e = a.Next()
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+		testCase := []document.DocId{1, 3, 6, 10}
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
 	})
 }
 
@@ -54,14 +62,14 @@ func TestNewNotAndQuery_Next2(t *testing.T) {
 		a := NewNotAndQuery([]Query{
 			NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator()),
 		}, nil)
-		v, e := a.Next()
-		//So(v, ShouldEqual, 3)
-		//So(e, ShouldBeNil)
-		//v, e = a.Next()
+		So(a, ShouldNotBeNil)
+		v, e := a.Current()
+		a.Next()
 		So(v, ShouldEqual, 10)
 		So(e, ShouldBeNil)
 
-		v, e = a.Next()
+		v, e = a.Current()
+		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})
@@ -78,43 +86,16 @@ func TestNewNotAndQuery_GetGE(t *testing.T) {
 	Convey("not and query get1", t, func() {
 		s1 := sl.Iterator()
 		a := NewNotAndQuery([]Query{NewTermQuery(s1)}, nil)
-		v, e := a.GetGE(1)
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
+		testCase := [][]document.DocId{
+			{1, 1}, {2, 3}, {3, 3}, {4, 6}, {5, 6}, {6, 6}, {7, 10}, {8, 10}, {9, 10}, {10, 10},
+		}
+		for _, expect := range testCase {
+			v, e := a.GetGE(expect[0])
+			So(v, ShouldEqual, expect[1])
+			So(e, ShouldBeNil)
+		}
 
-		v, e = a.GetGE(2)
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(3)
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(4)
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(5)
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(6)
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(7)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(9)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(10)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(11)
+		v, e := a.GetGE(11)
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})
@@ -139,43 +120,101 @@ func TestNewNotAndQuery_GetGE2(t *testing.T) {
 		s1 := sl.Iterator()
 		s2 := sl1.Iterator()
 		a := NewNotAndQuery([]Query{NewTermQuery(s1), NewTermQuery(s2)}, nil)
-		v, e := a.GetGE(1)
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
 
-		v, e = a.GetGE(2)
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
+		testCase := [][]document.DocId{
+			{1, 3}, {2, 3}, {3, 3}, {4, 10}, {5, 10}, {6, 10}, {7, 10}, {8, 10}, {9, 10}, {10, 10},
+		}
+		for _, expect := range testCase {
+			v, e := a.GetGE(expect[0])
+			So(v, ShouldEqual, expect[1])
+			So(e, ShouldBeNil)
+		}
 
-		v, e = a.GetGE(3)
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
+		v, e := a.GetGE(11)
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+}
 
-		v, e = a.GetGE(4)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+func TestNewAndQuery_Next_Check(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
-		v, e = a.GetGE(5)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+	sl.Add(document.DocId(1), 1)
+	sl.Add(document.DocId(3), 1)
+	sl.Add(document.DocId(6), 2)
+	sl.Add(document.DocId(10), 2)
 
-		v, e = a.GetGE(6)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
-		v, e = a.GetGE(7)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+	sl1.Add(document.DocId(1), 1)
+	sl1.Add(document.DocId(4), 1)
+	sl1.Add(document.DocId(6), 2)
+	sl1.Add(document.DocId(9), 2)
 
-		v, e = a.GetGE(9)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
-		v, e = a.GetGE(10)
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+	sl2.Add(document.DocId(1), 1)
+	sl2.Add(document.DocId(4), 1)
+	sl2.Add(document.DocId(6), 2)
+	sl2.Add(document.DocId(9), 2)
 
-		v, e = a.GetGE(11)
+	Convey("not and query check", t, func() {
+		a := NewNotAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+		})
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("not and query check2", t, func() {
+		a := NewNotAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("not and query check3", t, func() {
+		a := NewNotAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewOrChecker([]check.Checker{
+				check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+				check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+			}),
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("or query check4", t, func() {
+		a := NewNotAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewNotAndChecker([]check.Checker{
+				check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+				check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+			}),
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+		v, e := a.Current()
+		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})

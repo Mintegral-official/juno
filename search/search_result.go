@@ -32,13 +32,15 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 		return
 	}
 	now := time.Now()
-	id, err := query.Next()
+	id, err := query.Current()
+	query.Next()
 	for err == nil {
 		if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
 			continue
 		}
 		s.Docs = append(s.Docs, id)
-		id, err = query.Next()
+		id, err = query.Current()
+		query.Next()
 	}
 	s.Time = time.Since(now)
 	s.IndexDebug = iIndexer.DebugInfo()
@@ -51,11 +53,10 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operati
 	queryMarshal := q
 	var res = make(map[document.DocId]map[string]interface{}, len(ids))
 	for _, id := range ids {
-		var c []int
 		for k, v := range queryMarshal {
 			switch k {
 			case "and", "or", "not", "and_check", "or_check", "not_and_check":
-				debugInfo(v, idx, id, e, c)
+				debugInfo(v, idx, id, e)
 			case "=":
 				var termQuery = &query.TermQuery{}
 				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id); err != nil {
@@ -82,80 +83,29 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operati
 	s.FilterInfo = res
 }
 
-func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operation.Operation, c []int) {
+func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operation.Operation) {
 	for _, value := range res.([]map[string]interface{}) {
 		for k, v := range value {
 			switch k {
-			case "and":
-				f := true
-				debugInfo(v, idx, id, e, c)
-				for _, v := range c {
-					if v != 1 {
-						f = false
-					}
-				}
-				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
-			case "or":
-				f := false
-				debugInfo(v, idx, id, e, c)
-				for _, v := range c {
-					if v == 1 {
-						f = true
-						break
-					}
-				}
-				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
-			case "not":
-				f := true
-				debugInfo(v, idx, id, e, c)
-				for i := range c {
-					if i == 0 {
-						if c[i] != 1 {
-							f = false
-						}
-					} else {
-						if c[i] == 1 {
-							f = false
-						}
-					}
-				}
-				value[k] = append(v.([]map[string]interface{}), map[string]interface{}{"res": f})
-			case "and_check", "or_check", "not_and_check":
-				debugInfo(v, idx, id, e, c)
+			case "and", "or", "not", "and_check", "or_check", "not_and_check":
+				debugInfo(v, idx, id, e)
 			case "=":
 				var termQuery = &query.TermQuery{}
 				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id); err != nil {
 					value[k] = append(v.([]string), "id not found")
-					c = append(c, 0)
 				} else if res == id {
 					value[k] = append(v.([]string), "id found")
-					c = append(c, 1)
 				}
 			case "check":
 				var chk = &check.CheckerImpl{}
-				if chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id) {
-					c = append(c, 1)
-				} else {
-					c = append(c, 0)
-				}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
 					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
 			case "in_check":
 				var chk = &check.InChecker{}
-				if chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id) {
-					c = append(c, 1)
-				} else {
-					c = append(c, 0)
-				}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
 					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
 			case "not_check":
 				var chk = &check.CheckerImpl{}
-				if chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id) {
-					c = append(c, 1)
-				} else {
-					c = append(c, 0)
-				}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
 					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
 			}

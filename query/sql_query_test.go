@@ -3,7 +3,6 @@ package query
 import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
@@ -79,29 +78,29 @@ var doc3 = &document.DocInfo{
 	},
 }
 
-func TestSqlQuery_LRD(t *testing.T) {
-	s := "field1>= 1 and   (field2 !=1 or ( field2 = 1 and field1=1)) | (field1 in [1,2] and field1 !in [2,3])"
-	sq := NewSqlQuery(s, nil, false)
-	Convey("sql query", t, func() {
-		node := sq.exp2Tree()
-		n := node.To()
-		//node.Print()
-		So(n.Len(), ShouldEqual, 11)
-		idx := index.NewIndex("index")
-		So(idx.Add(doc1), ShouldBeNil)
-		So(idx.Add(doc2), ShouldBeNil)
-		So(idx.Add(doc3), ShouldBeNil)
-		q := sq.LRD(idx)
-		if _, err := q.Current(); err != nil {
-			So(err, ShouldNotBeNil)
-		}
-		id, err := q.Next()
-		for err == nil {
-			So(id, ShouldNotEqual, 0)
-			id, err = q.Next()
-		}
-	})
-}
+//func TestSqlQuery_LRD(t *testing.T) {
+//	s := "field1>= 1 and   (field2 !=1 or ( field2 = 1 and field1=1)) | (field1 in [1,2] and field1 !in [2,3])"
+//	sq := NewSqlQuery(s, nil, false)
+//	Convey("sql query", t, func() {
+//		node := sq.exp2Tree()
+//		n := node.To()
+//		//node.Print()
+//		So(n.Len(), ShouldEqual, 11)
+//		idx := index.NewIndex("index")
+//		So(idx.Add(doc1), ShouldBeNil)
+//		So(idx.Add(doc2), ShouldBeNil)
+//		So(idx.Add(doc3), ShouldBeNil)
+//		q := sq.LRD(idx)
+//		if _, err := q.Current(); err != nil {
+//			So(err, ShouldNotBeNil)
+//		}
+//		id, err := q.Next()
+//		for err == nil {
+//			So(id, ShouldNotEqual, 0)
+//			id, err = q.Next()
+//		}
+//	})
+//}
 
 func BenchmarkSqlQuery_LRD(b *testing.B) {
 	s := "field1>= 1 and   (field2 !=1 or ( field2 = 1 and field1=1)) | (field1 in [1,2] and field1 !in [2,3])"

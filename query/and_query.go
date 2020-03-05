@@ -6,7 +6,6 @@ import (
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 	"strings"
@@ -25,24 +24,55 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 		aq.debugs = debug.NewDebug("AndQuery")
 	}
 	if len(queries) == 0 {
-		return aq
+		return nil
 	}
+	aq.curIdx = 0
 	aq.queries = queries
 	aq.checkers = checkers
+	aq.next()
 	return aq
+	//for {
+	//	target, err := aq.queries[0].Current()
+	//	if err != nil {
+	//		return aq
+	//	}
+	//	if len(aq.queries) == 1 {
+	//		for !aq.check(target) {
+	//			aq.queries[0].Next()
+	//			target, err = aq.queries[0].Current()
+	//		}
+	//		return aq
+	//	}
+	//	for i := 1; i < len(aq.queries); i++ {
+	//		tar, _ := aq.queries[i].GetGE(target)
+	//		if tar != target {
+	//			aq.queries[0].Next()
+	//			_, _ = aq.queries[0].Current()
+	//			break
+	//		} else if i == len(aq.queries)-1 {
+	//			return aq
+	//		}
+	//	}
+	//}
 }
 
-func (aq *AndQuery) Next() (document.DocId, error) {
+func (aq *AndQuery) Next() {
+	aq.queries[aq.curIdx].Next()
+	aq.next()
+}
+
+func (aq *AndQuery) next() {
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Current()
 	if err != nil {
-		return target, helpers.NoMoreData
+		return
 	}
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
-			return cur, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+			aq.curIdx = curIdx
+			return
 		}
 		if cur != target {
 			lastIdx = curIdx
@@ -50,20 +80,21 @@ func (aq *AndQuery) Next() (document.DocId, error) {
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
 			if aq.check(target) {
-				_, _ = aq.queries[0].Next()
-				return target, nil
+				return
 			}
 			curIdx = (curIdx + 1) % len(aq.queries)
-			target, err = aq.queries[curIdx].Next()
+			aq.queries[curIdx].Next()
+			target, err = aq.queries[curIdx].Current()
 			if err != nil {
-				return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+				aq.curIdx = curIdx
+				return
 			}
 		}
 	}
 }
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	curIdx, lastIdx := aq.curIdx, aq.curIdx
+	curIdx, lastIdx := 0, 0
 	target, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
 		return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
@@ -72,6 +103,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
+			aq.curIdx = curIdx
 			return cur, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 		}
 		if cur != target {
@@ -79,11 +111,12 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			target = cur
 		}
 		if (curIdx+1)%len(aq.queries) == lastIdx {
-			if target != 0 && aq.check(target) {
+			if aq.check(target) {
 				return target, nil
 			}
 			curIdx = (curIdx + 1) % len(aq.queries)
-			target, err = aq.queries[curIdx].Next()
+			aq.queries[curIdx].Next()
+			target, err = aq.queries[curIdx].Current()
 			if err != nil {
 				return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
 			}
@@ -92,20 +125,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
-	target, err := aq.queries[0].Current()
-	if err != nil {
-		return target, err
-	}
-	for i := 1; i < len(aq.queries); i++ {
-		tar, err := aq.queries[i].GetGE(target)
-		if err != nil {
-			return tar, err
-		}
-		if tar != target {
-			return target, errors.New(fmt.Sprintf("%d in queries[%d] is different with %d in queries[%d]", target, i, tar, i+1))
-		}
-	}
-	return target, nil
+	return aq.queries[aq.curIdx].Current()
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {

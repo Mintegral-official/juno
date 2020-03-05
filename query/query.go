@@ -8,7 +8,7 @@ import (
 )
 
 type Query interface {
-	Next() (document.DocId, error)
+	Next()
 	Current() (document.DocId, error)
 	GetGE(id document.DocId) (document.DocId, error)
 	Marshal() map[string]interface{}

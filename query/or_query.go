@@ -14,6 +14,7 @@ type OrQuery struct {
 	checkers []check.Checker
 	h        Heap
 	debugs   *debug.Debug
+	lastId   *document.DocId
 }
 
 func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) (oq *OrQuery) {
@@ -22,7 +23,7 @@ func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) (oq *
 		oq.debugs = debug.NewDebug("OrQuery")
 	}
 	if len(queries) == 0 {
-		return oq
+		return nil
 	}
 	h := &Heap{}
 	for i := 0; i < len(queries); i++ {
@@ -33,33 +34,34 @@ func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) (oq *
 	}
 	oq.h = *h
 	oq.checkers = checkers
+	oq.next()
 	return oq
 }
 
-func (oq *OrQuery) Next() (document.DocId, error) {
-	for target, err := oq.Current(); err == nil; {
-		oq.next()
-		if oq.check(target) {
-			for cur, err := oq.Current(); err == nil; {
-				if cur != target {
-					break
-				}
-				oq.next()
-				cur, err = oq.Current()
-			}
-			return target, nil
-		}
-		target, err = oq.Current()
-	}
-	return 0, helpers.NoMoreData
-}
-
-func (oq *OrQuery) next() {
+func (oq *OrQuery) Next() {
 	top := oq.h.Top()
 	if top != nil {
 		q := top.(Query)
-		_, _ = q.Next()
+		q.Next()
 		heap.Fix(&oq.h, 0)
+	}
+	oq.next()
+}
+
+func (oq *OrQuery) next() {
+	for target, err := oq.Current(); err == nil; {
+		if (oq.lastId == nil || *oq.lastId != target) && oq.check(target) {
+			oq.lastId = &target
+			return
+		}
+
+		top := oq.h.Top()
+		if top != nil {
+			q := top.(Query)
+			q.Next()
+			heap.Fix(&oq.h, 0)
+			target, err = oq.Current()
+		}
 	}
 }
 
@@ -79,7 +81,7 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 		target, err = oq.Current()
 	}
 	for err == nil && !oq.check(target) {
-		target, err = oq.Next()
+		oq.Next()
 	}
 	return target, err
 }
@@ -90,11 +92,7 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 		return 0, helpers.NoMoreData
 	}
 	q := top.(Query)
-	res, err := q.Current()
-	if err != nil {
-		return res, err
-	}
-	return res, nil
+	return q.Current()
 }
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {
