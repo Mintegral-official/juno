@@ -47,7 +47,7 @@ func GenerateRandomNumber(start int, end int, count int) []int {
 func TestAndQuery(t *testing.T) {
 	a := NewAndQuery(nil, nil)
 	Convey("and query", t, func() {
-		So(a, ShouldNotBeNil)
+		So(a, ShouldBeNil)
 	})
 }
 
@@ -69,71 +69,28 @@ func TestAndQuery_GetGE(t *testing.T) {
 	Convey("and query get1", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 
-		v, e := a.GetGE(document.DocId(1))
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
+		testCase := [][]document.DocId{
+			{1, 1}, {1, 1}, {1, 1}, {3, 3}, {4, 6}, {6, 6}, {7, 10},
+		}
 
-		v, e = a.GetGE(document.DocId(1))
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(1))
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(3))
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(4))
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(6))
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(7))
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+		for _, expect := range testCase {
+			v, e := a.GetGE(expect[0])
+			So(v, ShouldEqual, expect[1])
+			So(e, ShouldBeNil)
+		}
 	})
 
 	Convey("and query get2", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
-		v, e := a.GetGE(document.DocId(1))
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(1))
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(1))
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(1))
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(3))
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(3))
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(4))
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.GetGE(document.DocId(6))
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-		fmt.Println()
-
-		v, e = a.GetGE(document.DocId(10))
+		testCase := [][]document.DocId{
+			{1, 1}, {1, 1}, {1, 1}, {3, 6}, {3, 6}, {4, 6}, {6, 6},
+		}
+		for _, expect := range testCase {
+			v, e := a.GetGE(expect[0])
+			So(v, ShouldEqual, expect[1])
+			So(e, ShouldBeNil)
+		}
+		v, e := a.GetGE(7)
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})
@@ -157,40 +114,34 @@ func TestAndQuery_Next(t *testing.T) {
 
 	Convey("and query next1", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
+
+		testCase := []document.DocId{
+			1, 3, 6, 10,
+		}
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
 		v, e := a.Current()
 		a.Next()
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
 	})
 
 	Convey("and query next2", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
+		testCase := []document.DocId{
+			1, 6,
+		}
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
 		v, e := a.Current()
-		a.Next()
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
 		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
@@ -212,25 +163,13 @@ func TestAndQuery_Current(t *testing.T) {
 		So(v, ShouldEqual, 1)
 		So(e, ShouldBeNil)
 
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 3)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 6)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
+		testCase := []document.DocId{1, 3, 6, 10}
+		for _, expect := range testCase {
+			v, e = a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
 
 		v, e = a.Current()
 		a.Next()
@@ -352,4 +291,119 @@ func BenchmarkAndQuery_Next(b *testing.B) {
 	}
 	b.StopTimer()
 	fmt.Println(c)
+}
+
+func TestNewAndQuery_Next_check(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), 1)
+	sl.Add(document.DocId(3), 1)
+	sl.Add(document.DocId(6), 2)
+	sl.Add(document.DocId(10), 2)
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(1), 1)
+	sl1.Add(document.DocId(4), 1)
+	sl1.Add(document.DocId(6), 2)
+	sl1.Add(document.DocId(9), 2)
+
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl2.Add(document.DocId(1), 1)
+	sl2.Add(document.DocId(4), 1)
+	sl2.Add(document.DocId(6), 2)
+	sl2.Add(document.DocId(9), 2)
+
+	Convey("and query check", t, func() {
+		a := NewAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+		})
+		testCase := []document.DocId{6}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("and query check2", t, func() {
+		a := NewAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+		testCase := []document.DocId{1, 6}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("and query check3", t, func() {
+		a := NewAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewAndChecker([]check.Checker{
+				check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+				check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+			}),
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+		testCase := []document.DocId{6}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("and query check4", t, func() {
+		a := NewAndQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewOrChecker([]check.Checker{
+				check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+				check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+			}),
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+		testCase := []document.DocId{1, 6}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
 }

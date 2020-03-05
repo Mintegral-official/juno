@@ -24,7 +24,7 @@ func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq 
 		aq.debugs = debug.NewDebug("AndQuery")
 	}
 	if len(queries) == 0 {
-		return aq
+		return nil
 	}
 	aq.curIdx = 0
 	aq.queries = queries

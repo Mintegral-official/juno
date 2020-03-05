@@ -22,17 +22,16 @@ func TestNewOrQuery_Next1(t *testing.T) {
 			check.NewChecker(sl.Iterator(), 1, operation.EQ, nil, false),
 		})
 
+		testCase := []document.DocId{1, 10}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+
 		v, e := a.Current()
-		a.Next()
-		So(v, ShouldEqual, 1)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
-		a.Next()
-		So(v, ShouldEqual, 10)
-		So(e, ShouldBeNil)
-
-		v, e = a.Current()
 		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
@@ -204,9 +203,7 @@ func TestNewOrQuery2(t *testing.T) {
 			NewTermQuery(sl2.Iterator()),
 		}, nil)
 
-		expectVec := []document.DocId{
-			1, 6,
-		}
+		expectVec := []document.DocId{6}
 
 		for _, expect := range expectVec {
 			v, e := q.Current()
@@ -217,6 +214,121 @@ func TestNewOrQuery2(t *testing.T) {
 
 		q.Next()
 		v, e := q.Current()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+}
+
+func TestNewOrQuery_Next_check(t *testing.T) {
+	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl.Add(document.DocId(1), 1)
+	sl.Add(document.DocId(3), 1)
+	sl.Add(document.DocId(6), 2)
+	sl.Add(document.DocId(10), 2)
+
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(1), 1)
+	sl1.Add(document.DocId(4), 1)
+	sl1.Add(document.DocId(6), 2)
+	sl1.Add(document.DocId(9), 2)
+
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl2.Add(document.DocId(1), 1)
+	sl2.Add(document.DocId(4), 1)
+	sl2.Add(document.DocId(6), 2)
+	sl2.Add(document.DocId(9), 2)
+
+	Convey("or query check", t, func() {
+		a := NewOrQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+		})
+		testCase := []document.DocId{6, 9}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("or query check2", t, func() {
+		a := NewOrQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+		testCase := []document.DocId{1, 4, 6, 9}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("or query check3", t, func() {
+		a := NewOrQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewOrChecker([]check.Checker{
+				check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+				check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+			}),
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+		testCase := []document.DocId{1, 4, 6, 9}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("or query check4", t, func() {
+		a := NewOrQuery([]Query{
+			NewTermQuery(sl.Iterator()),
+			NewTermQuery(sl1.Iterator()),
+		}, []check.Checker{
+			check.NewOrChecker([]check.Checker{
+				check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+				check.NewChecker(sl2.Iterator(), 2, operation.EQ, nil, false),
+			}),
+			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
+		})
+		testCase := []document.DocId{1, 4, 6, 9}
+
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})

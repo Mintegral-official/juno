@@ -26,6 +26,9 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (
 		naq.debugs = debug.NewDebug("NotAndQuery")
 	}
 	naq.checkers = checkers
+	if len(queries) == 0 {
+		return nil
+	}
 	if len(queries) == 1 {
 		naq.q = queries[0]
 	} else {
@@ -42,6 +45,7 @@ func (naq *NotAndQuery) next() {
 			return
 		}
 		naq.q.Next()
+		target, err = naq.Current()
 	}
 }
 
@@ -84,11 +88,14 @@ func (naq *NotAndQuery) check(id document.DocId) bool {
 	if len(naq.checkers) == 0 {
 		return true
 	}
-	for _, v := range naq.checkers {
+	for i, v := range naq.checkers {
 		if v == nil {
 			continue
 		}
-		if v.Check(id) {
+		if i == 0 && !v.Check(id) {
+			return false
+		}
+		if i != 0 && v.Check(id) {
 			return false
 		}
 	}
@@ -110,20 +117,19 @@ func (naq *NotAndQuery) DebugInfo() *debug.Debug {
 }
 
 func (naq *NotAndQuery) Marshal() map[string]interface{} {
-	//var queryInfo, checkInfo []map[string]interface{}
-	//res := make(map[string]interface{}, len(naq.queries))
-	//for _, v := range naq.queries {
-	//	queryInfo = append(queryInfo, v.Marshal())
-	//}
-	//if len(naq.checkers) != 0 {
-	//	for _, v := range naq.checkers {
-	//		checkInfo = append(checkInfo, v.Marshal())
-	//	}
-	//	res["not_and_check"] = checkInfo
-	//}
-	//res["not"] = queryInfo
-	//return res
-	return nil
+	var queryInfo, checkInfo []map[string]interface{}
+	res := make(map[string]interface{}, 2)
+	queryInfo = append(queryInfo, naq.q.Marshal())
+	queryInfo = append(queryInfo, naq.subQuery.Marshal())
+
+	if len(naq.checkers) != 0 {
+		for _, v := range naq.checkers {
+			checkInfo = append(checkInfo, v.Marshal())
+		}
+		res["not_and_check"] = checkInfo
+	}
+	res["not"] = queryInfo
+	return res
 }
 
 func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
@@ -182,9 +188,8 @@ func (naq *NotAndQuery) SetDebug(isDebug ...int) {
 	if len(isDebug) == 1 && isDebug[0] == 1 {
 		naq.debugs = debug.NewDebug("NotAndQuery")
 	}
-	//for _, v := range naq.queries {
-	//	v.SetDebug(1)
-	//}
+	naq.q.SetDebug(1)
+	naq.subQuery.SetDebug(1)
 	for _, v := range naq.checkers {
 		switch v.(type) {
 		case *check.AndChecker:
