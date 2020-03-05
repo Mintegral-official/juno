@@ -15,14 +15,10 @@ type StorageIndexer struct {
 	aDebug *debug.Debug
 }
 
-func NewStorageIndexer(isDebug ...int) (s *StorageIndexer) {
-	s = &StorageIndexer{
+func NewStorageIndexer() *StorageIndexer {
+	return &StorageIndexer{
 		data: sync.Map{},
 	}
-	if len(isDebug) != 0 && isDebug[0] == 1 {
-		s.aDebug = debug.NewDebug("storage index")
-	}
-	return s
 }
 
 func (s *StorageIndexer) GetValueById(id document.DocId) map[string][]string {
@@ -118,4 +114,10 @@ func (s *StorageIndexer) Iterator(fieldName string) datastruct.Iterator {
 
 func (s *StorageIndexer) DebugInfo() *debug.Debug {
 	return s.aDebug
+}
+
+func (s *StorageIndexer) SetDebug(level int) {
+	if s.aDebug == nil {
+		s.aDebug = debug.NewDebug(level, "storage index")
+	}
 }

@@ -12,16 +12,13 @@ type NotAndChecker struct {
 	aDebug *debug.Debug
 }
 
-func NewNotAndChecker(c []Checker, isDebug ...int) *NotAndChecker {
+func NewNotAndChecker(c []Checker) *NotAndChecker {
 	if c == nil {
 		return nil
 	}
-	na := &NotAndChecker{}
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		na.aDebug = debug.NewDebug("OrCheck")
+	return &NotAndChecker{
+		c: c,
 	}
-	na.c = c
-	return na
 }
 
 func (na *NotAndChecker) Check(id document.DocId) bool {
@@ -84,18 +81,23 @@ func (na *NotAndChecker) Unmarshal(idx *index.Indexer, res map[string]interface{
 	return NewOrChecker(c)
 }
 
-func (na *NotAndChecker) DebugInfo() string {
-	return na.aDebug.String()
+func (na *NotAndChecker) DebugInfo() *debug.Debug {
+	if na.aDebug != nil {
+		for _, v := range na.c {
+			if v.DebugInfo() != nil {
+				na.aDebug.AddDebug(v.DebugInfo())
+			}
+		}
+		return na.aDebug
+	}
+	return nil
 }
 
-func (na *NotAndChecker) SetDebug() {
-	na.aDebug = debug.NewDebug("OrCheck")
+func (na *NotAndChecker) SetDebug(level int) {
+	if na.aDebug == nil {
+		na.aDebug = debug.NewDebug(level, "OrCheck")
+	}
 	for _, v := range na.c {
-		switch v.(type) {
-		case *AndChecker:
-			v.(*AndChecker).aDebug = debug.NewDebug("AndCheck")
-		case *OrChecker:
-			v.(*OrChecker).aDebug = debug.NewDebug("OrCheck")
-		}
+		v.SetDebug(level)
 	}
 }

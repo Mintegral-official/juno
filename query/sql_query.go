@@ -20,16 +20,13 @@ type SqlQuery struct {
 	debugs     *debug.Debugs
 }
 
-func NewSqlQuery(str string, e operation.Operation, transfer bool, isDebug ...int) (s *SqlQuery) {
+func NewSqlQuery(str string, e operation.Operation, transfer bool) (s *SqlQuery) {
 	s = &SqlQuery{
 		Node:       &datastruct.TreeNode{},
 		Stack:      datastruct.NewStack(),
 		Expression: NewExpression(str),
 		e:          e,
 		transfer:   transfer,
-	}
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		s.debugs = debug.NewDebugs(debug.NewDebug("SqlQuery"))
 	}
 	return s
 }
@@ -123,9 +120,6 @@ func (sq *SqlQuery) parseIn(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewInChecker(storageIdx.Iterator(strSlice[0]), value, sq.e, sq.transfer))
-	if sq.debugs != nil {
-		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
-	}
 	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
@@ -137,17 +131,11 @@ func (sq *SqlQuery) parseNotIn(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewNotChecker(storageIdx.Iterator(strSlice[0]), value, sq.e, sq.transfer))
-	if sq.debugs != nil {
-		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
-	}
 	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
 func (sq *SqlQuery) parseEQ(str string, idx *index.Indexer) Query {
 	strSlice, invert := strings.Split(str, "="), idx.GetInvertedIndex()
-	if sq.debugs != nil {
-		return NewTermQuery(invert.Iterator(strSlice[0], strSlice[1]), 1)
-	}
 	return NewTermQuery(invert.Iterator(strSlice[0], strSlice[1]))
 }
 
@@ -158,9 +146,6 @@ func (sq *SqlQuery) parseNE(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.NE, sq.e, sq.transfer))
-	if sq.debugs != nil {
-		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
-	}
 	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
@@ -171,9 +156,6 @@ func (sq *SqlQuery) parseLT(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LT, sq.e, sq.transfer))
-	if sq.debugs != nil {
-		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
-	}
 	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
@@ -184,9 +166,6 @@ func (sq *SqlQuery) parseLE(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LE, sq.e, sq.transfer))
-	if sq.debugs != nil {
-		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
-	}
 	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
@@ -197,9 +176,6 @@ func (sq *SqlQuery) parseGT(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GT, sq.e, sq.transfer))
-	if sq.debugs != nil {
-		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
-	}
 	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 
@@ -210,9 +186,6 @@ func (sq *SqlQuery) parseGE(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GE, sq.e, sq.transfer))
-	if sq.debugs != nil {
-		return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]), 1),}, c, 1)
-	}
 	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
 }
 

@@ -1,18 +1,18 @@
 package check
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strconv"
 )
 
 type InChecker struct {
 	si       datastruct.Iterator
 	value    interface{}
 	e        operation.Operation
+	aDebug   *debug.Debug
 	transfer bool
 }
 
@@ -25,17 +25,17 @@ func NewInChecker(si datastruct.Iterator, value interface{}, e operation.Operati
 	}
 }
 
-func (i *InChecker) DebugInfo() string {
-	tmp := false
-	if i.e != nil {
-		tmp = true
+func (i *InChecker) DebugInfo() *debug.Debug {
+	if i.aDebug != nil {
+		return i.aDebug
 	}
-	return "FieldName: " + i.si.(*datastruct.SkipListIterator).FieldName + "\t" +
-		"value: " + fmt.Sprintf("%v", i.value) + "\t" +
-		"OP: in" + "\t" +
-		"defined operation: " + strconv.FormatBool(tmp) + "\t" +
-		"transfer: " + strconv.FormatBool(i.transfer)
+	return nil
+}
 
+func (i *InChecker) SetDebug(level int) {
+	if i.aDebug == nil {
+		i.aDebug = debug.NewDebug(level, "In checker")
+	}
 }
 
 func (i *InChecker) Check(id document.DocId) bool {

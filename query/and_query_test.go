@@ -70,7 +70,7 @@ func TestAndQuery_GetGE(t *testing.T) {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 
 		testCase := [][]document.DocId{
-			{1, 1}, {1, 1}, {1, 1}, {3, 3}, {4, 6}, {6, 6}, {7, 10},
+			{1, 1}, {1, 1}, {1, 1}, {3, 3}, {4, 6}, {6, 6}, {7, 10}, {10, 10},
 		}
 
 		for _, expect := range testCase {
@@ -78,6 +78,9 @@ func TestAndQuery_GetGE(t *testing.T) {
 			So(v, ShouldEqual, expect[1])
 			So(e, ShouldBeNil)
 		}
+		v, e := a.GetGE(11)
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
 	})
 
 	Convey("and query get2", t, func() {

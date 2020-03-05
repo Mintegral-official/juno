@@ -21,13 +21,8 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (
 	if len(queries) == 0 {
 		return nil
 	}
-	naq = &NotAndQuery{}
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		naq.debugs = debug.NewDebug("NotAndQuery")
-	}
-	naq.checkers = checkers
-	if len(queries) == 0 {
-		return nil
+	naq = &NotAndQuery{
+		checkers: checkers,
 	}
 	if len(queries) == 1 {
 		naq.q = queries[0]
@@ -104,13 +99,10 @@ func (naq *NotAndQuery) check(id document.DocId) bool {
 
 func (naq *NotAndQuery) DebugInfo() *debug.Debug {
 	if naq.debugs != nil {
-		//for _, v := range naq.queries {
-		//	if v.DebugInfo() != nil {
-		//		for key, value := range v.DebugInfo().Node {
-		//			naq.debugs.Node[key] = append(naq.debugs.Node[key], value...)
-		//		}
-		//	}
-		//}
+		naq.debugs.AddDebug(naq.q.DebugInfo(), naq.subQuery.DebugInfo())
+		for _, v := range naq.checkers {
+			naq.debugs.AddDebug(v.DebugInfo())
+		}
 		return naq.debugs
 	}
 	return nil
@@ -184,20 +176,13 @@ func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}
 	return NewNotAndQuery(q, c)
 }
 
-func (naq *NotAndQuery) SetDebug(isDebug ...int) {
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		naq.debugs = debug.NewDebug("NotAndQuery")
+func (naq *NotAndQuery) SetDebug(level int) {
+	if naq.debugs == nil {
+		naq.debugs = debug.NewDebug(level, "NotAndQuery")
 	}
-	naq.q.SetDebug(1)
-	naq.subQuery.SetDebug(1)
+	naq.q.SetDebug(level)
+	naq.subQuery.SetDebug(level)
 	for _, v := range naq.checkers {
-		switch v.(type) {
-		case *check.AndChecker:
-			v.(*check.AndChecker).SetDebug()
-		case *check.OrChecker:
-			v.(*check.OrChecker).SetDebug()
-		case *check.NotAndChecker:
-			v.(*check.NotAndChecker).SetDebug()
-		}
+		v.SetDebug(level)
 	}
 }

@@ -2,6 +2,7 @@ package query
 
 import (
 	"container/heap"
+	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -17,13 +18,12 @@ type OrQuery struct {
 	lastId   *document.DocId
 }
 
-func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) (oq *OrQuery) {
-	oq = &OrQuery{}
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		oq.debugs = debug.NewDebug("OrQuery")
-	}
+func NewOrQuery(queries []Query, checkers []check.Checker) (oq *OrQuery) {
 	if len(queries) == 0 {
 		return nil
+	}
+	oq = &OrQuery{
+		checkers: checkers,
 	}
 	h := &Heap{}
 	for i := 0; i < len(queries); i++ {
@@ -33,7 +33,6 @@ func NewOrQuery(queries []Query, checkers []check.Checker, isDebug ...int) (oq *
 		heap.Push(h, queries[i])
 	}
 	oq.h = *h
-	oq.checkers = checkers
 	oq.next()
 	return oq
 }
@@ -54,13 +53,16 @@ func (oq *OrQuery) next() {
 			oq.lastId = &target
 			return
 		}
-
 		top := oq.h.Top()
 		if top != nil {
 			q := top.(Query)
 			q.Next()
 			heap.Fix(&oq.h, 0)
 			target, err = oq.Current()
+		} else {
+			if oq.debugs != nil {
+				oq.debugs.AddDebugMsg(fmt.Sprintf("query is nil"))
+			}
 		}
 	}
 }
@@ -82,6 +84,7 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 	}
 	for err == nil && !oq.check(target) {
 		oq.Next()
+		target, err = oq.Current()
 	}
 	return target, err
 }
@@ -98,11 +101,10 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 func (oq *OrQuery) DebugInfo() *debug.Debug {
 	if oq.debugs != nil {
 		for _, v := range oq.h {
-			if v.DebugInfo() != nil {
-				for key, value := range v.DebugInfo().Node {
-					oq.debugs.Node[key] = append(oq.debugs.Node[key], value...)
-				}
-			}
+			oq.debugs.AddDebug(v.DebugInfo())
+		}
+		for _, v := range oq.checkers {
+			oq.debugs.AddDebug(v.DebugInfo())
 		}
 		return oq.debugs
 	}
@@ -192,21 +194,14 @@ func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e o
 	return NewOrQuery(q, c)
 }
 
-func (oq *OrQuery) SetDebug(isDebug ...int) {
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		oq.debugs = debug.NewDebug("OrQuery")
+func (oq *OrQuery) SetDebug(level int) {
+	if oq.debugs == nil {
+		oq.debugs = debug.NewDebug(level, "OrQuery")
 	}
 	for _, v := range oq.h {
-		v.SetDebug(1)
+		v.SetDebug(level)
 	}
 	for _, v := range oq.checkers {
-		switch v.(type) {
-		case *check.AndChecker:
-			v.(*check.AndChecker).SetDebug()
-		case *check.OrChecker:
-			v.(*check.OrChecker).SetDebug()
-		case *check.NotAndChecker:
-			v.(*check.NotAndChecker).SetDebug()
-		}
+		v.SetDebug(level)
 	}
 }

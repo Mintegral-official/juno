@@ -1,6 +1,7 @@
 package check
 
 import (
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
@@ -8,9 +9,23 @@ import (
 
 type Checker interface {
 	Check(id document.DocId) bool
-	DebugInfo() string
+	DebugInfo() *debug.Debug
+	SetDebug(level int)
 	Marshal() map[string]interface{}
 	Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Checker
+}
+
+var OpMap = map[operation.OP]string{
+	operation.EQ:  "=",   // 相等
+	operation.NE:  "!=",  // 不等
+	operation.LE:  "<=",  // 小于等于
+	operation.GE:  ">=",  // 大于等于
+	operation.LT:  "<",   // 小于
+	operation.GT:  ">",   // 大于
+	operation.AND: "and", // 与
+	operation.OR:  "or",  // 或
+	operation.NOT: "not", // 非
+	operation.IN:  "in",  // 范围
 }
 
 func UtilCheck(cValue interface{}, op operation.OP, value interface{}, e operation.Operation) bool {

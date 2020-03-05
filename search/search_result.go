@@ -16,7 +16,8 @@ type Searcher struct {
 	Docs       []document.DocId
 	Time       time.Duration
 	FilterInfo map[document.DocId]map[string]interface{}
-	Debug      *debug.Debug
+	IndexDebug *debug.Debug
+	QueryDebug *debug.Debug
 }
 
 func NewSearcher() *Searcher {

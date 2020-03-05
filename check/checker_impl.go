@@ -1,8 +1,12 @@
 package check
 
 import (
+	"errors"
+	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 )
@@ -12,6 +16,7 @@ type CheckerImpl struct {
 	value    interface{}
 	op       operation.OP
 	e        operation.Operation
+	aDebug   *debug.Debug
 	transfer bool
 }
 
@@ -25,8 +30,17 @@ func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e op
 	}
 }
 
-func (c *CheckerImpl) DebugInfo() string {
-	return ""
+func (c *CheckerImpl) DebugInfo() *debug.Debug {
+	if c.aDebug != nil {
+		return c.aDebug
+	}
+	return nil
+}
+
+func (c *CheckerImpl) SetDebug(level int) {
+	if c.aDebug == nil {
+		c.aDebug = debug.NewDebug(level, "checker["+OpMap[c.op]+"]")
+	}
 }
 
 func (c *CheckerImpl) Check(id document.DocId) bool {
@@ -35,14 +49,30 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	}
 	element := c.si.GetGE(id)
 	if element == nil {
+		if c.aDebug != nil {
+			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, Field: %s, Value:%v, reason: %v",
+				id, c.si.(*datastruct.SkipListIterator).FieldName, c.value, helpers.ElementNotfound))
+		}
 		return false
 	}
 	key, v := element.Key(), element.Value()
 	if key != id || v == nil {
+		if c.aDebug != nil {
+			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE ID %d,: Field: %s, FieldValue: %v, Value: %v, reason: %v",
+				id, key, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, errors.New("")))
+		}
 		return false
 	}
 	if c.transfer {
+		if c.aDebug != nil && !UtilCheck(c.value, c.op, v, c.e) {
+			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d Field: %s, FieldValue: %v, Value:%v, reason: %v",
+				id, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, errors.New("id not equal")))
+		}
 		return UtilCheck(c.value, c.op, v, c.e)
+	}
+	if c.aDebug != nil && !UtilCheck(v, c.op, c.value, c.e) {
+		c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE ID %d,: Name: %s, reason: %v",
+			id, key, c.si.(*datastruct.SkipListIterator).FieldName, errors.New("id not equal")))
 	}
 	return UtilCheck(v, c.op, c.value, c.e)
 }
@@ -59,7 +89,7 @@ func (c *CheckerImpl) Marshal() map[string]interface{} {
 		tmp = append(tmp, 0)
 	}
 	tmp = append(tmp, c.transfer)
-	tmp = append(tmp, opMap[c.op])
+	tmp = append(tmp, OpMap[c.op])
 	res["check"] = tmp
 	return res
 }
@@ -74,17 +104,4 @@ func (c *CheckerImpl) Unmarshal(idx *index.Indexer, res map[string]interface{}, 
 		return NewChecker(idx.GetStorageIndex().Iterator(value[0].(string)), value[1], value[2].(operation.OP), e, value[4].(bool))
 	}
 	return NewChecker(idx.GetStorageIndex().Iterator(value[0].(string)), value[1], value[2].(operation.OP), nil, value[4].(bool))
-}
-
-var opMap = map[operation.OP]string{
-	operation.EQ:  "=",   // 相等
-	operation.NE:  "!=",  // 不等
-	operation.LE:  "<=",  // 小于等于
-	operation.GE:  ">=",  // 大于等于
-	operation.LT:  "<",   // 小于
-	operation.GT:  ">",   // 大于
-	operation.AND: "and", // 与
-	operation.OR:  "or",  // 或
-	operation.NOT: "not", // 非
-	operation.IN:  "in",  // 范围
 }

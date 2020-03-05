@@ -12,16 +12,13 @@ type AndChecker struct {
 	aDebug *debug.Debug
 }
 
-func NewAndChecker(c []Checker, isDebug ...int) *AndChecker {
+func NewAndChecker(c []Checker) *AndChecker {
 	if c == nil {
 		return nil
 	}
-	a := &AndChecker{}
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		a.aDebug = debug.NewDebug("AndCheck")
+	return &AndChecker{
+		c: c,
 	}
-	a.c = c
-	return a
 }
 
 func (a *AndChecker) Check(id document.DocId) bool {
@@ -77,21 +74,19 @@ func (a *AndChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}, e
 	return NewAndChecker(c)
 }
 
-func (a *AndChecker) DebugInfo() string {
+func (a *AndChecker) DebugInfo() *debug.Debug {
 	if a.aDebug != nil {
-		return a.aDebug.String()
+		for _, v := range a.c {
+			a.aDebug.AddDebug(v.DebugInfo())
+		}
+		return a.aDebug
 	}
-	return ""
+	return nil
 }
 
-func (a *AndChecker) SetDebug() {
-	a.aDebug = debug.NewDebug("AndCheck")
+func (a *AndChecker) SetDebug(level int) {
+	a.aDebug = debug.NewDebug(level, "AndCheck")
 	for _, v := range a.c {
-		switch v.(type) {
-		case *AndChecker:
-			v.(*AndChecker).aDebug = debug.NewDebug("AndCheck")
-		case *OrChecker:
-			v.(*OrChecker).aDebug = debug.NewDebug("OrCheck")
-		}
+		v.SetDebug(level)
 	}
 }

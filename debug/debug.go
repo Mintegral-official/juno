@@ -2,32 +2,35 @@ package debug
 
 import (
 	"encoding/json"
-	"github.com/Mintegral-official/juno/document"
 	"unsafe"
 )
 
 type Debug struct {
-	Level     int       `json:"level"`
-	DebugInfo []string  `json:"debugInfo"`
-	Debugs    []*Debugs `json:"children"`
+	Level int      `json:"-"`
+	Name  string   `json:"name"`
+	Msg   []string `json:"msg,omitempty"`
+	Node  []*Debug `json:"node,omitempty"`
 }
 
-func NewDebug(name string) *Debug {
+func NewDebug(level int, name string) *Debug {
 	return &Debug{
-		Node: map[document.DocId][]string{},
+		Level: level,
+		Name:  name,
+		Msg:   []string{},
+		//	Node: []*Debug{},
 	}
 }
 
 func (d *Debug) AddDebug(debug ...*Debug) {
-	//for _, v := range debug {
-	//	d.Node = append(d.Node, v)
-	//}
+	for _, v := range debug {
+		d.Node = append(d.Node, v)
+	}
 }
 
 func (d *Debug) AddDebugMsg(msg ...string) {
-	//for _, v := range msg {
-	//	d.Msg = append(d.Msg, v)
-	//}
+	for _, v := range msg {
+		d.Msg = append(d.Msg, v)
+	}
 }
 
 func (d *Debug) String() string {
