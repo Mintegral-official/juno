@@ -7,13 +7,14 @@ import (
 )
 
 type Debug struct {
-	//Name document.DocId                `json:"name"`
-	Node map[document.DocId][][]string `json:"node"`
+	Level     int       `json:"level"`
+	DebugInfo []string  `json:"debugInfo"`
+	Debugs    []*Debugs `json:"children"`
 }
 
 func NewDebug(name string) *Debug {
 	return &Debug{
-		Node: map[document.DocId][][]string{},
+		Node: map[document.DocId][]string{},
 	}
 }
 

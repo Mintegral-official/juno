@@ -18,11 +18,8 @@ type AndQuery struct {
 	debugs   *debug.Debug
 }
 
-func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq *AndQuery) {
+func NewAndQuery(queries []Query, checkers []check.Checker) (aq *AndQuery) {
 	aq = &AndQuery{}
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		aq.debugs = debug.NewDebug("AndQuery")
-	}
 	if len(queries) == 0 {
 		return nil
 	}
@@ -238,8 +235,8 @@ func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e 
 	return NewAndQuery(q, c)
 }
 
-func (aq *AndQuery) SetDebug(isDebug ...int) {
-	if len(isDebug) == 1 && isDebug[0] == 1 {
+func (aq *AndQuery) SetDebug(isDebug int) {
+	if aq.debugs == nil {
 		aq.debugs = debug.NewDebug("AndQuery")
 	}
 	for _, v := range aq.queries {
