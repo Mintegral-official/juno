@@ -1,14 +1,11 @@
 package query
 
 import (
-	"errors"
-	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strings"
 )
 
 type AndQuery struct {
@@ -18,42 +15,17 @@ type AndQuery struct {
 	debugs   *debug.Debug
 }
 
-func NewAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (aq *AndQuery) {
-	aq = &AndQuery{}
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		aq.debugs = debug.NewDebug("AndQuery")
-	}
+func NewAndQuery(queries []Query, checkers []check.Checker) (aq *AndQuery) {
 	if len(queries) == 0 {
 		return nil
 	}
-	aq.curIdx = 0
-	aq.queries = queries
-	aq.checkers = checkers
+	aq = &AndQuery{
+		curIdx:   0,
+		queries:  queries,
+		checkers: checkers,
+	}
 	aq.next()
 	return aq
-	//for {
-	//	target, err := aq.queries[0].Current()
-	//	if err != nil {
-	//		return aq
-	//	}
-	//	if len(aq.queries) == 1 {
-	//		for !aq.check(target) {
-	//			aq.queries[0].Next()
-	//			target, err = aq.queries[0].Current()
-	//		}
-	//		return aq
-	//	}
-	//	for i := 1; i < len(aq.queries); i++ {
-	//		tar, _ := aq.queries[i].GetGE(target)
-	//		if tar != target {
-	//			aq.queries[0].Next()
-	//			_, _ = aq.queries[0].Current()
-	//			break
-	//		} else if i == len(aq.queries)-1 {
-	//			return aq
-	//		}
-	//	}
-	//}
 }
 
 func (aq *AndQuery) Next() {
@@ -97,14 +69,14 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 	curIdx, lastIdx := 0, 0
 	target, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
-		return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+		return target, err
 	}
 	for {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
 			aq.curIdx = curIdx
-			return cur, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+			return cur, err
 		}
 		if cur != target {
 			lastIdx = curIdx
@@ -118,7 +90,7 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			aq.queries[curIdx].Next()
 			target, err = aq.queries[curIdx].Current()
 			if err != nil {
-				return target, errors.New(aq.StringBuilder(256, curIdx, target, err.Error()))
+				return target, err
 			}
 		}
 	}
@@ -131,11 +103,10 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 func (aq *AndQuery) DebugInfo() *debug.Debug {
 	if aq.debugs != nil {
 		for _, v := range aq.queries {
-			if v.DebugInfo() != nil {
-				for key, value := range v.DebugInfo().Node {
-					aq.debugs.Node[key] = append(aq.debugs.Node[key], value...)
-				}
-			}
+			aq.debugs.AddDebug(v.DebugInfo())
+		}
+		for _, v := range aq.checkers {
+			aq.debugs.AddDebug(v.DebugInfo())
 		}
 		return aq.debugs
 	}
@@ -155,15 +126,6 @@ func (aq *AndQuery) check(id document.DocId) bool {
 		}
 	}
 	return true
-}
-
-func (aq *AndQuery) StringBuilder(cap int, value ...interface{}) string {
-	var b strings.Builder
-	b.Grow(cap)
-	_, _ = fmt.Fprintf(&b, "queries[%d] ", value[0])
-	_, _ = fmt.Fprintf(&b, "not found:[%d], ", value[1])
-	_, _ = fmt.Fprintf(&b, "reason:[%s]", value[2])
-	return b.String()
 }
 
 func (aq *AndQuery) Marshal() map[string]interface{} {
@@ -238,21 +200,14 @@ func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e 
 	return NewAndQuery(q, c)
 }
 
-func (aq *AndQuery) SetDebug(isDebug ...int) {
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		aq.debugs = debug.NewDebug("AndQuery")
+func (aq *AndQuery) SetDebug(level int) {
+	if aq.debugs == nil {
+		aq.debugs = debug.NewDebug(level, "AndQuery")
 	}
 	for _, v := range aq.queries {
 		v.SetDebug(1)
 	}
 	for _, v := range aq.checkers {
-		switch v.(type) {
-		case *check.AndChecker:
-			v.(*check.AndChecker).SetDebug()
-		case *check.OrChecker:
-			v.(*check.OrChecker).SetDebug()
-		case *check.NotAndChecker:
-			v.(*check.NotAndChecker).SetDebug()
-		}
+		v.SetDebug(level)
 	}
 }

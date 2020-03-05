@@ -202,7 +202,6 @@ func (mib *MongoIndexBuilder) InfoStatus(s string, t int64) {
 
 func (mib *MongoIndexBuilder) WarnStatus(s string, t int64) {
 	if mib.ops.Logger != nil {
-		mib.ops.Logger.Warnf("mongo_[%s]:[%s], totalNum:[%d], errorNum:[%d], load time:[%dms]",
-			mib.innerIndex.GetName(), s, mib.totalNum, mib.errorNum, t/1e6)
+		mib.ops.Logger.Warnf("reason: %s, time: %dms", s, t)
 	}
 }

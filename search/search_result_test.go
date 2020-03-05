@@ -214,13 +214,19 @@ func TestSearcher_Debug(t *testing.T) {
 				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
 			}),
 		})
+		q.SetDebug(1)
 		testCase := []document.DocId{1, 3, 4}
 		for _, expect := range testCase {
 			v, e := q.Current()
 			q.Next()
-			So(v, ShouldEqual,expect)
+			So(v, ShouldEqual, expect)
 			So(e, ShouldBeNil)
 		}
+		v, e := q.Current()
+		q.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+		fmt.Println(q.DebugInfo().String())
 	})
 
 }

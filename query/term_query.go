@@ -16,17 +16,13 @@ type TermQuery struct {
 	debugs   *debug.Debug
 }
 
-func NewTermQuery(iter datastruct.Iterator, isDebug ...int) (tq *TermQuery) {
-	tq = &TermQuery{}
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		tq.debugs = debug.NewDebug("TermQuery")
-	}
+func NewTermQuery(iter datastruct.Iterator) (tq *TermQuery) {
 	if iter == nil {
-		tq.debugs.AddDebugMsg("the iterator is nil")
-		return tq
+		return nil
 	}
-	tq.iterator = iter
-	return tq
+	return &TermQuery{
+		iterator: iter,
+	}
 }
 
 func (tq *TermQuery) Next() {
@@ -43,6 +39,11 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 
 	element := tq.iterator.GetGE(id)
 	if element == nil {
+		if tq.debugs != nil {
+			fields := strings.Split(tq.iterator.(*datastruct.SkipListIterator).FieldName, index.SEP)
+			tq.debugs.AddDebugMsg(fmt.Sprintf("docId: %d, Name: %s, Value: %s, Reason: %v",
+				id, fields[0], fields[1], helpers.ElementNotfound))
+		}
 		return 0, helpers.ElementNotfound
 	}
 	return element.Key(), nil
@@ -54,7 +55,12 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 	}
 	element := tq.iterator.Current()
 	if element == nil {
-		return 0, helpers.ElementNotfound
+		if tq.debugs != nil {
+			fields := strings.Split(tq.iterator.(*datastruct.SkipListIterator).FieldName, index.SEP)
+			tq.debugs.AddDebugMsg(fmt.Sprintf("Name: %s, Value: %s, Reason: %v",
+				fields[0], fields[1], helpers.NoMoreData))
+		}
+		return 0, helpers.NoMoreData
 	}
 	return element.Key(), nil
 }
@@ -81,8 +87,8 @@ func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e
 	return NewTermQuery(idx.GetInvertedIndex().Iterator(fmt.Sprint(v.([]string)[0]), fmt.Sprint(v.([]string)[1])))
 }
 
-func (tq *TermQuery) SetDebug(isDebug ...int) {
-	if len(isDebug) == 1 && isDebug[0] == 1 {
-		tq.debugs = debug.NewDebug("TermQuery")
+func (tq *TermQuery) SetDebug(level int) {
+	if tq.debugs == nil {
+		tq.debugs = debug.NewDebug(level, "TermQuery")
 	}
 }

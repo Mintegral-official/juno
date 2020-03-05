@@ -28,7 +28,7 @@ type Indexer struct {
 	aDebug          *debug.Debug
 }
 
-func NewIndex(name string, isDebug ...int) (i *Indexer) {
+func NewIndex(name string) (i *Indexer) {
 	i = &Indexer{
 		invertedIndex:   NewInvertedIndexer(),
 		storageIndex:    NewStorageIndexer(),
@@ -38,9 +38,6 @@ func NewIndex(name string, isDebug ...int) (i *Indexer) {
 		count:           1,
 		name:            name,
 		logger:          logrus.New(),
-	}
-	if len(isDebug) != 0 && isDebug[0] == 1 {
-		i.aDebug = debug.NewDebug(name)
 	}
 	return i
 }
@@ -65,12 +62,17 @@ func (i *Indexer) GetName() string {
 	return i.name
 }
 
-func (i *Indexer) UnsetDebug() {
-	i.aDebug = debug.NewDebug(i.GetName())
+func (i *Indexer) SetDebug(level int) {
+	if i.aDebug == nil {
+		i.aDebug = debug.NewDebug(level, i.GetName())
+		i.invertedIndex.SetDebug(level)
+		i.storageIndex.SetDebug(level)
+	}
+
 }
 
 func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
-	var res  [2]map[string][]string
+	var res [2]map[string][]string
 	res[0] = i.GetInvertedIndex().GetValueById(id)
 	res[1] = i.GetStorageIndex().GetValueById(id)
 	return res

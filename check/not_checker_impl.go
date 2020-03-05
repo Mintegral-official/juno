@@ -1,18 +1,18 @@
 package check
 
 import (
-	"fmt"
 	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
-	"strconv"
 )
 
 type NotChecker struct {
 	si       datastruct.Iterator
 	value    interface{}
 	e        operation.Operation
+	aDebug   *debug.Debug
 	transfer bool
 }
 
@@ -25,17 +25,17 @@ func NewNotChecker(si datastruct.Iterator, value interface{}, e operation.Operat
 	}
 }
 
-func (nc *NotChecker) DebugInfo() string {
-	tmp := false
-	if nc.e != nil {
-		tmp = true
+func (nc *NotChecker) DebugInfo() *debug.Debug {
+	if nc.aDebug != nil {
+		return nc.aDebug
 	}
-	return "FieldName: " + nc.si.(*datastruct.SkipListIterator).FieldName + "\t" +
-		"value: " + fmt.Sprintf("%v", nc.value) + "\t" +
-		"OP: not" + "\t" +
-		"defined operation: " + strconv.FormatBool(tmp) + "\t" +
-		"transfer: " + strconv.FormatBool(nc.transfer)
+	return nil
+}
 
+func (nc *NotChecker) SetDebug(level int) {
+	if nc.aDebug == nil {
+		nc.aDebug = debug.NewDebug(level, "not checker")
+	}
 }
 
 func (nc *NotChecker) Check(id document.DocId) bool {

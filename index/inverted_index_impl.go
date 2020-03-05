@@ -15,14 +15,10 @@ type InvertedIndexer struct {
 	aDebug *debug.Debug
 }
 
-func NewInvertedIndexer(isDebug ...int) (i *InvertedIndexer) {
-	i = &InvertedIndexer{
+func NewInvertedIndexer() *InvertedIndexer {
+	return &InvertedIndexer{
 		data: sync.Map{},
 	}
-	if len(isDebug) != 0 && isDebug[0] == 1 {
-		i.aDebug = debug.NewDebug("invert index")
-	}
-	return i
 }
 
 func (i *InvertedIndexer) Count() (count int) {
@@ -128,4 +124,10 @@ func (i *InvertedIndexer) Iterator(name, value string) datastruct.Iterator {
 
 func (i *InvertedIndexer) DebugInfo() *debug.Debug {
 	return i.aDebug
+}
+
+func (i *InvertedIndexer) SetDebug(level int) {
+	if i.aDebug == nil {
+		i.aDebug = debug.NewDebug(level, "invert index")
+	}
 }
