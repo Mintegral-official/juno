@@ -35,9 +35,6 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	id, err := query.Current()
 	query.Next()
 	for err == nil {
-		if v, ok := iIndexer.GetCampaignMap().Get(index.DocId(id)); ok && !iIndexer.GetBitMap().IsExist(v.(document.DocId)) {
-			continue
-		}
 		s.Docs = append(s.Docs, id)
 		id, err = query.Current()
 		query.Next()
