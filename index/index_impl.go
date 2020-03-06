@@ -89,7 +89,7 @@ func (i *Indexer) UpdateIds(fieldName string, ids []document.DocId) {
 			i.count++
 			i.campaignMapping.Set(DocId(id), i.count)
 			i.bitmap.Set(DocId(i.count), id)
-			idList = append(idList, v.(document.DocId))
+			idList = append(idList, i.count)
 		}
 	}
 	i.invertedIndex.Update(fieldName, idList)
