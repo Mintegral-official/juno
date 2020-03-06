@@ -67,7 +67,7 @@ func TestNewTermQuery1(t *testing.T) {
 					query.NewTermQuery(s1.Iterator("fieldName", "3")),
 					query.NewTermQuery(s1.Iterator("fieldName", "4")),
 				}, []check.Checker{
-					check.NewChecker(s2.Iterator("fieldName"), 2, operation.EQ, nil, false),
+					check.NewChecker(s2.Iterator("fieldName"), 2, operation.NE, nil, false),
 					check.NewAndChecker([]check.Checker{
 						check.NewChecker(s2.Iterator("fieldName"), 2, operation.EQ, nil, false),
 						check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
@@ -87,35 +87,17 @@ func TestNewTermQuery1(t *testing.T) {
 				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
 			}),
 		})
-		fmt.Println(q.Current())
-		q.Next()
-		fmt.Println(q.Current())
-		q.Next()
-		fmt.Println(q.Current())
-		q.Next()
-		fmt.Println(q.Current())
-		q.Next()
-		fmt.Println(q.Current())
-		q.Next()
-		fmt.Println(q.Current())
-		q.Next()
+		sq1 := NewSearcher()
+		sq1.Search(ss, q)
+		fmt.Println(sq1.Docs)
 		r, _ := json.Marshal(q.Marshal())
 		fmt.Println(string(r))
 		sq := NewSearcher()
 		sq.Debug(ss, q.Marshal(), nil, []document.DocId{document.DocId(10)})
 		bb, _ := json.Marshal(sq.FilterInfo)
 		fmt.Println(string(bb))
+		fmt.Println(sq.Docs)
 
-		//sea := NewSearcher()
-		//sea.Debug(ss, q.Marshal(), nil, []document.DocId{document.DocId(10)})
-		//bbb, _ := json.Marshal(sea.FilterInfo)
-		//fmt.Println(string(bbb))
-		//fmt.Println(sea.Docs)
-		//
-		//sea.Search(ss, q)
-		//fmt.Println(sea.Docs)
-		//
-		//fmt.Println(ss.GetValueById(document.DocId(10)))
 
 		qq := query.NewAndQuery([]query.Query{
 			query.NewTermQuery(s1.Iterator("fieldName", "1")),
@@ -146,7 +128,7 @@ func TestSearcher_Debug(t *testing.T) {
 	ss := index.NewIndex("")
 	s1 := ss.GetInvertedIndex()
 	s2 := ss.GetStorageIndex()
-	Convey("Add", t, func() {
+	Convey("SetDebug", t, func() {
 		So(s1.Add("fieldName\0071", 1), ShouldBeNil)
 		So(s1.Add("fieldName\0071", 3), ShouldBeNil)
 		So(s1.Add("fieldName\0071", 4), ShouldBeNil)
@@ -214,7 +196,6 @@ func TestSearcher_Debug(t *testing.T) {
 				check.NewChecker(s2.Iterator("fieldName"), 3, operation.EQ, nil, false),
 			}),
 		})
-		q.SetDebug(1)
 		testCase := []document.DocId{1, 3, 4}
 		for _, expect := range testCase {
 			v, e := q.Current()

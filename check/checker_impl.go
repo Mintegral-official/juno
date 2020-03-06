@@ -31,6 +31,7 @@ func NewChecker(si datastruct.Iterator, value interface{}, op operation.OP, e op
 
 func (c *CheckerImpl) DebugInfo() *debug.Debug {
 	if c.aDebug != nil {
+		c.aDebug.FieldName = c.si.(*datastruct.SkipListIterator).FieldName
 		return c.aDebug
 	}
 	return nil
@@ -38,7 +39,7 @@ func (c *CheckerImpl) DebugInfo() *debug.Debug {
 
 func (c *CheckerImpl) SetDebug(level int) {
 	if c.aDebug == nil {
-		c.aDebug = debug.NewDebug(level, "checker["+OpMap[c.op]+"]")
+		c.aDebug = debug.NewDebug(level, "checker")
 	}
 }
 
@@ -49,32 +50,35 @@ func (c *CheckerImpl) Check(id document.DocId) bool {
 	element := c.si.GetGE(id)
 	if element == nil {
 		if c.aDebug != nil {
-			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, field: %s, value:%v, operation: %s, reason: %s",
-				id, c.si.(*datastruct.SkipListIterator).FieldName, c.value, OpMap[c.op], helpers.ElementNotfound))
+			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, value:%v, operation: %s, reason: %s",
+				id, c.value, OpMap[c.op], helpers.ElementNotfound))
 		}
 		return false
 	}
 	key, v := element.Key(), element.Value()
 	if key != id || v == nil {
 		if c.aDebug != nil {
-			c.aDebug.AddDebugMsg(fmt.Sprintf(
-				"docID: %d, GetGE ID %d, field: %s, fieldValue: %v, value: %v, operation: %s, reason: %s",
-				id, key, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, OpMap[c.op], ))
+			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE[ID: %d, value: %v], value: %v, operation: %s",
+				id, key, v, c.value, OpMap[c.op]))
 		}
 		return false
 	}
+
+	var f bool
 	if c.transfer {
-		if c.aDebug != nil {
-			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d field: %s, fieldValue: %v, value:%v, operation: %s",
-				id, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, OpMap[c.op]))
+		f = UtilCheck(c.value, c.op, v, c.e)
+		if c.aDebug != nil && f == false {
+			c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE[ID: %d, value: %v], value: %v, operation: %s",
+				id, key, v, c.value, OpMap[c.op]))
 		}
-		return UtilCheck(c.value, c.op, v, c.e)
+		return f
 	}
-	if c.aDebug != nil {
-		c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE ID %d,: field: %s, fieldValue: %v, value:%v operation: %s",
-			id, key, c.si.(*datastruct.SkipListIterator).FieldName, v, c.value, OpMap[c.op]))
+	f = UtilCheck(v, c.op, c.value, c.e)
+	if c.aDebug != nil && f == false {
+		c.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE[ID: %d, value: %v], value: %v, operation: %s",
+			id, key, v, c.value, OpMap[c.op]))
 	}
-	return UtilCheck(v, c.op, c.value, c.e)
+	return f
 }
 
 func (c *CheckerImpl) Marshal() map[string]interface{} {

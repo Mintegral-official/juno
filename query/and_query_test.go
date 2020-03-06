@@ -46,7 +46,7 @@ func GenerateRandomNumber(start int, end int, count int) []int {
 
 func TestAndQuery(t *testing.T) {
 	a := NewAndQuery(nil, nil)
-	Convey("and query", t, func() {
+	Convey("queries and checkers is nil", t, func() {
 		So(a, ShouldBeNil)
 	})
 }
@@ -66,7 +66,7 @@ func TestAndQuery_GetGE(t *testing.T) {
 	sl1.Add(document.DocId(6), [1]byte{})
 	sl1.Add(document.DocId(9), [1]byte{})
 
-	Convey("and query get1", t, func() {
+	Convey("and query get one iterator", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 
 		testCase := [][]document.DocId{
@@ -83,7 +83,7 @@ func TestAndQuery_GetGE(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query get2", t, func() {
+	Convey("and query get two iterator", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		testCase := [][]document.DocId{
 			{1, 1}, {1, 1}, {1, 1}, {3, 6}, {3, 6}, {4, 6}, {6, 6},
@@ -115,7 +115,7 @@ func TestAndQuery_Next(t *testing.T) {
 	sl1.Add(document.DocId(6), [1]byte{})
 	sl1.Add(document.DocId(9), [1]byte{})
 
-	Convey("and query next1", t, func() {
+	Convey("and query next one iterator", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 
 		testCase := []document.DocId{
@@ -133,7 +133,7 @@ func TestAndQuery_Next(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query next2", t, func() {
+	Convey("and query next two iterator", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		testCase := []document.DocId{
 			1, 6,
@@ -204,7 +204,7 @@ func TestAndQuery_Next3(t *testing.T) {
 	sl2.Add(document.DocId(6), [1]byte{})
 	sl2.Add(document.DocId(9), [1]byte{})
 
-	Convey("and query current", t, func() {
+	Convey("and query current three iterator", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator())}, nil)
 
 		v, e := a.Current()
@@ -318,7 +318,7 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 	sl2.Add(document.DocId(6), 2)
 	sl2.Add(document.DocId(9), 2)
 
-	Convey("and query check", t, func() {
+	Convey("and query two queries & one check", t, func() {
 		a := NewAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -339,7 +339,7 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query check2", t, func() {
+	Convey("and query two queries & In check", t, func() {
 		a := NewAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -360,7 +360,7 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query check3", t, func() {
+	Convey("and query two queries & three checkers", t, func() {
 		a := NewAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -385,7 +385,7 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query check4", t, func() {
+	Convey("and query debug", t, func() {
 		a := NewAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -397,7 +397,7 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
 		})
 		testCase := []document.DocId{1, 6}
-
+		a.SetDebug(1)
 		for _, expect := range testCase {
 			v, e := a.Current()
 			a.Next()
@@ -408,5 +408,6 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
+		So(a.DebugInfo().String(), ShouldNotEqual, "")
 	})
 }
