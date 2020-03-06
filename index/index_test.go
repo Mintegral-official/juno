@@ -5,6 +5,7 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
+	"strings"
 	"testing"
 )
 
@@ -151,7 +152,7 @@ func TestNewIndex(t *testing.T) {
 			}
 			if1.Next()
 		}
-		So(c, ShouldEqual, 2)
+		So(c, ShouldEqual, 3)
 
 		if2 := index.invertedIndex.Iterator("field2", "2")
 		c = 0
@@ -161,7 +162,7 @@ func TestNewIndex(t *testing.T) {
 			}
 			if2.Next()
 		}
-		So(c, ShouldEqual, 1)
+		So(c, ShouldEqual, 2)
 		sf1 := index.GetStorageIndex().Iterator("field1")
 		c = 0
 		for sf1.HasNext() {
@@ -279,14 +280,25 @@ var doc5 = &document.DocInfo{
 			Value:     "20",
 			ValueType: document.StringFieldType,
 		},
+		{
+			Name:      "field2",
+			IndexType: 0,
+			Value:     "200",
+			ValueType: document.StringFieldType,
+		},
 	},
 }
 
 func TestNewStorageIndexer(t *testing.T) {
 	idx := NewIndex("")
-	idx.Add(doc4)
+	_ = idx.Add(doc4)
 	fmt.Println(idx.GetValueById(0))
 	idx.Del(doc5)
-	idx.Add(doc5)
+	_ = idx.Add(doc5)
 	fmt.Println(idx.GetValueById(0))
+}
+
+func TestDocId(t *testing.T) {
+	str := "h"
+	fmt.Println(strings.Split(str, SEP))
 }
