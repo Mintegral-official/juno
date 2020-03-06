@@ -6,10 +6,11 @@ import (
 )
 
 type Debug struct {
-	Level int      `json:"-"`
-	Name  string   `json:"name"`
-	Msg   []string `json:"msg,omitempty"`
-	Node  []*Debug `json:"node,omitempty"`
+	Level     int      `json:"-"`
+	Name      string   `json:"name"`
+	FieldName string   `json:"field_name,omitempty"`
+	Msg       []string `json:"msg,omitempty"`
+	Node      []*Debug `json:"node,omitempty"`
 }
 
 func NewDebug(level int, name string) *Debug {

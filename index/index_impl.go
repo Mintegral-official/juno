@@ -3,7 +3,6 @@ package index
 import (
 	"errors"
 	"fmt"
-	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
@@ -20,7 +19,7 @@ type Indexer struct {
 	invertedIndex   InvertedIndex
 	storageIndex    StorageIndex
 	campaignMapping *concurrent_map.ConcurrentMap
-	bitmap          *datastruct.BitSet
+	bitmap          *concurrent_map.ConcurrentMap
 	count           document.DocId
 	name            string
 	kvType          *concurrent_map.ConcurrentMap
@@ -34,7 +33,7 @@ func NewIndex(name string) (i *Indexer) {
 		storageIndex:    NewStorageIndexer(),
 		campaignMapping: concurrent_map.CreateConcurrentMap(128),
 		kvType:          concurrent_map.CreateConcurrentMap(128),
-		bitmap:          datastruct.NewBitMap(),
+		bitmap:          concurrent_map.CreateConcurrentMap(128),
 		count:           1,
 		name:            name,
 		logger:          logrus.New(),
@@ -54,7 +53,7 @@ func (i *Indexer) GetCampaignMap() *concurrent_map.ConcurrentMap {
 	return i.campaignMapping
 }
 
-func (i *Indexer) GetBitMap() *datastruct.BitSet {
+func (i *Indexer) GetBitMap() *concurrent_map.ConcurrentMap {
 	return i.bitmap
 }
 
@@ -73,7 +72,8 @@ func (i *Indexer) SetDebug(level int) {
 
 func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
 	var res [2]map[string][]string
-	res[0] = i.GetInvertedIndex().GetValueById(id)
+	docId, _ := i.campaignMapping.Get(DocId(id))
+	res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
 	res[1] = i.GetStorageIndex().GetValueById(id)
 	return res
 }
@@ -82,10 +82,12 @@ func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 	if doc == nil {
 		return helpers.DocumentError
 	}
+	i.campaignMapping.Set(DocId(doc.Id), i.count)
+	i.bitmap.Set(DocId(i.count), doc.Id)
 	for _, field := range doc.Fields {
 		switch field.IndexType {
 		case document.InvertedIndexType:
-			if err = i.invertAdd(doc.Id, field); err != nil {
+			if err = i.invertAdd(i.count, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
 				}
@@ -100,7 +102,7 @@ func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 			}
 			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
 		case document.BothIndexType:
-			if err = i.invertAdd(doc.Id, field); err != nil {
+			if err = i.invertAdd(i.count, field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
 				}
@@ -118,6 +120,7 @@ func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 			return errors.New("the add doc type is wrong or nil ")
 		}
 	}
+	i.count++
 	return err
 }
 
@@ -128,11 +131,11 @@ func (i *Indexer) Del(doc *document.DocInfo) {
 	for _, field := range doc.Fields {
 		switch field.IndexType {
 		case document.InvertedIndexType:
-			i.invertDel(doc.Id, field)
+			i.invertDel(doc.Id)
 		case document.StorageIndexType:
 			i.storageDel(doc.Id, field)
 		case document.BothIndexType:
-			i.invertDel(doc.Id, field)
+			i.invertDel(doc.Id)
 			i.storageDel(doc.Id, field)
 		default:
 			panic("the del doc type is nil or wrong")
@@ -172,9 +175,6 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 				i.WarnStatus(field.Name, v, err.Error())
 				return err
 			}
-			i.campaignMapping.Set(DocId(id), i.count)
-			i.bitmap.Set(i.count)
-			i.count++
 		}
 	case []int64:
 		value, _ := field.Value.([]int64)
@@ -183,9 +183,6 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 				i.WarnStatus(field.Name, v, err.Error())
 				return err
 			}
-			i.campaignMapping.Set(DocId(id), i.count)
-			i.bitmap.Set(i.count)
-			i.count++
 		}
 	case string:
 		value, _ := field.Value.(string)
@@ -193,18 +190,12 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 			i.WarnStatus(field.Name, value, err.Error())
 			return err
 		}
-		i.campaignMapping.Set(DocId(id), i.count)
-		i.bitmap.Set(i.count)
-		i.count++
 	case int64:
 		value, _ := field.Value.(int64)
 		if err = i.invertedIndex.Add(field.Name+SEP+strconv.FormatInt(value, 10), id); err != nil {
 			i.WarnStatus(field.Name, value, err.Error())
 			return err
 		}
-		i.campaignMapping.Set(DocId(id), i.count)
-		i.bitmap.Set(i.count)
-		i.count++
 	default:
 		return errors.New("the doc is nil or type is wrong")
 	}
@@ -219,40 +210,9 @@ func (i *Indexer) storageAdd(id document.DocId, field *document.Field) (err erro
 	return
 }
 
-func (i *Indexer) invertDel(id document.DocId, field *document.Field) {
-	switch field.Value.(type) {
-	case []string:
-		value, _ := field.Value.([]string)
-		for _, v := range value {
-			i.invertedIndex.Del(field.Name+SEP+v, id)
-			if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
-				i.bitmap.Del(docId.(document.DocId))
-			}
-		}
-	case []int64:
-		value, _ := field.Value.([]int64)
-		for _, v := range value {
-			i.invertedIndex.Del(field.Name+SEP+strconv.FormatInt(v, 10), id)
-			if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
-				i.bitmap.Del(docId.(document.DocId))
-			}
-		}
-	case string:
-		value, _ := field.Value.(string)
-		i.invertedIndex.Del(field.Name+SEP+value, id)
-		if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
-			i.bitmap.Del(docId.(document.DocId))
-		}
-	case int64:
-		value, _ := field.Value.(int64)
-		i.invertedIndex.Del(field.Name+SEP+strconv.FormatInt(value, 10), id)
-		if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
-			i.bitmap.Del(docId.(document.DocId))
-		}
-	default:
-		if i.aDebug != nil {
-			i.aDebug.AddDebugMsg(fmt.Sprintf("the del doc [%v] is nil or type is wrong", field))
-		}
+func (i *Indexer) invertDel(id document.DocId) {
+	if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
+		i.bitmap.Del(DocId(docId.(document.DocId)))
 	}
 }
 

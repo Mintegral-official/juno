@@ -1,6 +1,7 @@
 package check
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
@@ -28,10 +29,16 @@ func (na *NotAndChecker) Check(id document.DocId) bool {
 	for i := range na.c {
 		if i == 0 {
 			if !na.c[i].Check(id) {
+				if na.aDebug != nil {
+					na.aDebug.AddDebugMsg(fmt.Sprintf("%d in notAndChecker[%d] check result: false", id, i))
+				}
 				return false
 			}
 		} else {
 			if na.c[i].Check(id) {
+				if na.aDebug != nil {
+					na.aDebug.AddDebugMsg(fmt.Sprintf("%d in notAndChecker[%d] check result: false", id, i))
+				}
 				return false
 			}
 		}

@@ -320,7 +320,7 @@ func TestNewOrQuery_Next_check(t *testing.T) {
 			check.NewInChecker(sl2.Iterator(), []int{1, 2, 3}, nil, false),
 		})
 		testCase := []document.DocId{1, 4, 6, 9}
-
+		a.SetDebug(1)
 		for _, expect := range testCase {
 			v, e := a.Current()
 			a.Next()
@@ -331,5 +331,6 @@ func TestNewOrQuery_Next_check(t *testing.T) {
 		a.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
+		So(a.DebugInfo().String(), ShouldNotBeNil)
 	})
 }

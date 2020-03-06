@@ -11,7 +11,7 @@ import (
 
 func TestNotAndQuery_Next(t *testing.T) {
 	a := NewNotAndQuery([]Query{}, nil)
-	Convey("not and query", t, func() {
+	Convey("not and query nil", t, func() {
 		So(a, ShouldBeNil)
 	})
 }

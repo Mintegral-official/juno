@@ -2,7 +2,6 @@ package query
 
 import (
 	"container/heap"
-	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -59,10 +58,6 @@ func (oq *OrQuery) next() {
 			q.Next()
 			heap.Fix(&oq.h, 0)
 			target, err = oq.Current()
-		} else {
-			if oq.debugs != nil {
-				oq.debugs.AddDebugMsg(fmt.Sprintf("query is nil"))
-			}
 		}
 	}
 }

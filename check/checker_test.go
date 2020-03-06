@@ -25,13 +25,13 @@ func TestInChecker_Check(t *testing.T) {
 	sl1.Add(6, 8)
 	sl1.Add(9, 1)
 
-	Convey("checker", t, func() {
+	Convey("EQ checker", t, func() {
 		c := NewChecker(sl.Iterator(), 10, operation.EQ, nil, false)
 		So(c.Check(3), ShouldBeFalse)
 		So(c.Check(10), ShouldBeTrue)
 	})
 
-	Convey("and checker", t, func() {
+	Convey("And checker GE & LT", t, func() {
 		c := NewChecker(sl.Iterator(), 3, operation.GE, nil, false)
 		d := NewChecker(sl1.Iterator(), 10, operation.LT, nil, false)
 		a := NewAndChecker([]Checker{
@@ -42,7 +42,7 @@ func TestInChecker_Check(t *testing.T) {
 		So(a.Check(10), ShouldBeFalse)
 	})
 
-	Convey("or checker", t, func() {
+	Convey("Or checker EQ EQ", t, func() {
 		c := NewChecker(sl.Iterator(), 6, operation.EQ, nil, false)
 		d := NewChecker(sl1.Iterator(), 10, operation.EQ, nil, false)
 		o := NewOrChecker([]Checker{
@@ -54,7 +54,7 @@ func TestInChecker_Check(t *testing.T) {
 		So(o.Check(6), ShouldBeFalse)
 	})
 
-	Convey("in checker", t, func() {
+	Convey("In checker", t, func() {
 		var a = []int{1, 6, 3, 10}
 		c := make([]int, len(a))
 		for _, v := range a {
@@ -67,7 +67,7 @@ func TestInChecker_Check(t *testing.T) {
 		So(o.Check(6), ShouldBeFalse)
 	})
 
-	Convey("not checker", t, func() {
+	Convey("Not checker", t, func() {
 		var a = []int{1, 6, 3, 10}
 		c := make([]int, len(a))
 		for _, v := range a {

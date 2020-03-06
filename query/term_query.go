@@ -40,9 +40,7 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	element := tq.iterator.GetGE(id)
 	if element == nil {
 		if tq.debugs != nil {
-			fields := strings.Split(tq.iterator.(*datastruct.SkipListIterator).FieldName, index.SEP)
-			tq.debugs.AddDebugMsg(fmt.Sprintf("docId: %d, field: %s, value: %s, reason: %v",
-				id, fields[0], fields[1], helpers.ElementNotfound))
+			tq.debugs.AddDebugMsg(fmt.Sprintf("docId: %d, reason: %v", id, helpers.ElementNotfound))
 		}
 		return 0, helpers.ElementNotfound
 	}
@@ -55,11 +53,6 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 	}
 	element := tq.iterator.Current()
 	if element == nil {
-		if tq.debugs != nil {
-			fields := strings.Split(tq.iterator.(*datastruct.SkipListIterator).FieldName, index.SEP)
-			tq.debugs.AddDebugMsg(fmt.Sprintf("field: %s, value: %s, reason: %v",
-				fields[0], fields[1], helpers.NoMoreData))
-		}
 		return 0, helpers.NoMoreData
 	}
 	return element.Key(), nil
@@ -67,6 +60,7 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 
 func (tq *TermQuery) DebugInfo() *debug.Debug {
 	if tq.debugs != nil {
+		tq.debugs.FieldName = tq.iterator.(*datastruct.SkipListIterator).FieldName
 		return tq.debugs
 	}
 	return nil
@@ -89,6 +83,6 @@ func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e
 
 func (tq *TermQuery) SetDebug(level int) {
 	if tq.debugs == nil {
-		tq.debugs = debug.NewDebug(level, "TermQuery")
+		tq.debugs = debug.NewDebug(level, "TermQuery" )
 	}
 }
