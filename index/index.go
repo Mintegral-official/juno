@@ -7,6 +7,8 @@ import (
 
 type Index interface {
 	Add(docInfo *document.DocInfo) error
+	UpdateIds(fieldName string, ids []document.DocId)
+	Delete(fieldName string)
 	Del(docInfo *document.DocInfo)
 	GetDataType(fieldName string) document.FieldType
 	GetValueById(id document.DocId) [2]map[string][]string

@@ -41,8 +41,13 @@ func (i *InvertedIndexer) GetValueById(id document.DocId) map[string][]string {
 		if e == nil {
 			return true
 		}
+		if e.Key() != id {
+			return true
+		}
 		keys := strings.Split(key.(string), SEP)
-		res[keys[0]] = append(res[keys[0]], keys[1])
+		if len(keys) == 2 {
+			res[keys[0]] = append(res[keys[0]], keys[1])
+		}
 		return true
 	})
 	return res

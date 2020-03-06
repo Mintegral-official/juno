@@ -72,10 +72,31 @@ func (i *Indexer) SetDebug(level int) {
 
 func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
 	var res [2]map[string][]string
-	docId, _ := i.campaignMapping.Get(DocId(id))
-	res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
+	docId, ok := i.campaignMapping.Get(DocId(id))
+	if ok {
+		res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
+	}
 	res[1] = i.GetStorageIndex().GetValueById(id)
 	return res
+}
+
+func (i *Indexer) UpdateIds(fieldName string, ids []document.DocId) {
+	var idList []document.DocId
+	for _, id := range ids {
+		if v, ok := i.campaignMapping.Get(DocId(id)); ok {
+			idList = append(idList, v.(document.DocId))
+		} else {
+			i.count++
+			i.campaignMapping.Set(DocId(id), i.count)
+			i.bitmap.Set(DocId(i.count), id)
+			idList = append(idList, v.(document.DocId))
+		}
+	}
+	i.invertedIndex.Update(fieldName, idList)
+}
+
+func (i *Indexer) Delete(fieldName string) {
+	i.invertedIndex.Delete(fieldName)
 }
 
 func (i *Indexer) Add(doc *document.DocInfo) (err error) {
