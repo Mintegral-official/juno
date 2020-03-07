@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 const SEP = "\007"
@@ -20,7 +21,7 @@ type Indexer struct {
 	storageIndex    StorageIndex
 	campaignMapping *concurrent_map.ConcurrentMap
 	bitmap          *concurrent_map.ConcurrentMap
-	count           document.DocId
+	count           uint64
 	name            string
 	kvType          *concurrent_map.ConcurrentMap
 	logger          log.Logger
@@ -74,7 +75,7 @@ func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
 	var res [2]map[string][]string
 	docId, ok := i.campaignMapping.Get(DocId(id))
 	if ok {
-		res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
+		res[0] = i.GetInvertedIndex().GetValueById(document.DocId(docId.(uint64)))
 	}
 	res[1] = i.GetStorageIndex().GetValueById(id)
 	return res
@@ -84,12 +85,18 @@ func (i *Indexer) UpdateIds(fieldName string, ids []document.DocId) {
 	var idList []document.DocId
 	for _, id := range ids {
 		if v, ok := i.campaignMapping.Get(DocId(id)); ok {
-			idList = append(idList, v.(document.DocId))
-		} else {
-			i.count++
+			if _, ok := i.bitmap.Get(DocId(v.(document.DocId))); ok {
+				idList = append(idList, v.(document.DocId))
+			}
+			atomic.AddUint64(&i.count, 1)
 			i.campaignMapping.Set(DocId(id), i.count)
-			i.bitmap.Set(DocId(i.count), id)
-			idList = append(idList, i.count)
+			i.bitmap.Set(DocId(document.DocId(i.count)), id)
+			idList = append(idList, document.DocId(i.count))
+		} else {
+			atomic.AddUint64(&i.count, 1)
+			i.campaignMapping.Set(DocId(id), i.count)
+			i.bitmap.Set(DocId(document.DocId(i.count)), id)
+			idList = append(idList, document.DocId(i.count))
 		}
 	}
 	i.invertedIndex.Update(fieldName, idList)
@@ -104,18 +111,18 @@ func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 		return helpers.DocumentError
 	}
 	i.campaignMapping.Set(DocId(doc.Id), i.count)
-	i.bitmap.Set(DocId(i.count), doc.Id)
+	i.bitmap.Set(DocId(document.DocId(i.count)), doc.Id)
 	for _, field := range doc.Fields {
 		switch field.IndexType {
 		case document.InvertedIndexType:
-			if err = i.invertAdd(i.count, field); err != nil {
+			if err = i.invertAdd(document.DocId(i.count), field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
 				}
 				return err
 			}
 		case document.StorageIndexType:
-			if err = i.storageAdd(doc.Id, field); err != nil {
+			if err = i.storageAdd(document.DocId(i.count), field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "storage", doc.Id, field.Name, field.Value, err.Error()))
 				}
@@ -123,13 +130,13 @@ func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 			}
 			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
 		case document.BothIndexType:
-			if err = i.invertAdd(i.count, field); err != nil {
+			if err = i.invertAdd(document.DocId(i.count), field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "invert", doc.Id, field.Name, field.Value, err.Error()))
 				}
 				return err
 			}
-			if err = i.storageAdd(doc.Id, field); err != nil {
+			if err = i.storageAdd(document.DocId(i.count), field); err != nil {
 				if i.aDebug != nil {
 					i.aDebug.AddDebugMsg(i.StringBuilder(256, "storage", doc.Id, field.Name, field.Value, err.Error()))
 				}
@@ -141,7 +148,7 @@ func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 			return errors.New("the add doc type is wrong or nil ")
 		}
 	}
-	i.count++
+	atomic.AddUint64(&i.count, 1)
 	return err
 }
 
@@ -149,17 +156,10 @@ func (i *Indexer) Del(doc *document.DocInfo) {
 	if doc == nil {
 		return
 	}
+	i.invertDel(doc.Id)
 	for _, field := range doc.Fields {
-		switch field.IndexType {
-		case document.InvertedIndexType:
-			i.invertDel(doc.Id)
-		case document.StorageIndexType:
+		if field.IndexType == document.StorageIndexType || field.IndexType == document.BothIndexType {
 			i.storageDel(doc.Id, field)
-		case document.BothIndexType:
-			i.invertDel(doc.Id)
-			i.storageDel(doc.Id, field)
-		default:
-			panic("the del doc type is nil or wrong")
 		}
 	}
 }
@@ -233,15 +233,18 @@ func (i *Indexer) storageAdd(id document.DocId, field *document.Field) (err erro
 
 func (i *Indexer) invertDel(id document.DocId) {
 	if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
-		i.bitmap.Del(DocId(docId.(document.DocId)))
+		i.bitmap.Del(DocId(document.DocId(docId.(uint64))))
 	}
 }
 
 func (i *Indexer) storageDel(id document.DocId, field *document.Field) {
-	if ok := i.storageIndex.Del(field.Name, id); !ok {
-		if i.aDebug != nil {
-			i.aDebug.AddDebugMsg(fmt.Sprintf("del [%v] - [%v] failed", id, field))
+	if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
+		if ok := i.storageIndex.Del(field.Name, document.DocId(docId.(uint64))); !ok {
+			if i.aDebug != nil {
+				i.aDebug.AddDebugMsg(fmt.Sprintf("del [%v] - [%v] failed", id, field))
+			}
 		}
+		i.bitmap.Del(DocId(document.DocId(docId.(uint64))))
 	}
 }
 
