@@ -46,7 +46,7 @@ func GenerateRandomNumber(start int, end int, count int) []int {
 
 func TestAndQuery(t *testing.T) {
 	a := NewAndQuery(nil, nil)
-	Convey("queries and checkers is nil", t, func() {
+	Convey("and query nil", t, func() {
 		So(a, ShouldBeNil)
 	})
 }
@@ -66,7 +66,7 @@ func TestAndQuery_GetGE(t *testing.T) {
 	sl1.Add(document.DocId(6), [1]byte{})
 	sl1.Add(document.DocId(9), [1]byte{})
 
-	Convey("and query get one iterator", t, func() {
+	Convey("and query get one query", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 
 		testCase := [][]document.DocId{
@@ -83,7 +83,7 @@ func TestAndQuery_GetGE(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query get two iterator", t, func() {
+	Convey("and query get two queries", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		testCase := [][]document.DocId{
 			{1, 1}, {1, 1}, {1, 1}, {3, 6}, {3, 6}, {4, 6}, {6, 6},
@@ -115,7 +115,14 @@ func TestAndQuery_Next(t *testing.T) {
 	sl1.Add(document.DocId(6), [1]byte{})
 	sl1.Add(document.DocId(9), [1]byte{})
 
-	Convey("and query next one iterator", t, func() {
+	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl2.Add(document.DocId(2), [1]byte{})
+	sl2.Add(document.DocId(3), [1]byte{})
+	sl2.Add(document.DocId(6), [1]byte{})
+	sl2.Add(document.DocId(9), [1]byte{})
+
+	Convey("and query next one query", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 
 		testCase := []document.DocId{
@@ -133,7 +140,7 @@ func TestAndQuery_Next(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query next two iterator", t, func() {
+	Convey("and query next two queries", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator())}, nil)
 		testCase := []document.DocId{
 			1, 6,
@@ -150,6 +157,21 @@ func TestAndQuery_Next(t *testing.T) {
 		So(e, ShouldNotBeNil)
 
 	})
+
+	Convey("and query current three queries", t, func() {
+		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator())}, nil)
+
+		v, e := a.Current()
+		So(v, ShouldEqual, 6)
+		So(e, ShouldEqual, nil)
+
+		a.Next()
+
+		v, e = a.Current()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+
+	})
 }
 
 func TestAndQuery_Current(t *testing.T) {
@@ -160,7 +182,7 @@ func TestAndQuery_Current(t *testing.T) {
 	sl.Add(document.DocId(6), [1]byte{})
 	sl.Add(document.DocId(10), [1]byte{})
 
-	Convey("and query current", t, func() {
+	Convey("and query current one query", t, func() {
 		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
 		v, e := a.Current()
 		So(v, ShouldEqual, 1)
@@ -176,44 +198,6 @@ func TestAndQuery_Current(t *testing.T) {
 
 		v, e = a.Current()
 		a.Next()
-		So(v, ShouldEqual, 0)
-		So(e, ShouldNotBeNil)
-
-	})
-}
-
-func TestAndQuery_Next3(t *testing.T) {
-	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-
-	sl.Add(document.DocId(2), [1]byte{})
-	sl.Add(document.DocId(3), [1]byte{})
-	sl.Add(document.DocId(6), [1]byte{})
-	sl.Add(document.DocId(10), [1]byte{})
-
-	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-
-	sl1.Add(document.DocId(1), [1]byte{})
-	sl1.Add(document.DocId(4), [1]byte{})
-	sl1.Add(document.DocId(6), [1]byte{})
-	sl1.Add(document.DocId(9), [1]byte{})
-
-	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-
-	sl2.Add(document.DocId(1), [1]byte{})
-	sl2.Add(document.DocId(3), [1]byte{})
-	sl2.Add(document.DocId(6), [1]byte{})
-	sl2.Add(document.DocId(9), [1]byte{})
-
-	Convey("and query current three iterator", t, func() {
-		a := NewAndQuery([]Query{NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator())}, nil)
-
-		v, e := a.Current()
-		So(v, ShouldEqual, 6)
-		So(e, ShouldEqual, nil)
-
-		a.Next()
-
-		v, e = a.Current()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 
@@ -296,7 +280,7 @@ func BenchmarkAndQuery_Next(b *testing.B) {
 	fmt.Println(c)
 }
 
-func TestNewAndQuery_Next_check(t *testing.T) {
+func TestNewAndQuery_check(t *testing.T) {
 	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), 1)
@@ -318,7 +302,7 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 	sl2.Add(document.DocId(6), 2)
 	sl2.Add(document.DocId(9), 2)
 
-	Convey("and query two queries & one check", t, func() {
+	Convey("and query with check", t, func() {
 		a := NewAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -339,7 +323,7 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query two queries & In check", t, func() {
+	Convey("and query with In check", t, func() {
 		a := NewAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -360,7 +344,7 @@ func TestNewAndQuery_Next_check(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("and query two queries & three checkers", t, func() {
+	Convey("and query with and check", t, func() {
 		a := NewAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),

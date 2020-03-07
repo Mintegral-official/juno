@@ -9,38 +9,14 @@ import (
 	"testing"
 )
 
-func TestNotAndQuery_Next(t *testing.T) {
+func TestNotAndQuery(t *testing.T) {
 	a := NewNotAndQuery([]Query{}, nil)
 	Convey("not and query nil", t, func() {
 		So(a, ShouldBeNil)
 	})
 }
 
-func TestNewNotAndQuery_Next1(t *testing.T) {
-	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-
-	sl.Add(document.DocId(1), [1]byte{})
-	sl.Add(document.DocId(3), [1]byte{})
-	sl.Add(document.DocId(6), [1]byte{})
-	sl.Add(document.DocId(10), [1]byte{})
-
-	Convey("not and query next1", t, func() {
-		a := NewNotAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
-		testCase := []document.DocId{1, 3, 6, 10}
-		for _, expect := range testCase {
-			v, e := a.Current()
-			a.Next()
-			So(v, ShouldEqual, expect)
-			So(e, ShouldBeNil)
-		}
-		v, e := a.Current()
-		a.Next()
-		So(v, ShouldEqual, 0)
-		So(e, ShouldNotBeNil)
-	})
-}
-
-func TestNewNotAndQuery_Next2(t *testing.T) {
+func TestNewNotAndQuery_Next(t *testing.T) {
 	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), [1]byte{})
@@ -58,7 +34,22 @@ func TestNewNotAndQuery_Next2(t *testing.T) {
 	sl2 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 	sl2.Add(document.DocId(3), [1]byte{})
 
-	Convey("not and query next2", t, func() {
+	Convey("not and query next (one query)", t, func() {
+		a := NewNotAndQuery([]Query{NewTermQuery(sl.Iterator())}, nil)
+		testCase := []document.DocId{1, 3, 6, 10}
+		for _, expect := range testCase {
+			v, e := a.Current()
+			a.Next()
+			So(v, ShouldEqual, expect)
+			So(e, ShouldBeNil)
+		}
+		v, e := a.Current()
+		a.Next()
+		So(v, ShouldEqual, 0)
+		So(e, ShouldNotBeNil)
+	})
+
+	Convey("not and query next (three query)", t, func() {
 		a := NewNotAndQuery([]Query{
 			NewTermQuery(sl.Iterator()), NewTermQuery(sl1.Iterator()), NewTermQuery(sl2.Iterator()),
 		}, nil)
@@ -83,7 +74,14 @@ func TestNewNotAndQuery_GetGE(t *testing.T) {
 	sl.Add(document.DocId(6), [1]byte{})
 	sl.Add(document.DocId(10), [1]byte{})
 
-	Convey("not and query get1", t, func() {
+	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
+
+	sl1.Add(document.DocId(1), [1]byte{})
+	sl1.Add(document.DocId(4), [1]byte{})
+	sl1.Add(document.DocId(6), [1]byte{})
+	sl1.Add(document.DocId(9), [1]byte{})
+
+	Convey("not and query getGE (one query)", t, func() {
 		s1 := sl.Iterator()
 		a := NewNotAndQuery([]Query{NewTermQuery(s1)}, nil)
 		testCase := [][]document.DocId{
@@ -99,24 +97,8 @@ func TestNewNotAndQuery_GetGE(t *testing.T) {
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
 	})
-}
 
-func TestNewNotAndQuery_GetGE2(t *testing.T) {
-	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-
-	sl.Add(document.DocId(1), [1]byte{})
-	sl.Add(document.DocId(3), [1]byte{})
-	sl.Add(document.DocId(6), [1]byte{})
-	sl.Add(document.DocId(10), [1]byte{})
-
-	sl1 := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
-
-	sl1.Add(document.DocId(1), [1]byte{})
-	sl1.Add(document.DocId(4), [1]byte{})
-	sl1.Add(document.DocId(6), [1]byte{})
-	sl1.Add(document.DocId(9), [1]byte{})
-
-	Convey("not and query next2", t, func() {
+	Convey("not and query getGE (two queries)", t, func() {
 		s1 := sl.Iterator()
 		s2 := sl1.Iterator()
 		a := NewNotAndQuery([]Query{NewTermQuery(s1), NewTermQuery(s2)}, nil)
@@ -136,7 +118,7 @@ func TestNewNotAndQuery_GetGE2(t *testing.T) {
 	})
 }
 
-func TestNewAndQuery_Next_Check(t *testing.T) {
+func TestNewAndQuery_Check(t *testing.T) {
 	sl := datastruct.NewSkipList(datastruct.DefaultMaxLevel)
 
 	sl.Add(document.DocId(1), 1)
@@ -158,7 +140,7 @@ func TestNewAndQuery_Next_Check(t *testing.T) {
 	sl2.Add(document.DocId(6), 2)
 	sl2.Add(document.DocId(9), 2)
 
-	Convey("not and query check", t, func() {
+	Convey("not and query with check", t, func() {
 		a := NewNotAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -171,7 +153,7 @@ func TestNewAndQuery_Next_Check(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("not and query check2", t, func() {
+	Convey("not and query with in check", t, func() {
 		a := NewNotAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -184,7 +166,7 @@ func TestNewAndQuery_Next_Check(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("not and query check3", t, func() {
+	Convey("not and query with or check", t, func() {
 		a := NewNotAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),
@@ -202,7 +184,7 @@ func TestNewAndQuery_Next_Check(t *testing.T) {
 		So(e, ShouldNotBeNil)
 	})
 
-	Convey("or query check4", t, func() {
+	Convey("not and query with not and check", t, func() {
 		a := NewNotAndQuery([]Query{
 			NewTermQuery(sl.Iterator()),
 			NewTermQuery(sl1.Iterator()),

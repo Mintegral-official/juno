@@ -5,7 +5,6 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
-	"strings"
 	"testing"
 )
 
@@ -316,25 +315,40 @@ var doc5 = &document.DocInfo{
 func TestNewStorageIndexer(t *testing.T) {
 	idx := NewIndex("")
 	_ = idx.Add(doc4)
-	fmt.Println(idx.GetValueById(0))
-	a1 := idx.invertedIndex.Iterator("field2", "2")
-	fmt.Println(idx.bitmap.Get(DocId(a1.Current().Key())))
-	fmt.Println(a1.Current())
+	Convey("GetValueById add", t, func() {
+		realMap := idx.GetValueById(0)
+		expectMap := [2]map[string][]string{
+			{
+				"field2": []string{"2"},
+				"field3": []string{"3"},
+				"field4": []string{"34"},
+			},
+			{
+				"field1": []string{"1"},
+			},
+		}
+		So(realMap[0]["field2"][0], ShouldEqual, expectMap[0]["field2"][0])
+		So(realMap[0]["field3"][0], ShouldEqual, expectMap[0]["field3"][0])
+		So(realMap[0]["field4"][0], ShouldEqual, expectMap[0]["field4"][0])
+		So(realMap[1]["field1"][0], ShouldEqual, expectMap[1]["field1"][0])
+	})
 	idx.Del(doc5)
 	_ = idx.Add(doc5)
-	fmt.Println(idx.GetValueById(0))
-	a := idx.invertedIndex.Iterator("field2", "20")
-	fmt.Println(idx.bitmap.Get(DocId(a.Current().Key())))
-	fmt.Println(a.Current())
-	a2 := idx.invertedIndex.Iterator("field2", "200")
-	fmt.Println(idx.bitmap.Get(DocId(a2.Current().Key())))
-	fmt.Println(a2.Current())
-	a3 := idx.invertedIndex.Iterator("field2", "2")
-	fmt.Println(idx.bitmap.Get(DocId(a3.Current().Key())))
-	fmt.Println(a3.Current())
-}
-
-func TestDocId(t *testing.T) {
-	str := "h"
-	fmt.Println(strings.Split(str, SEP))
+	Convey("GetValueById del & add", t, func() {
+		realMap := idx.GetValueById(0)
+		expectMap := [2]map[string][]string{
+			{
+				"field2": []string{"20", "200"},
+				"field3": []string{"30", "300"},
+			},
+			{
+				"field1": []string{"10"},
+			},
+		}
+		So(realMap[0]["field2"][0], ShouldEqual, expectMap[0]["field2"][0])
+		So(realMap[0]["field2"][1], ShouldEqual, expectMap[0]["field2"][1])
+		So(realMap[0]["field3"][0], ShouldEqual, expectMap[0]["field3"][0])
+		So(realMap[0]["field3"][1], ShouldEqual, expectMap[0]["field3"][1])
+		So(realMap[1]["field1"][0], ShouldEqual, expectMap[1]["field1"][0])
+	})
 }
