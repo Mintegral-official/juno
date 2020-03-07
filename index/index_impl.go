@@ -88,9 +88,13 @@ func (i *Indexer) UpdateIds(fieldName string, ids []document.DocId) {
 	var idList []document.DocId
 	for _, id := range ids {
 		if v, ok := i.campaignMapping.Get(DocId(id)); ok {
-			idList = append(idList, v.(document.DocId))
-			if _, ok := i.bitmap.Get(DocId(v.(document.DocId))); !ok {
-				i.bitmap.Set(DocId(v.(document.DocId)), id)
+			if _, ok := i.bitmap.Get(DocId(v.(document.DocId))); ok {
+				idList = append(idList, v.(document.DocId))
+			} else {
+				i.campaignMapping.Set(DocId(id), document.DocId(i.count))
+				i.bitmap.Set(DocId(document.DocId(i.count)), id)
+				idList = append(idList, document.DocId(i.count))
+				atomic.AddUint64(&i.count, 1)
 			}
 		} else {
 			i.campaignMapping.Set(DocId(id), document.DocId(i.count))
