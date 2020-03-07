@@ -75,6 +75,9 @@ func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
 	var res [2]map[string][]string
 	docId, ok := i.campaignMapping.Get(DocId(id))
 	if ok {
+		if _, ok := i.bitmap.Get(DocId(docId.(document.DocId))); !ok {
+			return res
+		}
 		res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
 		res[1] = i.GetStorageIndex().GetValueById(docId.(document.DocId))
 	}
