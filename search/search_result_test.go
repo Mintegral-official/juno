@@ -7,6 +7,7 @@ import (
 	"github.com/Mintegral-official/juno/operation"
 	"github.com/Mintegral-official/juno/query"
 	. "github.com/smartystreets/goconvey/convey"
+	"reflect"
 	"testing"
 )
 
@@ -312,8 +313,7 @@ func TestNewSearcher_Inc_Index(t *testing.T) {
 			},
 		}
 		realMap := idx.GetValueById(0)
-		So(realMap[0]["field2"][0], ShouldEqual, expectMap[0]["field2"][0])
-		So(realMap[1]["field1"][0], ShouldEqual, expectMap[1]["field1"][0])
+		So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
 
 		s1 := NewSearcher()
 		s1.Search(idx, q)
@@ -330,9 +330,7 @@ func TestNewSearcher_Inc_Index(t *testing.T) {
 			},
 		}
 		realMap = idx.GetValueById(0)
-		So(realMap[0]["field2"][0], ShouldEqual, expectMap[0]["field2"][0])
-		So(realMap[0]["field2"][1], ShouldEqual, expectMap[0]["field2"][1])
-		So(realMap[1]["field1"][0], ShouldEqual, expectMap[1]["field1"][0])
+		So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
 
 		q = query.NewTermQuery(idx.GetInvertedIndex().Iterator("field2", "20"))
 		s1 = NewSearcher()

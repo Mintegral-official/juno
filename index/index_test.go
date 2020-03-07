@@ -5,6 +5,7 @@ import (
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
+	"reflect"
 	"testing"
 )
 
@@ -94,6 +95,9 @@ func TestNewIndex(t *testing.T) {
 
 		So(index.GetValueById(2), ShouldNotBeNil)
 		if1 := index.GetInvertedIndex().Iterator("field1", "1")
+		So(index.GetValueById(1), ShouldNotBeNil)
+		index.UpdateIds("test\007tt", []document.DocId{1, 2, 100})
+		So(index.GetValueById(1), ShouldNotBeNil)
 		c := 0
 		for if1.HasNext() {
 			if if1.Current() != nil {
@@ -327,10 +331,7 @@ func TestNewStorageIndexer(t *testing.T) {
 				"field1": []string{"1"},
 			},
 		}
-		So(realMap[0]["field2"][0], ShouldEqual, expectMap[0]["field2"][0])
-		So(realMap[0]["field3"][0], ShouldEqual, expectMap[0]["field3"][0])
-		So(realMap[0]["field4"][0], ShouldEqual, expectMap[0]["field4"][0])
-		So(realMap[1]["field1"][0], ShouldEqual, expectMap[1]["field1"][0])
+		So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
 	})
 	idx.Del(doc5)
 	_ = idx.Add(doc5)
@@ -345,10 +346,6 @@ func TestNewStorageIndexer(t *testing.T) {
 				"field1": []string{"10"},
 			},
 		}
-		So(realMap[0]["field2"][0], ShouldEqual, expectMap[0]["field2"][0])
-		So(realMap[0]["field2"][1], ShouldEqual, expectMap[0]["field2"][1])
-		So(realMap[0]["field3"][0], ShouldEqual, expectMap[0]["field3"][0])
-		So(realMap[0]["field3"][1], ShouldEqual, expectMap[0]["field3"][1])
-		So(realMap[1]["field1"][0], ShouldEqual, expectMap[1]["field1"][0])
+		So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
 	})
 }
