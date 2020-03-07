@@ -93,7 +93,7 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
 
-		So(index.GetValueById(document.DocId(2)), ShouldNotBeNil)
+		So(index.GetValueById(2), ShouldNotBeNil)
 		if1 := index.GetInvertedIndex().Iterator("field1", "1")
 		c := 0
 		for if1.HasNext() {
@@ -262,6 +262,18 @@ var doc4 = &document.DocInfo{
 			Value:     "2",
 			ValueType: document.StringFieldType,
 		},
+		{
+			Name:      "field3",
+			IndexType: 0,
+			Value:     "3",
+			ValueType: document.StringFieldType,
+		},
+		{
+			Name:      "field4",
+			IndexType: 0,
+			Value:     "34",
+			ValueType: document.StringFieldType,
+		},
 	},
 }
 
@@ -286,6 +298,18 @@ var doc5 = &document.DocInfo{
 			Value:     "200",
 			ValueType: document.StringFieldType,
 		},
+		{
+			Name:      "field3",
+			IndexType: 0,
+			Value:     "30",
+			ValueType: document.StringFieldType,
+		},
+		{
+			Name:      "field3",
+			IndexType: 0,
+			Value:     "300",
+			ValueType: document.StringFieldType,
+		},
 	},
 }
 
@@ -293,9 +317,21 @@ func TestNewStorageIndexer(t *testing.T) {
 	idx := NewIndex("")
 	_ = idx.Add(doc4)
 	fmt.Println(idx.GetValueById(0))
+	a1 := idx.invertedIndex.Iterator("field2", "2")
+	fmt.Println(idx.bitmap.Get(DocId(a1.Current().Key())))
+	fmt.Println(a1.Current())
 	idx.Del(doc5)
 	_ = idx.Add(doc5)
 	fmt.Println(idx.GetValueById(0))
+	a := idx.invertedIndex.Iterator("field2", "20")
+	fmt.Println(idx.bitmap.Get(DocId(a.Current().Key())))
+	fmt.Println(a.Current())
+	a2 := idx.invertedIndex.Iterator("field2", "200")
+	fmt.Println(idx.bitmap.Get(DocId(a2.Current().Key())))
+	fmt.Println(a2.Current())
+	a3 := idx.invertedIndex.Iterator("field2", "2")
+	fmt.Println(idx.bitmap.Get(DocId(a3.Current().Key())))
+	fmt.Println(a3.Current())
 }
 
 func TestDocId(t *testing.T) {
