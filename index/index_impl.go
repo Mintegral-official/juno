@@ -76,8 +76,8 @@ func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
 	docId, ok := i.campaignMapping.Get(DocId(id))
 	if ok {
 		res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
+		res[1] = i.GetStorageIndex().GetValueById(docId.(document.DocId))
 	}
-	res[1] = i.GetStorageIndex().GetValueById(id)
 	return res
 }
 
@@ -85,18 +85,15 @@ func (i *Indexer) UpdateIds(fieldName string, ids []document.DocId) {
 	var idList []document.DocId
 	for _, id := range ids {
 		if v, ok := i.campaignMapping.Get(DocId(id)); ok {
-			if _, ok := i.bitmap.Get(DocId(v.(document.DocId))); ok {
-				idList = append(idList, v.(document.DocId))
+			idList = append(idList, v.(document.DocId))
+			if _, ok := i.bitmap.Get(DocId(v.(document.DocId))); !ok {
+				i.bitmap.Set(DocId(v.(document.DocId)), id)
 			}
-			atomic.AddUint64(&i.count, 1)
-			i.campaignMapping.Set(DocId(id), document.DocId(i.count))
-			i.bitmap.Set(DocId(document.DocId(i.count)), id)
-			idList = append(idList, document.DocId(i.count))
 		} else {
-			atomic.AddUint64(&i.count, 1)
 			i.campaignMapping.Set(DocId(id), document.DocId(i.count))
 			i.bitmap.Set(DocId(document.DocId(i.count)), id)
 			idList = append(idList, document.DocId(i.count))
+			atomic.AddUint64(&i.count, 1)
 		}
 	}
 	i.invertedIndex.Update(fieldName, idList)
