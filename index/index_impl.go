@@ -75,7 +75,7 @@ func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
 	var res [2]map[string][]string
 	docId, ok := i.campaignMapping.Get(DocId(id))
 	if ok {
-		res[0] = i.GetInvertedIndex().GetValueById(document.DocId(docId.(uint64)))
+		res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
 	}
 	res[1] = i.GetStorageIndex().GetValueById(id)
 	return res
@@ -89,12 +89,12 @@ func (i *Indexer) UpdateIds(fieldName string, ids []document.DocId) {
 				idList = append(idList, v.(document.DocId))
 			}
 			atomic.AddUint64(&i.count, 1)
-			i.campaignMapping.Set(DocId(id), i.count)
+			i.campaignMapping.Set(DocId(id), document.DocId(i.count))
 			i.bitmap.Set(DocId(document.DocId(i.count)), id)
 			idList = append(idList, document.DocId(i.count))
 		} else {
 			atomic.AddUint64(&i.count, 1)
-			i.campaignMapping.Set(DocId(id), i.count)
+			i.campaignMapping.Set(DocId(id), document.DocId(i.count))
 			i.bitmap.Set(DocId(document.DocId(i.count)), id)
 			idList = append(idList, document.DocId(i.count))
 		}
@@ -110,7 +110,7 @@ func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 	if doc == nil {
 		return helpers.DocumentError
 	}
-	i.campaignMapping.Set(DocId(doc.Id), i.count)
+	i.campaignMapping.Set(DocId(doc.Id), document.DocId(i.count))
 	i.bitmap.Set(DocId(document.DocId(i.count)), doc.Id)
 	for _, field := range doc.Fields {
 		switch field.IndexType {
@@ -223,28 +223,28 @@ func (i *Indexer) invertAdd(id document.DocId, field *document.Field) (err error
 	return err
 }
 
-func (i *Indexer) storageAdd(id document.DocId, field *document.Field) (err error) {
-	if err = i.storageIndex.Add(field.Name, id, field.Value); err != nil {
+func (i *Indexer) storageAdd(id document.DocId, field *document.Field) error {
+	if err := i.storageIndex.Add(field.Name, id, field.Value); err != nil {
 		i.WarnStatus(field.Name, field.Value, err.Error())
-		return
+		return err
 	}
-	return
+	return nil
 }
 
 func (i *Indexer) invertDel(id document.DocId) {
 	if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
-		i.bitmap.Del(DocId(document.DocId(docId.(uint64))))
+		i.bitmap.Del(DocId(docId.(document.DocId)))
 	}
 }
 
 func (i *Indexer) storageDel(id document.DocId, field *document.Field) {
 	if docId, ok := i.campaignMapping.Get(DocId(id)); ok {
-		if ok := i.storageIndex.Del(field.Name, document.DocId(docId.(uint64))); !ok {
+		if ok := i.storageIndex.Del(field.Name, docId.(document.DocId)); !ok {
 			if i.aDebug != nil {
 				i.aDebug.AddDebugMsg(fmt.Sprintf("del [%v] - [%v] failed", id, field))
 			}
 		}
-		i.bitmap.Del(DocId(document.DocId(docId.(uint64))))
+		i.bitmap.Del(DocId(docId.(document.DocId)))
 	}
 }
 
