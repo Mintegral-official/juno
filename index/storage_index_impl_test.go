@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewStorageIndexerAdd(t *testing.T) {
-	Convey("Get", t, func() {
+	Convey("storage method test", t, func() {
 		s := NewStorageIndexer()
 		So(s.Get("fieldName", 1), ShouldBeNil)
 		So(s.Del("fieldName", 1), ShouldBeFalse)

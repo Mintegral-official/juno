@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/check"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
@@ -43,6 +44,9 @@ func (aq *AndQuery) next() {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
+			if aq.debugs != nil {
+				aq.debugs.AddDebugMsg(fmt.Sprintf("%d not found in queries[%d]", target, curIdx))
+			}
 			aq.curIdx = curIdx
 			return
 		}
@@ -75,6 +79,9 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 		curIdx = (curIdx + 1) % len(aq.queries)
 		cur, err := aq.queries[curIdx].GetGE(target)
 		if err != nil {
+			if aq.debugs != nil {
+				aq.debugs.AddDebugMsg(fmt.Sprintf("%d not found in queries[%d]", target, curIdx))
+			}
 			aq.curIdx = curIdx
 			return cur, err
 		}

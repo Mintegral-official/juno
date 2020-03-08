@@ -1,6 +1,7 @@
 package check
 
 import (
+	"fmt"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
 	"github.com/Mintegral-official/juno/index"
@@ -32,6 +33,9 @@ func (o *OrChecker) Check(id document.DocId) bool {
 		if cValue.Check(id) {
 			return true
 		}
+	}
+	if o.aDebug != nil {
+		o.aDebug.AddDebugMsg(fmt.Sprintf("%d in orChecker check result: false", id))
 	}
 	return false
 }

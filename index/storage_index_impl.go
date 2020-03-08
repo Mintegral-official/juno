@@ -32,6 +32,9 @@ func (s *StorageIndexer) GetValueById(id document.DocId) map[string][]string {
 		if e == nil {
 			return true
 		}
+		if e.Key() != id {
+			return true
+		}
 		res[key.(string)] = append(res[key.(string)], fmt.Sprintf("%v", e.Value()))
 		return true
 	})

@@ -5,6 +5,7 @@ import (
 	"github.com/Mintegral-official/juno/datastruct"
 	"github.com/Mintegral-official/juno/debug"
 	"github.com/Mintegral-official/juno/document"
+	"github.com/Mintegral-official/juno/helpers"
 	"github.com/Mintegral-official/juno/index"
 	"github.com/Mintegral-official/juno/operation"
 )
@@ -28,6 +29,7 @@ func NewNotChecker(si datastruct.Iterator, value interface{}, e operation.Operat
 
 func (nc *NotChecker) DebugInfo() *debug.Debug {
 	if nc.aDebug != nil {
+		nc.aDebug.FieldName = nc.si.(*datastruct.SkipListIterator).FieldName
 		return nc.aDebug
 	}
 	return nil
@@ -47,49 +49,54 @@ func (nc *NotChecker) Check(id document.DocId) bool {
 	element := nc.si.GetGE(id)
 	if element == nil {
 		if nc.aDebug != nil {
-			nc.aDebug.AddDebugMsg(fmt.Sprintf("docId: %d, Field: %s, Value: %v",
-				id, nc.si.(*datastruct.SkipListIterator).FieldName, nc.value))
+			nc.aDebug.AddDebugMsg(fmt.Sprintf("docId: %d, Value: %v, reason: %v",
+				id, nc.value, helpers.ElementNotfound))
 		}
 		return false
 	}
 	key, v := element.Key(), element.Value()
 	if key != id || v == nil {
 		if nc.aDebug != nil {
-			nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE ID %d,: Field: %s, FieldValue: %v, Value: %v",
-				id, key, nc.si.(*datastruct.SkipListIterator).FieldName, v, nc.value))
+			nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE[ID: %d, value: %v], value: %v",
+				id, key, v, nc.value))
 		}
 		return false
 	}
+	var f bool
 	if nc.e == nil {
 		if nc.transfer {
 			o := operation.Operations{FieldValue: nc.value}
-			if nc.aDebug != nil {
-				nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, field: %s, fieldValue: %v, value: %v",
-					id, nc.si.(*datastruct.SkipListIterator).FieldName, v, nc.value))
+			f = !o.In(v)
+			if nc.aDebug != nil && f == false {
+				nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE[ID: %d, value: %v], value: %v",
+					id, key, v, nc.value))
 			}
-			return !o.In(v)
+			return f
 		}
 		o := operation.Operations{FieldValue: v}
-		if nc.aDebug != nil {
-			nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, field: %s, fieldValue: %v, value: %v",
-				id, nc.si.(*datastruct.SkipListIterator).FieldName, v, nc.value))
+		f = !o.In(nc.value)
+		if nc.aDebug != nil && f == false {
+			nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE[ID: %d, value: %v], value: %v",
+				id, key, v, nc.value))
 		}
 		return !o.In(nc.value)
 	}
 	if nc.transfer {
 		nc.e.SetValue(nc.value)
-		if nc.aDebug != nil {
-			nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, field: %s, fieldValue: %v, value: %v",
-				id, nc.si.(*datastruct.SkipListIterator).FieldName, v, nc.value))
+		f = !nc.e.In(v)
+		if nc.aDebug != nil && f == false {
+			nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE[ID: %d, value: %v], value: %v",
+				id, key, v, nc.value))
 		}
-		return !nc.e.In(v)
+		return f
 	}
 	nc.e.SetValue(v)
-	if nc.aDebug != nil {
-		nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, field: %s, fieldValue: %v, value: %v",
-			id, nc.si.(*datastruct.SkipListIterator).FieldName, v, nc.value))
+	f = !nc.e.In(nc.value)
+	if nc.aDebug != nil && f == false {
+		nc.aDebug.AddDebugMsg(fmt.Sprintf("docID: %d, GetGE[ID: %d, value: %v], value: %v",
+			id, key, v, nc.value))
 	}
-	return !nc.e.In(nc.value)
+	return f
 }
 
 func (nc *NotChecker) Marshal() map[string]interface{} {
