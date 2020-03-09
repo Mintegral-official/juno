@@ -77,7 +77,7 @@ func Replay(index *index.Index, jsonQuery []byte, ids []document.DocId)
             "node":[
                 {
                     "term":{
-                        "key":"DeviceAndIpuaRetarget",
+                        "field":"DeviceAndIpuaRetarget",
                         "value":"2",
                         "result":true
                     }
