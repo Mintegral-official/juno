@@ -8,6 +8,7 @@ import (
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
 	"github.com/MintegralTech/juno/operation"
+	"github.com/MintegralTech/juno/register"
 )
 
 type InChecker struct {
@@ -112,14 +113,15 @@ func (i *InChecker) Marshal() map[string]interface{} {
 	return res
 }
 
-func (i *InChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Checker {
+func (i *InChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
 	v, ok := res["in_check"]
 	if !ok {
 		return nil
 	}
 	value := v.([]interface{})
 	if value[2] == 1 {
-		return NewInChecker(idx.GetStorageIndex().Iterator(value[0].(string)), value[1], e, value[3].(bool))
+		return NewInChecker(idx.GetStorageIndex().Iterator(value[0].(string)),
+			value[1], register.FieldMap[value[0].(string)], value[3].(bool))
 	}
 	return NewInChecker(idx.GetStorageIndex().Iterator(value[0].(string)), value[1], nil, value[3].(bool))
 

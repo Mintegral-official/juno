@@ -6,7 +6,6 @@ import (
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
-	"github.com/MintegralTech/juno/operation"
 )
 
 type AndQuery struct {
@@ -62,6 +61,9 @@ func (aq *AndQuery) next() {
 			aq.queries[curIdx].Next()
 			target, err = aq.queries[curIdx].Current()
 			if err != nil {
+				if aq.debugs != nil {
+					aq.debugs.AddDebugMsg(fmt.Sprintf("%d not found in queries[%d]", target, curIdx))
+				}
 				aq.curIdx = curIdx
 				return
 			}
@@ -96,6 +98,9 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 			curIdx = (curIdx + 1) % len(aq.queries)
 			aq.queries[curIdx].Next()
 			target, err = aq.queries[curIdx].Current()
+			if aq.debugs != nil {
+				aq.debugs.AddDebugMsg(fmt.Sprintf("%d not found in queries[%d]", target, curIdx))
+			}
 			if err != nil {
 				return target, err
 			}
@@ -155,56 +160,29 @@ func (aq *AndQuery) Marshal() map[string]interface{} {
 	return res
 }
 
-func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
+func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Query {
 	and, ok := res["and"]
 	if !ok {
 		return nil
 	}
+	var queries []Query
+	var checkers []check.Checker
+	uq := &Unmarshal{}
+	for _, v := range and.([]map[string]interface{}) {
+		if q := uq.Unmarshal(idx, v); q != nil {
+			queries = append(queries, q.(Query))
+		}
+	}
 	andCheck, ok := res["and_check"]
-	r := and.([]map[string]interface{})
-	var q []Query
-	var c []check.Checker
-	for _, v := range r {
-		if _, ok := v["and"]; ok {
-			var tmp = &AndQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["or"]; ok {
-			var tmp = &OrQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not"]; ok {
-			var tmp = &NotAndQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["="]; ok {
-			var tmp = &TermQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		}
-	}
 	if !ok {
-		return NewAndQuery(q, nil)
+		return NewAndQuery(queries, nil)
 	}
-	checks := andCheck.([]map[string]interface{})
-	for _, v := range checks {
-		if _, ok := v["and_check"]; ok {
-			var tmp = &check.AndChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["or_check"]; ok {
-			var tmp = &check.OrChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["in_check"]; ok {
-			var tmp = &check.InChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not_check"]; ok {
-			var tmp = &check.NotChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["check"]; ok {
-			var tmp = &check.CheckerImpl{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not_and_check"]; ok {
-			var tmp = check.NotAndChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
+	for _, v := range andCheck.([]map[string]interface{}) {
+		if c := uq.Unmarshal(idx, v); c != nil {
+			checkers = append(checkers, c.(check.Checker))
 		}
 	}
-	return NewAndQuery(q, c)
+	return NewAndQuery(queries, checkers)
 }
 
 func (aq *AndQuery) SetDebug(level int) {

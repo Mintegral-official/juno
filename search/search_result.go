@@ -6,7 +6,6 @@ import (
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
-	"github.com/MintegralTech/juno/operation"
 	"github.com/MintegralTech/juno/query"
 	"strconv"
 	"time"
@@ -46,19 +45,19 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	s.QueryDebug = query.DebugInfo()
 }
 
-func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operation.Operation, ids []document.DocId) {
-	uq := query.UnmarshalQuery{}
-	s.Search(idx, uq.Unmarshal(idx, q, e))
+func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, ids []document.DocId) {
+	uq := query.Unmarshal{}
+	s.Search(idx, uq.Unmarshal(idx, q).(query.Query))
 	queryMarshal := q
 	var res = make(map[document.DocId]map[string]interface{}, len(ids))
 	for _, id := range ids {
 		for k, v := range queryMarshal {
 			switch k {
 			case "and", "or", "not", "and_check", "or_check", "not_and_check":
-				debugInfo(v, idx, id, e)
+				debugInfo(v, idx, id)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id); err != nil {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id); err != nil {
 					queryMarshal[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					queryMarshal[k] = append(v.([]string), "id found")
@@ -66,15 +65,15 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operati
 			case "check":
 				var c = &check.CheckerImpl{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(id))))
 			case "in_check":
 				var c = &check.InChecker{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(id))))
 			case "not_check":
 				var c = &check.NotChecker{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(id))))
 			}
 		}
 		res[id] = queryMarshal
@@ -82,15 +81,15 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, e operati
 	s.FilterInfo = res
 }
 
-func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operation.Operation) {
+func debugInfo(res interface{}, idx *index.Indexer, id document.DocId) {
 	for _, value := range res.([]map[string]interface{}) {
 		for k, v := range value {
 			switch k {
 			case "and", "or", "not", "and_check", "or_check", "not_and_check":
-				debugInfo(v, idx, id, e)
+				debugInfo(v, idx, id)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}, e).GetGE(id); err != nil {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id); err != nil {
 					value[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					value[k] = append(v.([]string), "id found")
@@ -98,15 +97,15 @@ func debugInfo(res interface{}, idx *index.Indexer, id document.DocId, e operati
 			case "check":
 				var chk = &check.CheckerImpl{}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}).Check(id))))
 			case "in_check":
 				var chk = &check.InChecker{}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}).Check(id))))
 			case "not_check":
 				var chk = &check.CheckerImpl{}
 				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}, e).Check(id))))
+					strconv.FormatBool(chk.Unmarshal(idx, map[string]interface{}{k: v}).Check(id))))
 			}
 		}
 	}

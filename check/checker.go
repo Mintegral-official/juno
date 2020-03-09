@@ -12,7 +12,7 @@ type Checker interface {
 	DebugInfo() *debug.Debug
 	SetDebug(level int)
 	Marshal() map[string]interface{}
-	Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Checker
+	Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker
 }
 
 var OpMap = map[operation.OP]string{

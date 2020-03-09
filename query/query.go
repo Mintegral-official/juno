@@ -4,7 +4,6 @@ import (
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
-	"github.com/MintegralTech/juno/operation"
 )
 
 type Query interface {
@@ -12,7 +11,7 @@ type Query interface {
 	Current() (document.DocId, error)
 	GetGE(id document.DocId) (document.DocId, error)
 	Marshal() map[string]interface{}
-	Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query
+	Unmarshal(idx *index.Indexer, res map[string]interface{}) Query
 	DebugInfo() *debug.Debug
 	SetDebug(level int)
 }

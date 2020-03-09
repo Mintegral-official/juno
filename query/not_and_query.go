@@ -6,7 +6,6 @@ import (
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
-	"github.com/MintegralTech/juno/operation"
 )
 
 type NotAndQuery struct {
@@ -21,9 +20,7 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (
 	if len(queries) == 0 {
 		return nil
 	}
-	naq = &NotAndQuery{
-		checkers: checkers,
-	}
+	naq = &NotAndQuery{}
 	if len(queries) == 1 {
 		naq.q = queries[0]
 	} else {
@@ -124,56 +121,29 @@ func (naq *NotAndQuery) Marshal() map[string]interface{} {
 	return res
 }
 
-func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
+func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Query {
 	notAnd, ok := res["not"]
 	if !ok {
 		return nil
 	}
 	notCheck, ok := res["not_and_check"]
-	r := notAnd.([]map[string]interface{})
-	var q []Query
-	var c []check.Checker
-	for _, v := range r {
-		if _, ok := v["and"]; ok {
-			var tmp = &AndQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["or"]; ok {
-			var tmp = &OrQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not"]; ok {
-			var tmp = &NotAndQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["="]; ok {
-			var tmp = &TermQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
+	var queries []Query
+	var checker []check.Checker
+	uq := &Unmarshal{}
+	for _, v := range notAnd.([]map[string]interface{}) {
+		if q := uq.Unmarshal(idx, v); q != nil {
+			queries = append(queries, q.(Query))
 		}
 	}
 	if !ok {
-		return NewNotAndQuery(q, nil)
+		return NewNotAndQuery(queries, nil)
 	}
-	checks := notCheck.([]map[string]interface{})
-	for _, v := range checks {
-		if _, ok := v["and_check"]; ok {
-			var tmp = &check.AndChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["or_check"]; ok {
-			var tmp = &check.OrChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["in_check"]; ok {
-			var tmp = &check.InChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not_check"]; ok {
-			var tmp = &check.NotChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["check"]; ok {
-			var tmp = &check.CheckerImpl{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not_and_check"]; ok {
-			var tmp = &check.NotAndChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
+	for _, v := range notCheck.([]map[string]interface{}) {
+		if c := uq.Unmarshal(idx, v); c != nil {
+			checker = append(checker, c.(check.Checker))
 		}
 	}
-	return NewNotAndQuery(q, c)
+	return NewNotAndQuery(queries, checker)
 }
 
 func (naq *NotAndQuery) SetDebug(level int) {

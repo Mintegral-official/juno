@@ -1,6 +1,7 @@
 package search
 
 import (
+	"encoding/json"
 	"github.com/MintegralTech/juno/check"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
@@ -253,6 +254,8 @@ func TestSearcher(t *testing.T) {
 		q.Next()
 		So(v, ShouldEqual, 0)
 		So(e, ShouldNotBeNil)
+		res, _ := json.Marshal(q.Marshal())
+		So(res, ShouldNotBeNil)
 	})
 
 }
@@ -330,6 +333,7 @@ func TestNewSearcher_Inc_Index(t *testing.T) {
 			},
 		}
 		realMap = idx.GetValueById(0)
+		So(realMap, ShouldNotBeNil)
 		So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
 
 		q = query.NewTermQuery(idx.GetInvertedIndex().Iterator("field2", "20"))

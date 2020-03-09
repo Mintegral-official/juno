@@ -5,7 +5,6 @@ import (
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
-	"github.com/MintegralTech/juno/operation"
 )
 
 type AndChecker struct {
@@ -50,32 +49,19 @@ func (a *AndChecker) Marshal() map[string]interface{} {
 	return res
 }
 
-func (a *AndChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Checker {
-	v, ok := res["and_check"]
+func (a *AndChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
+	value, ok := res["and_check"]
 	if !ok {
 		return nil
 	}
-	value := v.([]map[string]interface{})
-	var c []Checker
-	for _, v := range value {
-		if _, ok := v["and_check"]; ok {
-			var tmp = &AndChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["or_check"]; ok {
-			var tmp = &OrChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["in_check"]; ok {
-			var tmp = &InChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not_check"]; ok {
-			var tmp = &NotChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["check"]; ok {
-			var tmp = CheckerImpl{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
+	var checks []Checker
+	uq := &unmarshal{}
+	for _, v := range value.([]map[string]interface{}) {
+		if c := uq.Unmarshal(idx, v); c != nil {
+			checks = append(checks, c)
 		}
 	}
-	return NewAndChecker(c)
+	return NewAndChecker(checks)
 }
 
 func (a *AndChecker) DebugInfo() *debug.Debug {

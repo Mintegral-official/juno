@@ -7,7 +7,6 @@ import (
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
-	"github.com/MintegralTech/juno/operation"
 	"strings"
 )
 
@@ -73,7 +72,7 @@ func (tq *TermQuery) Marshal() map[string]interface{} {
 	return res
 }
 
-func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
+func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Query {
 	v, ok := res["="]
 	if !ok {
 		return nil

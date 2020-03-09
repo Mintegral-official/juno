@@ -7,7 +7,6 @@ import (
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
-	"github.com/MintegralTech/juno/operation"
 )
 
 type OrQuery struct {
@@ -137,56 +136,29 @@ func (oq *OrQuery) Marshal() map[string]interface{} {
 	return res
 }
 
-func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}, e operation.Operation) Query {
+func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Query {
 	or, ok := res["or"]
 	if !ok {
 		return nil
 	}
-	r := or.([]map[string]interface{})
-	var q []Query
-	var c []check.Checker
-	for _, v := range r {
-		if _, ok := v["and"]; ok {
-			var tmp = &AndQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["or"]; ok {
-			var tmp = &OrQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not"]; ok {
-			var tmp = &NotAndQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["="]; ok {
-			var tmp = &TermQuery{}
-			q = append(q, tmp.Unmarshal(idx, v, e))
+	var queries []Query
+	var checker []check.Checker
+	uq := &Unmarshal{}
+	for _, v := range or.([]map[string]interface{}) {
+		if q := uq.Unmarshal(idx, v); q != nil {
+			queries = append(queries, q.(Query))
 		}
 	}
 	orCheck, ok := res["or_check"]
 	if !ok {
-		return NewOrQuery(q, nil)
+		return NewOrQuery(queries, nil)
 	}
-	checks := orCheck.([]map[string]interface{})
-	for _, v := range checks {
-		if _, ok := v["and_check"]; ok {
-			var tmp = &check.AndChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["or_check"]; ok {
-			var tmp = &check.OrChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["in_check"]; ok {
-			var tmp = &check.InChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not_check"]; ok {
-			var tmp = &check.NotChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["check"]; ok {
-			var tmp = &check.CheckerImpl{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
-		} else if _, ok := v["not_and_check"]; ok {
-			var tmp = check.NotAndChecker{}
-			c = append(c, tmp.Unmarshal(idx, v, e))
+	for _, v := range orCheck.([]map[string]interface{}) {
+		if q := uq.Unmarshal(idx, v); q != nil {
+			checker = append(checker, q.(check.Checker))
 		}
 	}
-	return NewOrQuery(q, c)
+	return NewOrQuery(queries, checker)
 }
 
 func (oq *OrQuery) SetDebug(level int) {
