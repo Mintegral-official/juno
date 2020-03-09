@@ -16,11 +16,13 @@ type NotAndQuery struct {
 	debugs   *debug.Debug
 }
 
-func NewNotAndQuery(queries []Query, checkers []check.Checker, isDebug ...int) (naq *NotAndQuery) {
+func NewNotAndQuery(queries []Query, checkers []check.Checker) (naq *NotAndQuery) {
 	if len(queries) == 0 {
 		return nil
 	}
-	naq = &NotAndQuery{}
+	naq = &NotAndQuery{
+		checkers: checkers,
+	}
 	if len(queries) == 1 {
 		naq.q = queries[0]
 	} else {
