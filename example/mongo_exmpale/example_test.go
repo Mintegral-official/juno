@@ -1,4 +1,4 @@
-package main
+package mongo_exmpale
 
 import (
 	"context"
@@ -114,7 +114,6 @@ func BenchmarkSliceEqual(b *testing.B) {
 		//fmt.Println("+****************************+")
 		//fmt.Println(r1.IndexDebug)
 		//fmt.Println("+****************************+")
-
 
 		a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
 		sq := query.NewSqlQuery(a, nil, false)
