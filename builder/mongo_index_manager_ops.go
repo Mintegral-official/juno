@@ -1,8 +1,8 @@
 package builder
 
 import (
-	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/log"
+	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/log"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 

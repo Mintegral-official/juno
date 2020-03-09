@@ -1,6 +1,6 @@
 package index
 
-import "github.com/Mintegral-official/juno/document"
+import "github.com/MintegralTech/juno/document"
 
 type DocIdKey struct {
 	value document.DocId

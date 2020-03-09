@@ -3,9 +3,9 @@ package check
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Mintegral-official/juno/datastruct"
-	"github.com/Mintegral-official/juno/index"
-	"github.com/Mintegral-official/juno/operation"
+	"github.com/MintegralTech/juno/datastruct"
+	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/operation"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

@@ -1,6 +1,6 @@
 package datastruct
 
-import "github.com/Mintegral-official/juno/document"
+import "github.com/MintegralTech/juno/document"
 
 type Iterator interface {
 	HasNext() bool

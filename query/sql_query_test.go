@@ -1,8 +1,8 @@
 package query
 
 import (
-	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/index"
+	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/index"
 	"testing"
 )
 

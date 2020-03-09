@@ -2,7 +2,7 @@ package query
 
 import (
 	"bytes"
-	"github.com/Mintegral-official/juno/datastruct"
+	"github.com/MintegralTech/juno/datastruct"
 	"strconv"
 	"strings"
 )

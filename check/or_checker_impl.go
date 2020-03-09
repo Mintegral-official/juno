@@ -2,10 +2,10 @@ package check
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/debug"
-	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/index"
-	"github.com/Mintegral-official/juno/operation"
+	"github.com/MintegralTech/juno/debug"
+	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/operation"
 )
 
 type OrChecker struct {

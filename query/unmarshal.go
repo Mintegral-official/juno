@@ -1,8 +1,8 @@
 package query
 
 import (
-	"github.com/Mintegral-official/juno/index"
-	"github.com/Mintegral-official/juno/operation"
+	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/operation"
 )
 
 type UnmarshalQuery struct {

@@ -2,8 +2,8 @@ package query
 
 import (
 	"container/heap"
-	"github.com/Mintegral-official/juno/datastruct"
-	"github.com/Mintegral-official/juno/document"
+	"github.com/MintegralTech/juno/datastruct"
+	"github.com/MintegralTech/juno/document"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

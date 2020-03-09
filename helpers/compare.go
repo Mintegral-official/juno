@@ -2,7 +2,7 @@ package helpers
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/document"
+	"github.com/MintegralTech/juno/document"
 	"strings"
 )
 

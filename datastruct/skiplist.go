@@ -1,8 +1,8 @@
 package datastruct
 
 import (
-	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
+	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/helpers"
 	"math/rand"
 	"time"
 )

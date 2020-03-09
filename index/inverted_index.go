@@ -1,9 +1,9 @@
 package index
 
 import (
-	"github.com/Mintegral-official/juno/datastruct"
-	"github.com/Mintegral-official/juno/debug"
-	"github.com/Mintegral-official/juno/document"
+	"github.com/MintegralTech/juno/datastruct"
+	"github.com/MintegralTech/juno/debug"
+	"github.com/MintegralTech/juno/document"
 )
 
 type InvertedIndex interface {

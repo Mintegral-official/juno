@@ -2,8 +2,8 @@ package index
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
+	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/helpers"
 	. "github.com/smartystreets/goconvey/convey"
 	"reflect"
 	"testing"

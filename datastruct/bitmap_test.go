@@ -2,7 +2,7 @@ package datastruct
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/document"
+	"github.com/MintegralTech/juno/document"
 	. "github.com/smartystreets/goconvey/convey"
 	"math/rand"
 	"strconv"

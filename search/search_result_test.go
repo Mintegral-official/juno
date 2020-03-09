@@ -1,11 +1,11 @@
 package search
 
 import (
-	"github.com/Mintegral-official/juno/check"
-	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/index"
-	"github.com/Mintegral-official/juno/operation"
-	"github.com/Mintegral-official/juno/query"
+	"github.com/MintegralTech/juno/check"
+	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/operation"
+	"github.com/MintegralTech/juno/query"
 	. "github.com/smartystreets/goconvey/convey"
 	"reflect"
 	"testing"

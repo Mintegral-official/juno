@@ -1,6 +1,6 @@
 package operation
 
-import "github.com/Mintegral-official/juno/helpers"
+import "github.com/MintegralTech/juno/helpers"
 
 type Operations struct {
 	FieldValue interface{}

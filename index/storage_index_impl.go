@@ -2,10 +2,10 @@ package index
 
 import (
 	"fmt"
-	"github.com/Mintegral-official/juno/datastruct"
-	"github.com/Mintegral-official/juno/debug"
-	"github.com/Mintegral-official/juno/document"
-	"github.com/Mintegral-official/juno/helpers"
+	"github.com/MintegralTech/juno/datastruct"
+	"github.com/MintegralTech/juno/debug"
+	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/helpers"
 	"strconv"
 	"sync"
 )

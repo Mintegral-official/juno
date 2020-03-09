@@ -2,8 +2,8 @@ package builder
 
 import (
 	"context"
-	"github.com/Mintegral-official/juno/helpers"
-	"github.com/Mintegral-official/juno/index"
+	"github.com/MintegralTech/juno/helpers"
+	"github.com/MintegralTech/juno/index"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
