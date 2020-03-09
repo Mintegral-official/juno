@@ -114,8 +114,6 @@ func (i *Indexer) Add(doc *document.DocInfo) error {
 	if doc == nil {
 		return helpers.DocumentError
 	}
-	i.campaignMapping.Set(DocId(doc.Id), document.DocId(i.count))
-	i.bitmap.Set(DocId(document.DocId(i.count)), doc.Id)
 	for _, field := range doc.Fields {
 		switch field.IndexType {
 		case document.InvertedIndexType:
@@ -131,6 +129,8 @@ func (i *Indexer) Add(doc *document.DocInfo) error {
 			i.WarnStatus(field.Name, field.Value, "type is wrong")
 		}
 	}
+	i.campaignMapping.Set(DocId(doc.Id), document.DocId(i.count))
+	i.bitmap.Set(DocId(document.DocId(i.count)), doc.Id)
 	atomic.AddUint64(&i.count, 1)
 	return nil
 }
