@@ -110,7 +110,7 @@ func (i *Indexer) Delete(fieldName string) {
 	i.invertedIndex.Delete(fieldName)
 }
 
-func (i *Indexer) Add(doc *document.DocInfo) (err error) {
+func (i *Indexer) Add(doc *document.DocInfo) error {
 	if doc == nil {
 		return helpers.DocumentError
 	}
@@ -129,11 +129,10 @@ func (i *Indexer) Add(doc *document.DocInfo) (err error) {
 			i.kvType.Set(concurrent_map.StrKey(field.Name), field.ValueType)
 		default:
 			i.WarnStatus(field.Name, field.Value, "type is wrong")
-			return errors.New("the add doc type is wrong or nil ")
 		}
 	}
 	atomic.AddUint64(&i.count, 1)
-	return err
+	return nil
 }
 
 func (i *Indexer) Del(doc *document.DocInfo) {
