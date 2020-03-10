@@ -34,6 +34,9 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker) (naq *NotAndQuery
 }
 
 func (naq *NotAndQuery) next() {
+	if naq.q == nil {
+		return
+	}
 	for target, err := naq.Current(); err == nil; {
 		if naq.check(target) && naq.findSubSet(target) {
 			return
@@ -44,6 +47,9 @@ func (naq *NotAndQuery) next() {
 }
 
 func (naq *NotAndQuery) findSubSet(id document.DocId) bool {
+	if naq.q == nil {
+		return false
+	}
 	if naq.subQuery == nil {
 		return true
 	}

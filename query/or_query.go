@@ -30,9 +30,6 @@ func NewOrQuery(queries []Query, checkers []check.Checker) (oq *OrQuery) {
 		}
 		heap.Push(h, queries[i])
 	}
-	if h.Len() == 0 {
-		return nil
-	}
 	oq.h = *h
 	oq.next()
 	return oq
