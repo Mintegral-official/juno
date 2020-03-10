@@ -103,7 +103,7 @@ func (naq *NotAndQuery) check(id document.DocId) bool {
 }
 
 func (naq *NotAndQuery) DebugInfo() *debug.Debug {
-	if naq.debugs != nil {
+	if naq != nil && naq.debugs != nil {
 		naq.debugs.AddDebug(naq.q.DebugInfo(), naq.subQuery.DebugInfo())
 		for _, v := range naq.checkers {
 			naq.debugs.AddDebug(v.DebugInfo())

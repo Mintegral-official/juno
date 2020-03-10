@@ -133,7 +133,7 @@ func (aq *AndQuery) Current() (document.DocId, error) {
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {
-	if aq != nil || aq.debugs != nil {
+	if aq != nil && aq.debugs != nil {
 		for _, v := range aq.queries {
 			aq.debugs.AddDebug(v.DebugInfo())
 		}

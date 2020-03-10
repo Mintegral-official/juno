@@ -111,7 +111,7 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 }
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {
-	if oq.debugs != nil {
+	if oq != nil && oq.debugs != nil {
 		for _, v := range oq.h {
 			oq.debugs.AddDebug(v.DebugInfo())
 		}

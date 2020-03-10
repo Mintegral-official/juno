@@ -58,7 +58,7 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 }
 
 func (tq *TermQuery) DebugInfo() *debug.Debug {
-	if tq.debugs != nil {
+	if tq != nil && tq.debugs != nil {
 		tq.debugs.FieldName = tq.iterator.(*datastruct.SkipListIterator).FieldName
 		return tq.debugs
 	}
