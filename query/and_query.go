@@ -29,6 +29,9 @@ func NewAndQuery(queries []Query, checkers []check.Checker) (aq *AndQuery) {
 			aq.queries = append(aq.queries, queries[i])
 		}
 	}
+	if len(aq.queries) == 0 {
+		return nil
+	}
 	aq.next()
 	return aq
 }
