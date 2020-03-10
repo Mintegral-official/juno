@@ -39,6 +39,9 @@ func NewOrQuery(queries []Query, checkers []check.Checker) (oq *OrQuery) {
 }
 
 func (oq *OrQuery) Next() {
+	if oq == nil {
+		return
+	}
 	top := oq.h.Top()
 	if top != nil {
 		q := top.(Query)
@@ -49,6 +52,9 @@ func (oq *OrQuery) Next() {
 }
 
 func (oq *OrQuery) next() {
+	if oq == nil {
+		return
+	}
 	for target, err := oq.Current(); err == nil; {
 		if (oq.lastId == nil || *oq.lastId != target) && oq.check(target) {
 			oq.lastId = &target
@@ -65,6 +71,9 @@ func (oq *OrQuery) next() {
 }
 
 func (oq *OrQuery) getGE(id document.DocId) {
+	if oq == nil {
+		return
+	}
 	top := oq.h.Top()
 	if top != nil {
 		q := top.(Query)
