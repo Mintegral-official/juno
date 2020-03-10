@@ -17,7 +17,7 @@ type NotAndQuery struct {
 }
 
 func NewNotAndQuery(queries []Query, checkers []check.Checker) (naq *NotAndQuery) {
-	if len(queries) == 0 {
+	if len(queries) == 0 || queries[0] == nil {
 		return nil
 	}
 	naq = &NotAndQuery{

@@ -5,6 +5,7 @@ import (
 	"github.com/MintegralTech/juno/check"
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
 )
 
@@ -21,19 +22,29 @@ func NewAndQuery(queries []Query, checkers []check.Checker) (aq *AndQuery) {
 	}
 	aq = &AndQuery{
 		curIdx:   0,
-		queries:  queries,
 		checkers: checkers,
+	}
+	for i := 0; i < len(queries); i++ {
+		if queries[i] != nil {
+			aq.queries = append(aq.queries, queries[i])
+		}
 	}
 	aq.next()
 	return aq
 }
 
 func (aq *AndQuery) Next() {
+	if len(aq.queries) == 0 {
+		return
+	}
 	aq.queries[aq.curIdx].Next()
 	aq.next()
 }
 
 func (aq *AndQuery) next() {
+	if len(aq.queries) == 0 {
+		return
+	}
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Current()
 	if err != nil {
@@ -72,6 +83,9 @@ func (aq *AndQuery) next() {
 }
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
+	if len(aq.queries) == 0 {
+		return 0, helpers.ElementNotfound
+	}
 	curIdx, lastIdx := 0, 0
 	target, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
@@ -109,6 +123,9 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
+	if len(aq.queries) == 0 {
+		return 0, helpers.ElementNotfound
+	}
 	return aq.queries[aq.curIdx].Current()
 }
 
