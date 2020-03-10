@@ -148,6 +148,9 @@ func (mib *MongoIndexBuilder) base(name string) (err error) {
 		_ = baseIndex.Add(r.Value)
 	}
 	mib.innerIndex = baseIndex
+	if mib.ops.OnFinishBase != nil {
+		mib.ops.OnFinishBase(mib)
+	}
 	return err
 }
 
@@ -185,6 +188,9 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 			mib.innerIndex.Del(r.Value)
 			mib.totalNum--
 		}
+	}
+	if mib.ops.OnFinishInc != nil {
+		mib.ops.OnFinishInc(mib)
 	}
 	return err
 }
