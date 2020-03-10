@@ -30,6 +30,9 @@ func NewOrQuery(queries []Query, checkers []check.Checker) (oq *OrQuery) {
 		}
 		heap.Push(h, queries[i])
 	}
+	if h.Len() == 0 {
+		return nil
+	}
 	oq.h = *h
 	oq.next()
 	return oq
@@ -71,6 +74,9 @@ func (oq *OrQuery) getGE(id document.DocId) {
 }
 
 func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
+	if oq == nil {
+		return 0, helpers.ElementNotfound
+	}
 	target, err := oq.Current()
 	for err == nil && target < id {
 		oq.getGE(id)
@@ -84,6 +90,9 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (oq *OrQuery) Current() (document.DocId, error) {
+	if oq == nil {
+		return 0, helpers.ElementNotfound
+	}
 	top := oq.h.Top()
 	if top == nil {
 		return 0, helpers.NoMoreData
