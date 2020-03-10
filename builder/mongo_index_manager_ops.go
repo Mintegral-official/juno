@@ -40,4 +40,6 @@ type MongoIndexManagerOps struct {
 	Logger         log.Logger
 	OnBeforeBase   func(interface{}) interface{}
 	OnBeforeInc    func(interface{}) interface{}
+	OnFinishBase   func(interface{})
+	OnFinishInc    func(interface{})
 }
