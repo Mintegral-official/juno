@@ -34,7 +34,7 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker) (naq *NotAndQuery
 }
 
 func (naq *NotAndQuery) next() {
-	if naq.q == nil {
+	if naq == nil || naq.q == nil {
 		return
 	}
 	for target, err := naq.Current(); err == nil; {
@@ -47,7 +47,7 @@ func (naq *NotAndQuery) next() {
 }
 
 func (naq *NotAndQuery) findSubSet(id document.DocId) bool {
-	if naq.q == nil {
+	if naq == nil || naq.q == nil {
 		return false
 	}
 	if naq.subQuery == nil {
@@ -61,7 +61,7 @@ func (naq *NotAndQuery) findSubSet(id document.DocId) bool {
 }
 
 func (naq *NotAndQuery) Next() {
-	if naq.q == nil {
+	if naq == nil || naq.q == nil {
 		return
 	}
 	naq.q.Next()
@@ -69,7 +69,7 @@ func (naq *NotAndQuery) Next() {
 }
 
 func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	if naq.q == nil {
+	if naq == nil || naq.q == nil {
 		return 0, helpers.NoMoreData
 	}
 	_, _ = naq.q.GetGE(id)
@@ -78,14 +78,14 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (naq *NotAndQuery) Current() (document.DocId, error) {
-	if naq.q == nil {
+	if naq == nil || naq.q == nil {
 		return 0, helpers.NoMoreData
 	}
 	return naq.q.Current()
 }
 
 func (naq *NotAndQuery) check(id document.DocId) bool {
-	if len(naq.checkers) == 0 {
+	if naq == nil || len(naq.checkers) == 0 {
 		return true
 	}
 	for i, v := range naq.checkers {

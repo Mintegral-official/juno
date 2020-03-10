@@ -37,7 +37,7 @@ func NewAndQuery(queries []Query, checkers []check.Checker) (aq *AndQuery) {
 }
 
 func (aq *AndQuery) Next() {
-	if len(aq.queries) == 0 {
+	if aq == nil || len(aq.queries) == 0 {
 		return
 	}
 	aq.queries[aq.curIdx].Next()
@@ -45,7 +45,7 @@ func (aq *AndQuery) Next() {
 }
 
 func (aq *AndQuery) next() {
-	if len(aq.queries) == 0 {
+	if aq == nil || len(aq.queries) == 0 {
 		return
 	}
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
@@ -86,7 +86,7 @@ func (aq *AndQuery) next() {
 }
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	if len(aq.queries) == 0 {
+	if aq == nil || len(aq.queries) == 0 {
 		return 0, helpers.ElementNotfound
 	}
 	curIdx, lastIdx := 0, 0
@@ -126,14 +126,14 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
-	if len(aq.queries) == 0 {
+	if aq == nil || len(aq.queries) == 0 {
 		return 0, helpers.ElementNotfound
 	}
 	return aq.queries[aq.curIdx].Current()
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {
-	if aq.debugs != nil {
+	if aq != nil || aq.debugs != nil {
 		for _, v := range aq.queries {
 			aq.debugs.AddDebug(v.DebugInfo())
 		}
@@ -146,7 +146,7 @@ func (aq *AndQuery) DebugInfo() *debug.Debug {
 }
 
 func (aq *AndQuery) check(id document.DocId) bool {
-	if len(aq.checkers) == 0 {
+	if aq == nil || len(aq.checkers) == 0 {
 		return true
 	}
 	for _, c := range aq.checkers {

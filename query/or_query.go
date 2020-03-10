@@ -39,7 +39,7 @@ func NewOrQuery(queries []Query, checkers []check.Checker) (oq *OrQuery) {
 }
 
 func (oq *OrQuery) Next() {
-	if oq == nil {
+	if oq == nil || oq.h.Len() == 0 {
 		return
 	}
 	top := oq.h.Top()
@@ -52,7 +52,7 @@ func (oq *OrQuery) Next() {
 }
 
 func (oq *OrQuery) next() {
-	if oq == nil {
+	if oq == nil || oq.h.Len() == 0 {
 		return
 	}
 	for target, err := oq.Current(); err == nil; {
@@ -71,7 +71,7 @@ func (oq *OrQuery) next() {
 }
 
 func (oq *OrQuery) getGE(id document.DocId) {
-	if oq == nil {
+	if oq == nil || oq.h.Len() == 0 {
 		return
 	}
 	top := oq.h.Top()
@@ -83,7 +83,7 @@ func (oq *OrQuery) getGE(id document.DocId) {
 }
 
 func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
-	if oq == nil {
+	if oq == nil || oq.h.Len() == 0 {
 		return 0, helpers.ElementNotfound
 	}
 	target, err := oq.Current()
@@ -99,7 +99,7 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (oq *OrQuery) Current() (document.DocId, error) {
-	if oq == nil {
+	if oq == nil || oq.h.Len() == 0 {
 		return 0, helpers.ElementNotfound
 	}
 	top := oq.h.Top()
@@ -124,7 +124,7 @@ func (oq *OrQuery) DebugInfo() *debug.Debug {
 }
 
 func (oq *OrQuery) check(id document.DocId) bool {
-	if len(oq.checkers) == 0 {
+	if oq == nil || len(oq.checkers) == 0 {
 		return true
 	}
 	for _, v := range oq.checkers {
