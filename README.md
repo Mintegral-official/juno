@@ -65,7 +65,7 @@ func main() {
 		IncParser:      &CampaignParser{},
 		BaseParser:     &CampaignParser{},
 		BaseQuery:      bson.M{"status": 1},
-		IncQuery:       bson.M{"updated": bson.M{"$gte": time.Now().Unix() - 5, "$lte": 				time.Now().Unix()}},
+		IncQuery:       bson.M{"updated": bson.M{"$gte": time.Now().Unix() - 5, "$lte": time.Now().Unix()}},
 		DB:             "new_adn",
 		Collection:     "campaign",
 		ConnectTimeout: 10000,
@@ -89,7 +89,7 @@ func main() {
 		fmt.Println("build error", e.Error())
 	}
 
-  // 获取构建的索引
+        // 获取构建的索引
 	tIndex := b.GetIndex()
 
 ```
