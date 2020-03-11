@@ -139,6 +139,9 @@ func (oq *OrQuery) check(id document.DocId) bool {
 }
 
 func (oq *OrQuery) Marshal() map[string]interface{} {
+	if oq == nil {
+		return map[string]interface{}{}
+	}
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, len(oq.h))
 	for _, v := range oq.h {

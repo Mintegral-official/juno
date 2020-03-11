@@ -161,6 +161,9 @@ func (aq *AndQuery) check(id document.DocId) bool {
 }
 
 func (aq *AndQuery) Marshal() map[string]interface{} {
+	if aq == nil {
+		return map[string]interface{}{}
+	}
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, len(aq.queries))
 	for _, v := range aq.queries {

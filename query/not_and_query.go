@@ -114,6 +114,9 @@ func (naq *NotAndQuery) DebugInfo() *debug.Debug {
 }
 
 func (naq *NotAndQuery) Marshal() map[string]interface{} {
+	if naq == nil {
+		return map[string]interface{}{}
+	}
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, 2)
 	queryInfo = append(queryInfo, naq.q.Marshal())
