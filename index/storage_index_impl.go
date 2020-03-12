@@ -50,6 +50,10 @@ func (s *StorageIndexer) Count() (count int) {
 	return count
 }
 
+func (s *StorageIndexer) Range(f func(key, value interface{}) bool) {
+	s.data.Range(f)
+}
+
 func (s *StorageIndexer) Get(fieldName string, id document.DocId) interface{} {
 	v, ok := s.data.Load(fieldName)
 	if !ok {

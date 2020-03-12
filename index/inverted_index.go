@@ -12,6 +12,7 @@ type InvertedIndex interface {
 	Update(fieldName string, ids []document.DocId)
 	Delete(fieldName string)
 	Iterator(name, value string) datastruct.Iterator
+	Range(func(key, value interface{}) bool)
 	Count() int
 	GetValueById(id document.DocId) map[string][]string
 	SetDebug(level int)

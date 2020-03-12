@@ -30,6 +30,10 @@ func (i *InvertedIndexer) Count() (count int) {
 	return count
 }
 
+func (i *InvertedIndexer) Range(f func(key, value interface{}) bool) {
+	i.data.Range(f)
+}
+
 func (i *InvertedIndexer) GetValueById(id document.DocId) map[string][]string {
 	var res = make(map[string][]string, 16)
 	i.data.Range(func(key, value interface{}) bool {

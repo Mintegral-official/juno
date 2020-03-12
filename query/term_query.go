@@ -28,6 +28,9 @@ func (tq *TermQuery) Next() {
 	if tq == nil || tq.iterator == nil {
 		return
 	}
+	if tq.debugs != nil && tq.debugs.Level == 2 {
+		tq.debugs.NextCounter++
+	}
 	tq.iterator.Next()
 }
 
@@ -37,6 +40,9 @@ func (tq *TermQuery) GetGE(id document.DocId) (document.DocId, error) {
 	}
 
 	element := tq.iterator.GetGE(id)
+	if tq.debugs != nil && tq.debugs.Level == 2 {
+		tq.debugs.LECounter++
+	}
 	if element == nil {
 		if tq.debugs != nil {
 			tq.debugs.AddDebugMsg(fmt.Sprintf("docId: %d, reason: %v", id, helpers.ElementNotfound))
@@ -82,6 +88,6 @@ func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Q
 
 func (tq *TermQuery) SetDebug(level int) {
 	if tq.debugs == nil {
-		tq.debugs = debug.NewDebug(level, "TermQuery" )
+		tq.debugs = debug.NewDebug(level, "TermQuery")
 	}
 }

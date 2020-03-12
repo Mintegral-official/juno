@@ -100,6 +100,8 @@ func main() {
 
 juno目前支持类sql，go struct两种查询语法，同时支持debug模式，可以获取特定文档没召回的原因
 
+保留字段： where search index
+
 ### 类SQL查询语法 示例
 
 > 基本query: 支持=,!=, >, >=, <, <=, in, has等操作符
@@ -109,11 +111,12 @@ juno目前支持类sql，go struct两种查询语法，同时支持debug模式�
 > 3. adid has [1, 2, 3]
 > 4. price > 10
 > 5. price < 100
+> 6. campain != 5
 >
 > 复核query: 基本query的组合, 支持 and, or, not
 > 1. campainId = 1 && price > 10
 > 2. adid has [1, 2, 3] && (price > 10 || os = 1)
-> 3. adid has [1, 2, 3] && (not campaignId = 5)
+> 3. adid has [1, 2, 3] || (not campaignId = 5)
 > 4. adid has not [1, 2, 3]
 >
 > 自定义函数：
@@ -122,6 +125,12 @@ juno目前支持类sql，go struct两种查询语法，同时支持debug模式�
 > 1. func1(price, 100)
 > 2. campainId = 1 && price > 10 && func(price, 100) 
 > 3. regex_func(fieldName, "xxx")
+>
+> 文档过滤原因
+>
+> Query: {adv = 1 && price > 10 | business1} && {adv = 1 && price > 10 && func(price, 100) | business2}  docid in [1,2]
+>
+> 返回结果：1: business1=true, business=false;2:business1=fasle,business2=false
 
 ### go struct 查询
 
