@@ -113,7 +113,7 @@ func (i *InChecker) Marshal() map[string]interface{} {
 	return res
 }
 
-func (i *InChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
+func (i *InChecker) Unmarshal(idx index.Index, res map[string]interface{}) Checker {
 	v, ok := res["in_check"]
 	if !ok {
 		return nil

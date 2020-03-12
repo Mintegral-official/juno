@@ -99,7 +99,7 @@ func (c *CheckerImpl) Marshal() map[string]interface{} {
 	return res
 }
 
-func (c *CheckerImpl) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
+func (c *CheckerImpl) Unmarshal(idx index.Index, res map[string]interface{}) Checker {
 	v, ok := res["check"]
 	if !ok {
 		return nil

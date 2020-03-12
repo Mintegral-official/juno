@@ -25,7 +25,7 @@ func NewSearcher() *Searcher {
 	}
 }
 
-func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
+func (s *Searcher) Search(iIndexer index.Index, query query.Query) {
 	if query == nil {
 		panic("the query should not be nil")
 		return
@@ -34,8 +34,8 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	id, err := query.Current()
 	query.Next()
 	for err == nil {
-		if vb, ok := iIndexer.GetBitMap().Get(index.DocId(id)); ok {
-			s.Docs = append(s.Docs, vb.(document.DocId))
+		if i, e := iIndexer.GetId(id); e == nil {
+			s.Docs = append(s.Docs, i)
 		}
 		id, err = query.Current()
 		query.Next()
@@ -45,24 +45,23 @@ func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
 	s.QueryDebug = query.DebugInfo()
 }
 
-func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, ids []document.DocId) {
+func (s *Searcher) Debug(idx index.Index, q map[string]interface{}, ids []document.DocId) {
 	uq := query.Unmarshal{}
 	s.Search(idx, uq.Unmarshal(idx, q).(query.Query))
 	queryMarshal := q
 	var res = make(map[document.DocId]map[string]interface{}, len(ids))
 	for _, id := range ids {
-		tmp, ok := idx.GetCampaignMap().Get(index.DocId(id))
-		if !ok {
+		tmp, ok := idx.GetId(id)
+		if ok != nil {
 			continue
 		}
 		for k, v := range queryMarshal {
 			switch k {
 			case "and", "or", "not", "and_check", "or_check", "not_and_check":
-				debugInfo(v, idx, tmp.(document.DocId))
+				debugInfo(v, idx, tmp)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(tmp.(document.DocId));
-					err != nil || res != id {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(tmp); err != nil || res != id {
 					queryMarshal[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					queryMarshal[k] = append(v.([]string), "id found")
@@ -70,15 +69,15 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, ids []doc
 			case "check":
 				var c = &check.CheckerImpl{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp.(document.DocId)))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp))))
 			case "in_check":
 				var c = &check.InChecker{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp.(document.DocId)))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp))))
 			case "not_check":
 				var c = &check.NotChecker{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp.(document.DocId)))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp))))
 			}
 		}
 		res[id] = queryMarshal
@@ -86,7 +85,7 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, ids []doc
 	s.FilterInfo = res
 }
 
-func debugInfo(res interface{}, idx *index.Indexer, id document.DocId) {
+func debugInfo(res interface{}, idx index.Index, id document.DocId) {
 	for _, value := range res.([]map[string]interface{}) {
 		for k, v := range value {
 			switch k {
@@ -94,8 +93,7 @@ func debugInfo(res interface{}, idx *index.Indexer, id document.DocId) {
 				debugInfo(v, idx, id)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id);
-					err != nil || res != id {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id); err != nil || res != id {
 					value[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					value[k] = append(v.([]string), "id found")

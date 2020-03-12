@@ -28,8 +28,8 @@ type Indexer struct {
 	aDebug          *debug.Debug
 }
 
-func NewIndex(name string) (i *Indexer) {
-	i = &Indexer{
+func NewIndexImpl(name string) Index {
+	return &Indexer{
 		invertedIndex:   NewInvertedIndexer(),
 		storageIndex:    NewStorageIndexer(),
 		campaignMapping: concurrent_map.CreateConcurrentMap(128),
@@ -39,7 +39,6 @@ func NewIndex(name string) (i *Indexer) {
 		name:            name,
 		logger:          logrus.New(),
 	}
-	return i
 }
 
 func (i *Indexer) GetInvertedIndex() InvertedIndex {
@@ -249,4 +248,11 @@ func (i *Indexer) WarnStatus(name string, value interface{}, err string) {
 	if i.logger != nil {
 		i.logger.Warnf("name:[%s] value:[%v] wrong reason:[%s]", name, value, err)
 	}
+}
+
+func (i *Indexer) GetId(id document.DocId) (document.DocId, error) {
+	if id, ok := i.bitmap.Get(DocId(id)); ok {
+		return id.(document.DocId), nil
+	}
+	return 0, errors.New("id not found")
 }

@@ -183,7 +183,7 @@ func (aq *AndQuery) Marshal() map[string]interface{} {
 	return res
 }
 
-func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Query {
+func (aq *AndQuery) Unmarshal(idx index.Index, res map[string]interface{}) Query {
 	and, ok := res["and"]
 	if !ok {
 		return nil

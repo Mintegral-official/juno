@@ -81,7 +81,7 @@ func (tq *TermQuery) Marshal() map[string]interface{} {
 	return res
 }
 
-func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Query {
+func (tq *TermQuery) Unmarshal(idx index.Index, res map[string]interface{}) Query {
 	v, ok := res["="]
 	if !ok {
 		return nil

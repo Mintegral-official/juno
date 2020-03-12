@@ -157,7 +157,7 @@ func (oq *OrQuery) Marshal() map[string]interface{} {
 	return res
 }
 
-func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Query {
+func (oq *OrQuery) Unmarshal(idx index.Index, res map[string]interface{}) Query {
 	or, ok := res["or"]
 	if !ok {
 		return nil
