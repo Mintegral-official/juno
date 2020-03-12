@@ -107,7 +107,7 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 3)
 
-		if2 := index.invertedIndex.Iterator("field2", "2")
+		if2 := index.GetInvertedIndex().Iterator("field2", "2")
 		c = 0
 		for if2.HasNext() {
 			if if2.Current() != nil {
@@ -125,7 +125,7 @@ func TestNewIndex(t *testing.T) {
 			sf1.Next()
 		}
 		So(c, ShouldEqual, 2)
-		sf2 := index.storageIndex.Iterator("field2")
+		sf2 := index.GetStorageIndex().Iterator("field2")
 		c = 0
 		for sf2.HasNext() {
 			if sf2.Current() != nil {
@@ -135,7 +135,6 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 1)
 		//So(len(*index.GetBitMap()), ShouldEqual, 32768)
-		So(index.GetCampaignMap(), ShouldNotBeNil)
 		So(index.GetDataType("field1"), ShouldEqual, 1)
 		So(index.GetDataType("field2"), ShouldEqual, 3)
 	})
@@ -157,7 +156,7 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 3)
 
-		if2 := index.invertedIndex.Iterator("field2", "2")
+		if2 := index.GetInvertedIndex().Iterator("field2", "2")
 		c = 0
 		for if2.HasNext() {
 			if if2.Current() != nil {
@@ -175,7 +174,7 @@ func TestNewIndex(t *testing.T) {
 			sf1.Next()
 		}
 		So(c, ShouldEqual, 1)
-		sf2 := index.storageIndex.Iterator("field2")
+		sf2 := index.GetStorageIndex().Iterator("field2")
 		c = 0
 		for sf2.HasNext() {
 			if sf2.Current() != nil {
@@ -185,7 +184,6 @@ func TestNewIndex(t *testing.T) {
 		}
 		So(c, ShouldEqual, 1)
 		//So(len(*index.GetBitMap()), ShouldEqual, 32768)
-		So(index.GetCampaignMap(), ShouldNotBeNil)
 		So(index.GetDataType("field1"), ShouldEqual, 1)
 		So(index.GetDataType("field2"), ShouldEqual, 3)
 	})
@@ -227,7 +225,7 @@ func TestStorageIndexer_Add(t *testing.T) {
 	Convey("add", t, func() {
 		index := NewIndex("index")
 		_ = index.Add(a)
-		idx := index.invertedIndex.Iterator("f1", "1")
+		idx := index.GetInvertedIndex().Iterator("f1", "1")
 		So(idx.HasNext(), ShouldBeTrue)
 		c := 0
 		for idx.HasNext() {
@@ -237,7 +235,7 @@ func TestStorageIndexer_Add(t *testing.T) {
 			idx.Next()
 		}
 		So(c, ShouldEqual, 1)
-		sto := index.storageIndex.Iterator("f2")
+		sto := index.GetStorageIndex().Iterator("f2")
 		So(sto.HasNext(), ShouldBeTrue)
 		c = 0
 		for sto.HasNext() {

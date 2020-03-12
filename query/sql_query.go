@@ -48,7 +48,7 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 			root.Right = sq.Stack.Pop().(*datastruct.TreeNode)
 			sq.Stack.Push(root)
 		} else {
-			sq.Stack.Push(&datastruct.TreeNode{Data: v,})
+			sq.Stack.Push(&datastruct.TreeNode{Data: v})
 		}
 	}
 	if sq.Stack.Empty() || sq.Stack.Len() > 1 {
@@ -57,7 +57,7 @@ func (sq *SqlQuery) exp2Tree() *datastruct.TreeNode {
 	return sq.Stack.Pop().(*datastruct.TreeNode)
 }
 
-func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
+func (sq *SqlQuery) LRD(idx index.Index) Query {
 	node := sq.exp2Tree().To()
 	for !sq.Stack.Empty() || !node.Empty() {
 		if !node.Empty() {
@@ -112,7 +112,7 @@ func (sq *SqlQuery) LRD(idx *index.Indexer) Query {
 	return sq.Stack.Pop().(Query)
 }
 
-func (sq *SqlQuery) parseIn(str string, idx *index.Indexer) Query {
+func (sq *SqlQuery) parseIn(str string, idx index.Index) Query {
 	strSlice, storageIdx := strings.Split(str, "@"), idx.GetStorageIndex()
 	s := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
 	var (
@@ -120,10 +120,10 @@ func (sq *SqlQuery) parseIn(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewInChecker(storageIdx.Iterator(strSlice[0]), value, sq.e, sq.transfer))
-	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]))}, c)
 }
 
-func (sq *SqlQuery) parseNotIn(str string, idx *index.Indexer) Query {
+func (sq *SqlQuery) parseNotIn(str string, idx index.Index) Query {
 	strSlice, storageIdx := strings.Split(str, "#"), idx.GetStorageIndex()
 	s := strings.Split(strings.Trim(strings.Trim(strSlice[1], "["), "]"), ",")
 	var (
@@ -131,65 +131,65 @@ func (sq *SqlQuery) parseNotIn(str string, idx *index.Indexer) Query {
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewNotChecker(storageIdx.Iterator(strSlice[0]), value, sq.e, sq.transfer))
-	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]))}, c)
 }
 
-func (sq *SqlQuery) parseEQ(str string, idx *index.Indexer) Query {
+func (sq *SqlQuery) parseEQ(str string, idx index.Index) Query {
 	strSlice, invert := strings.Split(str, "="), idx.GetInvertedIndex()
 	return NewTermQuery(invert.Iterator(strSlice[0], strSlice[1]))
 }
 
-func (sq *SqlQuery) parseNE(str string, idx *index.Indexer) Query {
+func (sq *SqlQuery) parseNE(str string, idx index.Index) Query {
 	strSlice, storageIdx := strings.Split(str, "!="), idx.GetStorageIndex()
 	var (
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.NE, sq.e, sq.transfer))
-	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]))}, c)
 }
 
-func (sq *SqlQuery) parseLT(str string, idx *index.Indexer) Query {
+func (sq *SqlQuery) parseLT(str string, idx index.Index) Query {
 	strSlice, storageIdx := strings.Split(str, "<"), idx.GetStorageIndex()
 	var (
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LT, sq.e, sq.transfer))
-	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]))}, c)
 }
 
-func (sq *SqlQuery) parseLE(str string, idx *index.Indexer) Query {
+func (sq *SqlQuery) parseLE(str string, idx index.Index) Query {
 	strSlice, storageIdx := strings.Split(str, "<="), idx.GetStorageIndex()
 	var (
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.LE, sq.e, sq.transfer))
-	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]))}, c)
 }
 
-func (sq *SqlQuery) parseGT(str string, idx *index.Indexer) Query {
+func (sq *SqlQuery) parseGT(str string, idx index.Index) Query {
 	strSlice, storageIdx := strings.Split(str, ">"), idx.GetStorageIndex()
 	var (
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GT, sq.e, sq.transfer))
-	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]))}, c)
 }
 
-func (sq *SqlQuery) parseGE(str string, idx *index.Indexer) Query {
+func (sq *SqlQuery) parseGE(str string, idx index.Index) Query {
 	strSlice, storageIdx := strings.Split(str, ">="), idx.GetStorageIndex()
 	var (
 		value = changeType(idx, strSlice[0], strSlice[1])
 		c     = make([]check.Checker, 1)
 	)
 	c = append(c, check.NewChecker(storageIdx.Iterator(strSlice[0]), value[0], operation.GE, sq.e, sq.transfer))
-	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0])),}, c, )
+	return NewAndQuery([]Query{NewTermQuery(storageIdx.Iterator(strSlice[0]))}, c)
 }
 
-func changeType(idx *index.Indexer, name string, value ...string) (res []interface{}) {
+func changeType(idx index.Index, name string, value ...string) (res []interface{}) {
 	switch typ := idx.GetDataType(name); typ {
 	case document.BoolFieldType:
 		for _, v := range value {
