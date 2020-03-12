@@ -1,6 +1,8 @@
 package datastruct
 
 import (
+	"fmt"
+	"github.com/MintegralTech/juno/document"
 	"sort"
 	"testing"
 )
@@ -98,4 +100,34 @@ func BenchmarkMap_Get_RunParallel(b *testing.B) {
 			get3()
 		}
 	})
+}
+
+func TestSlice_Add(t *testing.T) {
+	s := NewSlice()
+	for i := 2; i < 100; i++ {
+		s.Add(document.DocId(i), nil)
+	}
+	s.Add(document.DocId(1), nil)
+	s.Add(document.DocId(1000), nil)
+	s.Add(document.DocId(145), nil)
+	s.Add(document.DocId(14), nil)
+	//for _, v := range *s {
+	//	fmt.Println(v.key)
+	//}
+	//fmt.Println(s.Len())
+	//fmt.Println(s.Get(document.DocId(34)))
+	//fmt.Println(s.Get(document.DocId(3)))
+	//fmt.Println(s.Get(document.DocId(300000)))
+	//s.Del(document.DocId(3))
+	//fmt.Println(s.Len())
+	r := s.Iterator()
+	for r.HasNext() {
+		fmt.Println(r.Current())
+		r.Next()
+	}
+
+	r1 := s.Iterator()
+	fmt.Println(r1.GetGE(document.DocId(34)))
+	fmt.Println(r1.GetGE(document.DocId(24)))
+
 }
