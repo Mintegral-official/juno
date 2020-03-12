@@ -51,18 +51,17 @@ func (s *Searcher) Debug(idx index.Index, q map[string]interface{}, ids []docume
 	queryMarshal := q
 	var res = make(map[document.DocId]map[string]interface{}, len(ids))
 	for _, id := range ids {
-		tmp, ok := idx.GetCampaignMap().Get(index.DocId(id))
-		if !ok {
+		tmp, ok := idx.GetId(id)
+		if ok != nil {
 			continue
 		}
 		for k, v := range queryMarshal {
 			switch k {
 			case "and", "or", "not", "and_check", "or_check", "not_and_check":
-				debugInfo(v, idx, tmp.(document.DocId))
+				debugInfo(v, idx, tmp)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(tmp.(document.DocId)); err != nil || res != id {
-
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(tmp); err != nil || res != id {
 					queryMarshal[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					queryMarshal[k] = append(v.([]string), "id found")
@@ -70,15 +69,15 @@ func (s *Searcher) Debug(idx index.Index, q map[string]interface{}, ids []docume
 			case "check":
 				var c = &check.CheckerImpl{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp.(document.DocId)))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp))))
 			case "in_check":
 				var c = &check.InChecker{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp.(document.DocId)))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp))))
 			case "not_check":
 				var c = &check.NotChecker{}
 				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp.(document.DocId)))))
+					strconv.FormatBool(c.Unmarshal(idx, map[string]interface{}{k: v}).Check(tmp))))
 			}
 		}
 		res[id] = queryMarshal
