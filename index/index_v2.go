@@ -38,7 +38,7 @@ func NewIndexV2(name string) (i *IndexerV2) {
 		campaignMapping: concurrent_map.CreateConcurrentMap(128),
 		kvType:          concurrent_map.CreateConcurrentMap(128),
 		idMap:           make([]document.DocId, MaxNumIndex),
-		count:           1,
+		count:           0,
 		name:            name,
 		logger:          logrus.New(),
 	}
@@ -197,29 +197,33 @@ func (i *IndexerV2) WarnStatus(name string, value interface{}, err string) {
 func (i *IndexerV2) MergeIndex(target *IndexerV2) {
 
 	invertIters := make(map[string]datastruct.Iterator, i.invertedIndex.Count())
-	i.invertedIndex.Range(func(key, value interface{}) bool {
+	target.invertedIndex.Range(func(key, value interface{}) bool {
 		k := key.(string)
 		items := strings.Split(k, SEP)
-		iter := i.invertedIndex.Iterator(items[0], items[1])
+		iter := target.invertedIndex.Iterator(items[0], items[1])
 		invertIters[k] = iter
 		return true
 	})
 
 	storageIters := make(map[string]datastruct.Iterator, i.storageIndex.Count())
-	i.storageIndex.Range(func(key, value interface{}) bool {
+	target.storageIndex.Range(func(key, value interface{}) bool {
 		k := key.(string)
-		iter := i.storageIndex.Iterator(k)
-		invertIters[k] = iter
+		iter := target.storageIndex.Iterator(k)
+		storageIters[k] = iter
 		return true
 	})
 
 	// merge by id
-	for id := uint64(1); id < target.count; id++ {
-		docId := i.idMap[id]
+	for id := uint64(0); id < target.count; id++ {
+		if gid, err := target.GetId(document.DocId(id)); err == nil {
+			if _, ok := target.GetCampaignMap().Get(DocId(gid)); !ok {
+				continue
+			}
+		}
+		docId := target.idMap[id]
 		if _, ok := i.campaignMapping.Get(DocId(docId)); ok {
 			continue
 		}
-		i.count++
 
 		// invert List
 		for k, v := range invertIters {
@@ -246,6 +250,7 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) {
 		}
 		i.campaignMapping.Set(DocId(docId), i.count)
 		i.idMap[i.count] = docId
+		i.count++
 	}
 
 }
