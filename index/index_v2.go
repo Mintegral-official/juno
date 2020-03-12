@@ -208,8 +208,7 @@ func (i *IndexerV2) mergeIndex(target *IndexerV2) {
 	storageIters := make(map[string]datastruct.Iterator, i.storageIndex.Count())
 	i.storageIndex.Range(func(key, value interface{}) bool {
 		k := key.(string)
-		items := strings.Split(k, SEP)
-		iter := i.invertedIndex.Iterator(items[0], items[1])
+		iter := i.storageIndex.Iterator(k)
 		invertIters[k] = iter
 		return true
 	})

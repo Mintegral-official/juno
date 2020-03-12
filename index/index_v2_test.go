@@ -206,5 +206,21 @@ func TestMergeIndexV2(t *testing.T) {
 			fmt.Println(realMap)
 			So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
 		})
+
+		idx2.mergeIndex(idx)
+		Convey("GetValueById merge", func() {
+			realMap := idx2.GetValueById(0)
+			expectMap := [2]map[string][]string{
+				{
+					"field2": []string{"20", "200"},
+					"field3": []string{"30", "300"},
+				},
+				{
+					"field1": []string{"10"},
+				},
+			}
+			fmt.Println(realMap)
+			So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
+		})
 	})
 }
