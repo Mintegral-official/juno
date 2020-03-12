@@ -161,20 +161,21 @@ func main() {
 	defer cancel()
 
 	// build index
+	logger := logrus.New()
 	b, e := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
 		URI:            "mongodb://13.250.108.190:27017",
 		IncInterval:    5,
 		BaseInterval:   120,
 		IncParser:      &CampaignParser{},
 		BaseParser:     &CampaignParser{},
-		BaseQuery:      bson.M{"status": 1},
-		IncQuery:       bson.M{"updated": bson.M{"$gte": time.Now().Unix() - 5, "$lte": time.Now().Unix()}},
+		BaseQuery:      bson.M{"advertiserId": 903, "publisherId": 0, "status": 1, "system": 5},
+		IncQuery:       bson.M{"advertiserId": 903, "publisherId": 0, "status": 1, "system": 5, "updated": bson.M{"$gte": time.Now().Unix() - 5, "$lte": time.Now().Unix()}},
 		DB:             "new_adn",
 		Collection:     "campaign",
 		ConnectTimeout: 10000,
 		ReadTimeout:    20000,
 		UserData:       &UserData{},
-		Logger:         logrus.New(),
+		Logger:         logger,
 		OnBeforeInc: func(userData interface{}) interface{} {
 			ud, ok := userData.(*UserData)
 			if !ok {
