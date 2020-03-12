@@ -158,6 +158,9 @@ func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}
 }
 
 func (naq *NotAndQuery) SetDebug(level int) {
+	if naq == nil {
+		return
+	}
 	if naq.debugs == nil {
 		naq.debugs = debug.NewDebug(level, "NotAndQuery")
 	}

@@ -84,6 +84,9 @@ func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Q
 }
 
 func (tq *TermQuery) SetDebug(level int) {
+	if tq == nil {
+		return
+	}
 	if tq.debugs == nil {
 		tq.debugs = debug.NewDebug(level, "TermQuery")
 	}

@@ -209,6 +209,9 @@ func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Qu
 }
 
 func (aq *AndQuery) SetDebug(level int) {
+	if aq == nil {
+		return
+	}
 	if aq.debugs == nil {
 		aq.debugs = debug.NewDebug(level, "AndQuery")
 	}

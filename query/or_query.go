@@ -183,6 +183,9 @@ func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Que
 }
 
 func (oq *OrQuery) SetDebug(level int) {
+	if oq == nil {
+		return
+	}
 	if oq.debugs == nil {
 		oq.debugs = debug.NewDebug(level, "OrQuery")
 	}

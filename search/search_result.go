@@ -57,7 +57,8 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, ids []doc
 				debugInfo(v, idx, id)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id); err != nil {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id);
+					err != nil || res != id {
 					queryMarshal[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					queryMarshal[k] = append(v.([]string), "id found")
@@ -89,7 +90,8 @@ func debugInfo(res interface{}, idx *index.Indexer, id document.DocId) {
 				debugInfo(v, idx, id)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id); err != nil {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id);
+					err != nil || res != id {
 					value[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					value[k] = append(v.([]string), "id found")
