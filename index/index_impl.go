@@ -8,7 +8,6 @@ import (
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/log"
 	"github.com/easierway/concurrent_map"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -28,18 +27,19 @@ type Indexer struct {
 	aDebug          *debug.Debug
 }
 
-func NewIndex(name string) (i *Indexer) {
-	i = &Indexer{
-		invertedIndex:   NewInvertedIndexer(),
-		storageIndex:    NewStorageIndexer(),
-		campaignMapping: concurrent_map.CreateConcurrentMap(128),
-		kvType:          concurrent_map.CreateConcurrentMap(128),
-		bitmap:          concurrent_map.CreateConcurrentMap(128),
-		count:           1,
-		name:            name,
-		logger:          logrus.New(),
-	}
-	return i
+func NewIndex(name string) Index {
+	//i = &Indexer{
+	//	invertedIndex:   NewInvertedIndexer(),
+	//	storageIndex:    NewStorageIndexer(),
+	//	campaignMapping: concurrent_map.CreateConcurrentMap(128),
+	//	kvType:          concurrent_map.CreateConcurrentMap(128),
+	//	bitmap:          concurrent_map.CreateConcurrentMap(128),
+	//	count:           1,
+	//	name:            name,
+	//	logger:          logrus.New(),
+	//}
+	//return i
+	return NewIndexV2(name)
 }
 
 func (i *Indexer) GetInvertedIndex() InvertedIndex {
