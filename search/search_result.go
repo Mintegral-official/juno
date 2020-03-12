@@ -25,7 +25,7 @@ func NewSearcher() *Searcher {
 	}
 }
 
-func (s *Searcher) Search(iIndexer *index.Indexer, query query.Query) {
+func (s *Searcher) Search(iIndexer index.Index, query query.Query) {
 	if query == nil {
 		panic("the query should not be nil")
 		return
@@ -61,8 +61,8 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, ids []doc
 				debugInfo(v, idx, tmp.(document.DocId))
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(tmp.(document.DocId));
-					err != nil || res != id {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(tmp.(document.DocId)); err != nil || res != id {
+
 					queryMarshal[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					queryMarshal[k] = append(v.([]string), "id found")
@@ -94,8 +94,7 @@ func debugInfo(res interface{}, idx *index.Indexer, id document.DocId) {
 				debugInfo(v, idx, id)
 			case "=":
 				var termQuery = &query.TermQuery{}
-				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id);
-					err != nil || res != id {
+				if res, err := termQuery.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).GetGE(id); err != nil || res != id {
 					value[k] = append(v.([]string), "id not found")
 				} else if res == id {
 					value[k] = append(v.([]string), "id found")

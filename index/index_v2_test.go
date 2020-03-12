@@ -35,7 +35,7 @@ func TestNewIndexV2(t *testing.T) {
 		}
 		So(c, ShouldEqual, 3)
 
-		if2 := index.invertedIndex.Iterator("field2", "2")
+		if2 := index.GetInvertedIndex().Iterator("field2", "2")
 		c = 0
 		for if2.HasNext() {
 			if if2.Current() != nil {
@@ -53,7 +53,7 @@ func TestNewIndexV2(t *testing.T) {
 			sf1.Next()
 		}
 		So(c, ShouldEqual, 2)
-		sf2 := index.storageIndex.Iterator("field2")
+		sf2 := index.GetStorageIndex().Iterator("field2")
 		c = 0
 		for sf2.HasNext() {
 			if sf2.Current() != nil {
@@ -63,7 +63,6 @@ func TestNewIndexV2(t *testing.T) {
 		}
 		So(c, ShouldEqual, 1)
 		//So(len(*index.GetBitMap()), ShouldEqual, 32768)
-		So(index.GetCampaignMap(), ShouldNotBeNil)
 		So(index.GetDataType("field1"), ShouldEqual, 1)
 		So(index.GetDataType("field2"), ShouldEqual, 3)
 	})
@@ -85,7 +84,7 @@ func TestNewIndexV2(t *testing.T) {
 		}
 		So(c, ShouldEqual, 3)
 
-		if2 := index.invertedIndex.Iterator("field2", "2")
+		if2 := index.GetInvertedIndex().Iterator("field2", "2")
 		c = 0
 		for if2.HasNext() {
 			if if2.Current() != nil {
@@ -103,7 +102,7 @@ func TestNewIndexV2(t *testing.T) {
 			sf1.Next()
 		}
 		So(c, ShouldEqual, 1)
-		sf2 := index.storageIndex.Iterator("field2")
+		sf2 := index.GetStorageIndex().Iterator("field2")
 		c = 0
 		for sf2.HasNext() {
 			if sf2.Current() != nil {
@@ -113,7 +112,6 @@ func TestNewIndexV2(t *testing.T) {
 		}
 		So(c, ShouldEqual, 1)
 		//So(len(*index.GetBitMap()), ShouldEqual, 32768)
-		So(index.GetCampaignMap(), ShouldNotBeNil)
 		So(index.GetDataType("field1"), ShouldEqual, 1)
 		So(index.GetDataType("field2"), ShouldEqual, 3)
 	})
