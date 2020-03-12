@@ -8,6 +8,7 @@ import (
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/log"
 	"github.com/easierway/concurrent_map"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -27,19 +28,17 @@ type Indexer struct {
 	aDebug          *debug.Debug
 }
 
-func NewIndex(name string) Index {
-	//i = &Indexer{
-	//	invertedIndex:   NewInvertedIndexer(),
-	//	storageIndex:    NewStorageIndexer(),
-	//	campaignMapping: concurrent_map.CreateConcurrentMap(128),
-	//	kvType:          concurrent_map.CreateConcurrentMap(128),
-	//	bitmap:          concurrent_map.CreateConcurrentMap(128),
-	//	count:           1,
-	//	name:            name,
-	//	logger:          logrus.New(),
-	//}
-	//return i
-	return NewIndexV2(name)
+func NewIndexImpl(name string) Index {
+	return &Indexer{
+		invertedIndex:   NewInvertedIndexer(),
+		storageIndex:    NewStorageIndexer(),
+		campaignMapping: concurrent_map.CreateConcurrentMap(128),
+		kvType:          concurrent_map.CreateConcurrentMap(128),
+		bitmap:          concurrent_map.CreateConcurrentMap(128),
+		count:           1,
+		name:            name,
+		logger:          logrus.New(),
+	}
 }
 
 func (i *Indexer) GetInvertedIndex() InvertedIndex {
@@ -249,4 +248,11 @@ func (i *Indexer) WarnStatus(name string, value interface{}, err string) {
 	if i.logger != nil {
 		i.logger.Warnf("name:[%s] value:[%v] wrong reason:[%s]", name, value, err)
 	}
+}
+
+func (i *Indexer) GetId(id document.DocId) (document.DocId, error) {
+	if id, ok := i.bitmap.Get(DocId(id)); ok {
+		return id.(document.DocId), nil
+	}
+	return 0, errors.New("id not found")
 }

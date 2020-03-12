@@ -49,7 +49,7 @@ func (o *OrChecker) Marshal() map[string]interface{} {
 	return res
 }
 
-func (o *OrChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
+func (o *OrChecker) Unmarshal(idx index.Index, res map[string]interface{}) Checker {
 	value, ok := res["or_check"]
 	if !ok {
 		return nil

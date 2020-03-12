@@ -249,3 +249,10 @@ func (i *IndexerV2) mergeIndex(target *IndexerV2) {
 	}
 
 }
+
+func (i *IndexerV2) GetId(id document.DocId) (document.DocId, error) {
+	if uint64(id) >= i.count {
+		return 0, errors.New("id not found")
+	}
+	return i.idMap[id], nil
+}

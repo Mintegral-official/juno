@@ -49,7 +49,7 @@ func (a *AndChecker) Marshal() map[string]interface{} {
 	return res
 }
 
-func (a *AndChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
+func (a *AndChecker) Unmarshal(idx index.Index, res map[string]interface{}) Checker {
 	value, ok := res["and_check"]
 	if !ok {
 		return nil

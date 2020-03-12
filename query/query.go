@@ -11,7 +11,7 @@ type Query interface {
 	Current() (document.DocId, error)
 	GetGE(id document.DocId) (document.DocId, error)
 	Marshal() map[string]interface{}
-	Unmarshal(idx *index.Indexer, res map[string]interface{}) Query
+	Unmarshal(idx index.Index, res map[string]interface{}) Query
 	DebugInfo() *debug.Debug
 	SetDebug(level int)
 }

@@ -34,8 +34,8 @@ func (s *Searcher) Search(iIndexer index.Index, query query.Query) {
 	id, err := query.Current()
 	query.Next()
 	for err == nil {
-		if vb, ok := iIndexer.GetBitMap().Get(index.DocId(id)); ok {
-			s.Docs = append(s.Docs, vb.(document.DocId))
+		if i, e := iIndexer.GetId(id); e == nil {
+			s.Docs = append(s.Docs, i)
 		}
 		id, err = query.Current()
 		query.Next()
@@ -45,7 +45,7 @@ func (s *Searcher) Search(iIndexer index.Index, query query.Query) {
 	s.QueryDebug = query.DebugInfo()
 }
 
-func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, ids []document.DocId) {
+func (s *Searcher) Debug(idx index.Index, q map[string]interface{}, ids []document.DocId) {
 	uq := query.Unmarshal{}
 	s.Search(idx, uq.Unmarshal(idx, q).(query.Query))
 	queryMarshal := q
@@ -81,7 +81,7 @@ func (s *Searcher) Debug(idx *index.Indexer, q map[string]interface{}, ids []doc
 	s.FilterInfo = res
 }
 
-func debugInfo(res interface{}, idx *index.Indexer, id document.DocId) {
+func debugInfo(res interface{}, idx index.Index, id document.DocId) {
 	for _, value := range res.([]map[string]interface{}) {
 		for k, v := range value {
 			switch k {
