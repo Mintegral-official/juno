@@ -41,7 +41,7 @@ func (h *Heap) Pop() interface{} {
 }
 
 func (h *Heap) Top() interface{} {
-	if len(*h) == 0 {
+	if h == nil || h.Len() == 0 {
 		return nil
 	}
 	return (*h)[0]

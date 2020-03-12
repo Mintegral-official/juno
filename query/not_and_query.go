@@ -17,7 +17,7 @@ type NotAndQuery struct {
 }
 
 func NewNotAndQuery(queries []Query, checkers []check.Checker) (naq *NotAndQuery) {
-	if len(queries) == 0 {
+	if len(queries) == 0 || queries[0] == nil {
 		return nil
 	}
 	naq = &NotAndQuery{
@@ -34,6 +34,9 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker) (naq *NotAndQuery
 }
 
 func (naq *NotAndQuery) next() {
+	if naq == nil || naq.q == nil {
+		return
+	}
 	for target, err := naq.Current(); err == nil; {
 		if naq.check(target) && naq.findSubSet(target) {
 			return
@@ -44,6 +47,9 @@ func (naq *NotAndQuery) next() {
 }
 
 func (naq *NotAndQuery) findSubSet(id document.DocId) bool {
+	if naq == nil || naq.q == nil {
+		return false
+	}
 	if naq.subQuery == nil {
 		return true
 	}
@@ -55,7 +61,7 @@ func (naq *NotAndQuery) findSubSet(id document.DocId) bool {
 }
 
 func (naq *NotAndQuery) Next() {
-	if naq.q == nil {
+	if naq == nil || naq.q == nil {
 		return
 	}
 	naq.q.Next()
@@ -63,7 +69,7 @@ func (naq *NotAndQuery) Next() {
 }
 
 func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
-	if naq.q == nil {
+	if naq == nil || naq.q == nil {
 		return 0, helpers.NoMoreData
 	}
 	_, _ = naq.q.GetGE(id)
@@ -72,14 +78,14 @@ func (naq *NotAndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (naq *NotAndQuery) Current() (document.DocId, error) {
-	if naq.q == nil {
+	if naq == nil || naq.q == nil {
 		return 0, helpers.NoMoreData
 	}
 	return naq.q.Current()
 }
 
 func (naq *NotAndQuery) check(id document.DocId) bool {
-	if len(naq.checkers) == 0 {
+	if naq == nil || len(naq.checkers) == 0 {
 		return true
 	}
 	for i, v := range naq.checkers {
@@ -97,7 +103,7 @@ func (naq *NotAndQuery) check(id document.DocId) bool {
 }
 
 func (naq *NotAndQuery) DebugInfo() *debug.Debug {
-	if naq.debugs != nil {
+	if naq != nil && naq.debugs != nil {
 		naq.debugs.AddDebug(naq.q.DebugInfo(), naq.subQuery.DebugInfo())
 		for _, v := range naq.checkers {
 			naq.debugs.AddDebug(v.DebugInfo())
@@ -108,6 +114,9 @@ func (naq *NotAndQuery) DebugInfo() *debug.Debug {
 }
 
 func (naq *NotAndQuery) Marshal() map[string]interface{} {
+	if naq == nil {
+		return map[string]interface{}{}
+	}
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, 2)
 	queryInfo = append(queryInfo, naq.q.Marshal())
@@ -149,6 +158,9 @@ func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}
 }
 
 func (naq *NotAndQuery) SetDebug(level int) {
+	if naq == nil {
+		return
+	}
 	if naq.debugs == nil {
 		naq.debugs = debug.NewDebug(level, "NotAndQuery")
 	}

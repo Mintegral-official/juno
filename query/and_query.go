@@ -5,6 +5,7 @@ import (
 	"github.com/MintegralTech/juno/check"
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
+	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
 )
 
@@ -21,19 +22,32 @@ func NewAndQuery(queries []Query, checkers []check.Checker) (aq *AndQuery) {
 	}
 	aq = &AndQuery{
 		curIdx:   0,
-		queries:  queries,
 		checkers: checkers,
+	}
+	for i := 0; i < len(queries); i++ {
+		if queries[i] != nil {
+			aq.queries = append(aq.queries, queries[i])
+		}
+	}
+	if len(aq.queries) == 0 {
+		return nil
 	}
 	aq.next()
 	return aq
 }
 
 func (aq *AndQuery) Next() {
+	if aq == nil || len(aq.queries) == 0 {
+		return
+	}
 	aq.queries[aq.curIdx].Next()
 	aq.next()
 }
 
 func (aq *AndQuery) next() {
+	if aq == nil || len(aq.queries) == 0 {
+		return
+	}
 	lastIdx, curIdx := aq.curIdx, aq.curIdx
 	target, err := aq.queries[curIdx].Current()
 	if err != nil {
@@ -72,6 +86,9 @@ func (aq *AndQuery) next() {
 }
 
 func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
+	if aq == nil || len(aq.queries) == 0 {
+		return 0, helpers.ElementNotfound
+	}
 	curIdx, lastIdx := 0, 0
 	target, err := aq.queries[aq.curIdx].GetGE(id)
 	if err != nil {
@@ -109,11 +126,14 @@ func (aq *AndQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (aq *AndQuery) Current() (document.DocId, error) {
+	if aq == nil || len(aq.queries) == 0 {
+		return 0, helpers.ElementNotfound
+	}
 	return aq.queries[aq.curIdx].Current()
 }
 
 func (aq *AndQuery) DebugInfo() *debug.Debug {
-	if aq.debugs != nil {
+	if aq != nil && aq.debugs != nil {
 		for _, v := range aq.queries {
 			aq.debugs.AddDebug(v.DebugInfo())
 		}
@@ -126,7 +146,7 @@ func (aq *AndQuery) DebugInfo() *debug.Debug {
 }
 
 func (aq *AndQuery) check(id document.DocId) bool {
-	if len(aq.checkers) == 0 {
+	if aq == nil || len(aq.checkers) == 0 {
 		return true
 	}
 	for _, c := range aq.checkers {
@@ -141,6 +161,9 @@ func (aq *AndQuery) check(id document.DocId) bool {
 }
 
 func (aq *AndQuery) Marshal() map[string]interface{} {
+	if aq == nil {
+		return map[string]interface{}{}
+	}
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, len(aq.queries))
 	for _, v := range aq.queries {
@@ -186,6 +209,9 @@ func (aq *AndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Qu
 }
 
 func (aq *AndQuery) SetDebug(level int) {
+	if aq == nil {
+		return
+	}
 	if aq.debugs == nil {
 		aq.debugs = debug.NewDebug(level, "AndQuery")
 	}

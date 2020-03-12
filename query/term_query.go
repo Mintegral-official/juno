@@ -64,7 +64,7 @@ func (tq *TermQuery) Current() (document.DocId, error) {
 }
 
 func (tq *TermQuery) DebugInfo() *debug.Debug {
-	if tq.debugs != nil {
+	if tq != nil && tq.debugs != nil {
 		tq.debugs.FieldName = tq.iterator.(*datastruct.SkipListIterator).FieldName
 		return tq.debugs
 	}
@@ -72,6 +72,9 @@ func (tq *TermQuery) DebugInfo() *debug.Debug {
 }
 
 func (tq *TermQuery) Marshal() map[string]interface{} {
+	if tq == nil {
+		return map[string]interface{}{}
+	}
 	res := make(map[string]interface{}, 1)
 	fields := strings.Split(tq.iterator.(*datastruct.SkipListIterator).FieldName, index.SEP)
 	res["="] = []string{fields[0], fields[1]}
@@ -87,6 +90,9 @@ func (tq *TermQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Q
 }
 
 func (tq *TermQuery) SetDebug(level int) {
+	if tq == nil {
+		return
+	}
 	if tq.debugs == nil {
 		tq.debugs = debug.NewDebug(level, "TermQuery")
 	}

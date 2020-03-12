@@ -30,12 +30,18 @@ func NewOrQuery(queries []Query, checkers []check.Checker) (oq *OrQuery) {
 		}
 		heap.Push(h, queries[i])
 	}
+	if h.Len() == 0 {
+		return nil
+	}
 	oq.h = *h
 	oq.next()
 	return oq
 }
 
 func (oq *OrQuery) Next() {
+	if oq == nil || oq.h.Len() == 0 {
+		return
+	}
 	top := oq.h.Top()
 	if top != nil {
 		q := top.(Query)
@@ -46,6 +52,9 @@ func (oq *OrQuery) Next() {
 }
 
 func (oq *OrQuery) next() {
+	if oq == nil || oq.h.Len() == 0 {
+		return
+	}
 	for target, err := oq.Current(); err == nil; {
 		if (oq.lastId == nil || *oq.lastId != target) && oq.check(target) {
 			oq.lastId = &target
@@ -62,6 +71,9 @@ func (oq *OrQuery) next() {
 }
 
 func (oq *OrQuery) getGE(id document.DocId) {
+	if oq == nil || oq.h.Len() == 0 {
+		return
+	}
 	top := oq.h.Top()
 	if top != nil {
 		q := top.(Query)
@@ -71,6 +83,9 @@ func (oq *OrQuery) getGE(id document.DocId) {
 }
 
 func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
+	if oq == nil || oq.h.Len() == 0 {
+		return 0, helpers.ElementNotfound
+	}
 	target, err := oq.Current()
 	for err == nil && target < id {
 		oq.getGE(id)
@@ -84,6 +99,9 @@ func (oq *OrQuery) GetGE(id document.DocId) (document.DocId, error) {
 }
 
 func (oq *OrQuery) Current() (document.DocId, error) {
+	if oq == nil || oq.h.Len() == 0 {
+		return 0, helpers.ElementNotfound
+	}
 	top := oq.h.Top()
 	if top == nil {
 		return 0, helpers.NoMoreData
@@ -93,7 +111,7 @@ func (oq *OrQuery) Current() (document.DocId, error) {
 }
 
 func (oq *OrQuery) DebugInfo() *debug.Debug {
-	if oq.debugs != nil {
+	if oq != nil && oq.debugs != nil {
 		for _, v := range oq.h {
 			oq.debugs.AddDebug(v.DebugInfo())
 		}
@@ -106,7 +124,7 @@ func (oq *OrQuery) DebugInfo() *debug.Debug {
 }
 
 func (oq *OrQuery) check(id document.DocId) bool {
-	if len(oq.checkers) == 0 {
+	if oq == nil || len(oq.checkers) == 0 {
 		return true
 	}
 	for _, v := range oq.checkers {
@@ -121,6 +139,9 @@ func (oq *OrQuery) check(id document.DocId) bool {
 }
 
 func (oq *OrQuery) Marshal() map[string]interface{} {
+	if oq == nil {
+		return map[string]interface{}{}
+	}
 	var queryInfo, checkInfo []map[string]interface{}
 	res := make(map[string]interface{}, len(oq.h))
 	for _, v := range oq.h {
@@ -162,6 +183,9 @@ func (oq *OrQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Que
 }
 
 func (oq *OrQuery) SetDebug(level int) {
+	if oq == nil {
+		return
+	}
 	if oq.debugs == nil {
 		oq.debugs = debug.NewDebug(level, "OrQuery")
 	}
