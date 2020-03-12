@@ -20,6 +20,7 @@ type MongoIndexBuilder struct {
 	findOpt    *options.FindOptions
 	start      int64
 	end        int64
+	mergeTime  time.Duration
 }
 
 func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error) {
@@ -186,19 +187,15 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 				mib.ops.Logger.Warnf("load inc error[%s]", e.Error())
 				mib.errorNum++
 			}
+		} else {
+			mib.innerIndex.Del(r.Value)
 		}
-		//if r.DataMod == DataAddOrUpdate {
-		//	mib.innerIndex.Del(r.Value)
-		//	_ = mib.innerIndex.Add(r.Value)
-		//	mib.totalNum++
-		//} else {
-		//	mib.innerIndex.Del(r.Value)
-		//	mib.totalNum--
-		//}
 	}
 	t := tmpIndex.(*index.IndexerV2)
+	now := time.Now()
 	t.MergeIndex(mib.innerIndex.(*index.IndexerV2))
 	mib.innerIndex = t
+	mib.mergeTime = time.Now().Sub(now)
 	if mib.ops.OnFinishInc != nil {
 		mib.ops.OnFinishInc(mib)
 	}
@@ -212,8 +209,8 @@ func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {
 func (mib *MongoIndexBuilder) InfoStatus(s string, t int64) {
 	if mib.ops.Logger != nil {
 		mib.ops.Logger.Infof("mongo_[%s]:[%s], totalNum:[%d], errorNum:[%d], "+
-			"invert index:[%d], storage index:[%d], load time:[%dms]", mib.innerIndex.GetName(), s, mib.totalNum,
-			mib.errorNum, mib.innerIndex.GetInvertedIndex().Count(), mib.innerIndex.GetStorageIndex().Count(), t/1e6)
+			"invert index:[%d], storage index:[%d], load time:[%dms], merge time[%s]", mib.innerIndex.GetName(), s, mib.totalNum,
+			mib.errorNum, mib.innerIndex.GetInvertedIndex().Count(), mib.innerIndex.GetStorageIndex().Count(), t/1e6, mib.mergeTime.String())
 	}
 }
 

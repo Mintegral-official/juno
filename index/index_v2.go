@@ -116,7 +116,7 @@ func (i *IndexerV2) Add(doc *document.DocInfo) error {
 }
 
 func (i *IndexerV2) Del(doc *document.DocInfo) {
-	println("IndexerV2 not support delete")
+	i.campaignMapping.Del(DocId(doc.Id))
 }
 
 func (i *IndexerV2) Update(filename string) error {

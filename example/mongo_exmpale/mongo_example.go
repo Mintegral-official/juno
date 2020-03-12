@@ -199,7 +199,6 @@ func main() {
 		fmt.Println("build error", e.Error())
 	}
 
-	time.Sleep(time.Hour)
 	tIndex := b.GetIndex()
 
 	// search: advertiserId=457 or platform=android or (price in [20.0, 1.4, 3.6, 5.7, 2.5] And price >= 1.4)
@@ -213,7 +212,7 @@ func main() {
 	var a0 = []int64{647, 658, 670}
 	//var dev = []int64{4, 5}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 0; i++ {
 		q := query.NewOrQuery([]query.Query{
 			// ==
 			query.NewOrQuery([]query.Query{
