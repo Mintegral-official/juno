@@ -16,9 +16,14 @@ type Index interface {
 	GetStorageIndex() StorageIndex
 	GetDataType(fieldName string) document.FieldType
 	GetValueById(id document.DocId) [2]map[string][]string
+	GetId(id document.DocId) (document.DocId, error)
 
 	Dump(filename string) error
 	Load(filename string) error
 
 	DebugInfo() *debug.Debug
+}
+
+func NewIndex(name string) Index {
+	return NewIndexV2(name)
 }

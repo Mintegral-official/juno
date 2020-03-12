@@ -82,12 +82,13 @@ var doc3 = &document.DocInfo{
 }
 
 func TestNewIndex(t *testing.T) {
+
 	Convey("NewIndex", t, func() {
-		So(NewIndex("index"), ShouldNotBeNil)
+		So(NewIndexImpl("index"), ShouldNotBeNil)
 	})
 
 	Convey("Add", t, func() {
-		index := NewIndex("index")
+		index := NewIndexImpl("index")
 		So(index.Add(nil), ShouldEqual, helpers.DocumentError)
 		So(index.Add(doc1), ShouldBeNil)
 		So(index.Add(doc2), ShouldBeNil)
@@ -140,7 +141,7 @@ func TestNewIndex(t *testing.T) {
 	})
 
 	Convey("Del", t, func() {
-		index := NewIndex("index")
+		index := NewIndexImpl("index")
 		So(index.Add(nil), ShouldEqual, helpers.DocumentError)
 		So(index.Add(doc1), ShouldBeNil)
 		So(index.Add(doc2), ShouldBeNil)
@@ -223,7 +224,7 @@ func TestStorageIndexer_Add(t *testing.T) {
 		},
 	}
 	Convey("add", t, func() {
-		index := NewIndex("index")
+		index := NewIndexImpl("index")
 		_ = index.Add(a)
 		idx := index.GetInvertedIndex().Iterator("f1", "1")
 		So(idx.HasNext(), ShouldBeTrue)
@@ -315,7 +316,7 @@ var doc5 = &document.DocInfo{
 }
 
 func TestNewStorageIndexer(t *testing.T) {
-	idx := NewIndex("")
+	idx := NewIndexImpl("")
 	_ = idx.Add(doc4)
 	Convey("GetValueById add", t, func() {
 		realMap := idx.GetValueById(0)

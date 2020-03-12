@@ -132,7 +132,7 @@ func (naq *NotAndQuery) Marshal() map[string]interface{} {
 	return res
 }
 
-func (naq *NotAndQuery) Unmarshal(idx *index.Indexer, res map[string]interface{}) Query {
+func (naq *NotAndQuery) Unmarshal(idx index.Index, res map[string]interface{}) Query {
 	notAnd, ok := res["not"]
 	if !ok {
 		return nil

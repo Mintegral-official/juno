@@ -115,7 +115,7 @@ func (nc *NotChecker) Marshal() map[string]interface{} {
 	return res
 }
 
-func (nc *NotChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
+func (nc *NotChecker) Unmarshal(idx index.Index, res map[string]interface{}) Checker {
 	v, ok := res["not_check"]
 	if !ok {
 		return nil

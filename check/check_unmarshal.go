@@ -7,7 +7,7 @@ import (
 type unmarshal struct {
 }
 
-func (u *unmarshal) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
+func (u *unmarshal) Unmarshal(idx index.Index, res map[string]interface{}) Checker {
 	if _, ok := res["=_check"]; ok {
 		var checkImpl = &CheckerImpl{}
 		return checkImpl.Unmarshal(idx, res)

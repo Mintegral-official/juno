@@ -56,7 +56,7 @@ func (na *NotAndChecker) Marshal() map[string]interface{} {
 	return res
 }
 
-func (na *NotAndChecker) Unmarshal(idx *index.Indexer, res map[string]interface{}) Checker {
+func (na *NotAndChecker) Unmarshal(idx index.Index, res map[string]interface{}) Checker {
 	value, ok := res["not_and_check"]
 	if !ok {
 		return nil

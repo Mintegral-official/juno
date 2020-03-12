@@ -8,7 +8,7 @@ import (
 type Unmarshal struct {
 }
 
-func (u *Unmarshal) Unmarshal(idx *index.Indexer, res map[string]interface{}) interface{} {
+func (u *Unmarshal) Unmarshal(idx index.Index, res map[string]interface{}) interface{} {
 	if _, ok := res["and"]; ok {
 		var andQuery = &AndQuery{}
 		return andQuery.Unmarshal(idx, res)
