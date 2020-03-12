@@ -170,6 +170,7 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 		_ = cur.Close(c)
 	}()
 
+	tmpIndex := index.NewIndex(mib.innerIndex.GetName())
 	for cur.Next(nil) {
 		if cur.Err() != nil {
 			mib.errorNum++
@@ -181,14 +182,23 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 			continue
 		}
 		if r.DataMod == DataAddOrUpdate {
-			mib.innerIndex.Del(r.Value)
-			_ = mib.innerIndex.Add(r.Value)
-			mib.totalNum++
-		} else {
-			mib.innerIndex.Del(r.Value)
-			mib.totalNum--
+			if e := tmpIndex.Add(r.Value); e != nil {
+				mib.ops.Logger.Warnf("load inc error[%s]", e.Error())
+				mib.errorNum++
+			}
 		}
+		//if r.DataMod == DataAddOrUpdate {
+		//	mib.innerIndex.Del(r.Value)
+		//	_ = mib.innerIndex.Add(r.Value)
+		//	mib.totalNum++
+		//} else {
+		//	mib.innerIndex.Del(r.Value)
+		//	mib.totalNum--
+		//}
 	}
+	t := tmpIndex.(*index.IndexerV2)
+	t.MergeIndex(mib.innerIndex.(*index.IndexerV2))
+	mib.innerIndex = t
 	if mib.ops.OnFinishInc != nil {
 		mib.ops.OnFinishInc(mib)
 	}

@@ -154,7 +154,7 @@ func TestMergeIndexV2(t *testing.T) {
 			So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
 		})
 
-		idx2.mergeIndex(idx)
+		idx2.MergeIndex(idx)
 		Convey("GetValueById merge", func() {
 			realMap := idx2.GetValueById(0)
 			expectMap := [2]map[string][]string{

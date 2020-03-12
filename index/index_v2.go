@@ -194,7 +194,7 @@ func (i *IndexerV2) WarnStatus(name string, value interface{}, err string) {
 	}
 }
 
-func (i *IndexerV2) mergeIndex(target *IndexerV2) {
+func (i *IndexerV2) MergeIndex(target *IndexerV2) {
 
 	invertIters := make(map[string]datastruct.Iterator, i.invertedIndex.Count())
 	i.invertedIndex.Range(func(key, value interface{}) bool {
@@ -226,7 +226,7 @@ func (i *IndexerV2) mergeIndex(target *IndexerV2) {
 			if id == uint64(v.Current().Key()) {
 				// add invert index
 				if e := i.invertedIndex.Add(k, document.DocId(i.count)); e != nil {
-					i.logger.Warnf("mergeIndex add inverted index error, docId[%d], id[%d]", docId, i.count)
+					i.logger.Warnf("MergeIndex add inverted index error, docId[%d], id[%d]", docId, i.count)
 				}
 				v.Next()
 				continue
@@ -238,7 +238,7 @@ func (i *IndexerV2) mergeIndex(target *IndexerV2) {
 			if id == uint64(v.Current().Key()) {
 				// add storage index
 				if e := i.storageIndex.Add(k, document.DocId(i.count), v.Current().Value()); e != nil {
-					i.logger.Warnf("mergeIndex add inverted index error, docId[%d], id[%d]", docId, i.count)
+					i.logger.Warnf("MergeIndex add inverted index error, docId[%d], id[%d]", docId, i.count)
 				}
 				v.Next()
 				continue
