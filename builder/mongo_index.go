@@ -180,8 +180,8 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 	mib.deleteCounter = 0
 	mib.addCounter = 0
 	tmpIndex := index.NewIndex(mib.innerIndex.GetName())
-	mib.totalNum++
 	for cur.Next(nil) {
+		mib.totalNum++
 		if cur.Err() != nil {
 			mib.errorNum++
 			continue
