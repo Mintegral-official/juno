@@ -169,7 +169,6 @@ func main() {
 		IncParser:      &CampaignParser{},
 		BaseParser:     &CampaignParser{},
 		BaseQuery:      bson.M{"advertiserId": 903, "publisherId": 0, "status": 1, "system": 5},
-		IncQuery:       bson.M{"advertiserId": 903, "publisherId": 0, "status": 1, "system": 5, "updated": bson.M{"$gte": time.Now().Unix() - 5, "$lte": time.Now().Unix()}},
 		DB:             "new_adn",
 		Collection:     "campaign",
 		ConnectTimeout: 10000,
@@ -181,7 +180,7 @@ func main() {
 			if !ok {
 				return nil
 			}
-			incQuery := bson.M{"updated": bson.M{"$gte": ud.UpTime - 5, "$lte": time.Now().Unix()}}
+			incQuery := bson.M{"advertiserId": 903, "publisherId": 0, "status": 1, "system": 5, "updated": bson.M{"$gte": ud.UpTime - 5, "$lte": time.Now().Unix()}}
 			return incQuery
 		},
 		OnFinishInc: func(userData interface{}) {
