@@ -268,6 +268,14 @@ func (i *IndexerV2) GetId(id document.DocId) (document.DocId, error) {
 	return i.idMap[id], nil
 }
 
+func (i *IndexerV2) GetInnerId(id document.DocId) (document.DocId, error) {
+	v, ok := i.GetCampaignMap().Get(DocId(id))
+	if !ok {
+		return 0, errors.New("id not found")
+	}
+	return v.(document.DocId), nil
+}
+
 func (i *IndexerV2) IndexInfo() string {
 	var builder strings.Builder
 	builder.WriteString("index[")

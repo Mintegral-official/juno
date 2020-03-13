@@ -2,6 +2,7 @@ package search
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/MintegralTech/juno/check"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
@@ -412,7 +413,7 @@ func TestIndexV2(t *testing.T) {
 
 		Convey("testMerge", func() {
 			idx2 := index.NewIndexV2("merged")
-			idx2.MergeIndex(idx1)
+			So(idx2.MergeIndex(idx1), ShouldBeNil)
 			q := query.NewAndQuery([]query.Query{
 				query.NewTermQuery(idx1.GetInvertedIndex().Iterator("fieldName", "3")),
 			}, nil)
@@ -421,6 +422,18 @@ func TestIndexV2(t *testing.T) {
 			So(len(s.Docs), ShouldEqual, 1)
 			So(s.Docs[0], ShouldEqual, 30)
 		})
+
+		Convey("test debug", func() {
+			q := query.NewAndQuery([]query.Query{
+				query.NewTermQuery(idx1.GetInvertedIndex().Iterator("fieldName", "3")),
+			}, nil)
+			s := Searcher{}
+			s.Debug(idx1, q.Marshal(), []document.DocId{0})
+			fmt.Println(s.FilterInfo)
+			fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxx")
+			fmt.Println(q.Marshal())
+		})
+
 	})
 
 }

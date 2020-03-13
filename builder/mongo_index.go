@@ -20,8 +20,6 @@ type MongoIndexBuilder struct {
 	client        *mongo.Client
 	collection    *mongo.Collection
 	findOpt       *options.FindOptions
-	start         int64
-	end           int64
 	addCounter    int64
 	deleteCounter int64
 	mergeTime     time.Duration
@@ -78,14 +76,14 @@ func (mib *MongoIndexBuilder) GetIndex() index.Index {
 }
 
 func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
-	mib.start = time.Now().UnixNano()
+	now := time.Now()
 	err := mib.base(name)
-	mib.end = time.Now().UnixNano()
+	d := time.Now().Sub(now)
 	if err != nil {
-		mib.WarnStatus("base load failed: "+err.Error(), mib.end-mib.start)
+		mib.WarnStatus("base load failed: "+err.Error(), d)
 		return err
 	} else {
-		mib.InfoStatus("base load success", mib.end-mib.start)
+		mib.InfoStatus("base load success", d)
 	}
 	go func() {
 		var (
@@ -95,29 +93,27 @@ func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
 		for {
 			select {
 			case <-ctx.Done():
-				mib.start = time.Now().UnixNano()
-				mib.end = time.Now().UnixNano()
-				mib.InfoStatus("finish: ", mib.end-mib.start)
+				mib.InfoStatus("finish: ", 0)
 				return
 			case <-base:
-				mib.start = time.Now().UnixNano()
+				now := time.Now()
 				err := mib.base(name)
-				mib.end = time.Now().UnixNano()
+				d := time.Now().Sub(now)
 				base = time.After(time.Duration(mib.ops.BaseInterval) * time.Second)
 				if err != nil {
-					mib.WarnStatus("base load failed: "+err.Error(), mib.end-mib.start)
+					mib.WarnStatus("base load failed: "+err.Error(), d)
 				} else {
-					mib.InfoStatus("base load success", mib.end-mib.start)
+					mib.InfoStatus("base load success", d)
 				}
 			case <-inc:
-				mib.start = time.Now().UnixNano()
+				now := time.Now()
 				err := mib.inc(ctx)
-				mib.end = time.Now().UnixNano()
+				d := time.Now().Sub(now)
 				inc = time.After(time.Duration(mib.ops.IncInterval)*time.Second + time.Nanosecond)
 				if err != nil {
-					mib.WarnStatus("inc failed: "+err.Error(), mib.end-mib.start)
+					mib.WarnStatus("inc failed: "+err.Error(), d)
 				} else {
-					mib.InfoStatus("inc success", mib.end-mib.start)
+					mib.InfoStatus("inc success", d)
 				}
 			}
 		}
@@ -221,32 +217,40 @@ func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {
 	return mib.update(ctx, name)
 }
 
-func (mib *MongoIndexBuilder) InfoStatus(s string, t int64) {
+func (mib *MongoIndexBuilder) InfoStatus(s string, d time.Duration) {
 	if mib.ops.Logger != nil {
-		var builder strings.Builder
-		builder.WriteString("mongo_index[")
-		builder.WriteString(mib.innerIndex.GetName())
-		builder.WriteString("]:[")
-		builder.WriteString(s)
-		builder.WriteString("], totalNum[")
-		builder.WriteString(strconv.FormatInt(mib.totalNum, 10))
-		builder.WriteString("], errorNum[")
-		builder.WriteString(strconv.FormatInt(mib.errorNum, 10))
-		builder.WriteString("], addNum[")
-		builder.WriteString(strconv.FormatInt(mib.addCounter, 10))
-		builder.WriteString("], delNum[")
-		builder.WriteString(strconv.FormatInt(mib.deleteCounter, 10))
-		builder.WriteString("], mergeTime[")
-		builder.WriteString(mib.mergeTime.String())
-		builder.WriteString("], IndexInfo[")
-		builder.WriteString(mib.innerIndex.IndexInfo())
-		builder.WriteString("]")
-		mib.ops.Logger.Info(builder.String())
+		mib.ops.Logger.Info(mib.Info(s, d))
 	}
 }
 
-func (mib *MongoIndexBuilder) WarnStatus(s string, t int64) {
+func (mib *MongoIndexBuilder) WarnStatus(s string, d time.Duration) {
 	if mib.ops.Logger != nil {
-		mib.ops.Logger.Warnf("reason: %s, time: %dms", s, t)
+		mib.ops.Logger.Info(mib.Info(s, d))
 	}
+}
+
+func (mib *MongoIndexBuilder) Info(s string, d time.Duration) string {
+	var builder strings.Builder
+	builder.WriteString("time[")
+	builder.WriteString(time.Now().String())
+	builder.WriteString("], mongo_index[")
+	builder.WriteString(mib.innerIndex.GetName())
+	builder.WriteString("]:[")
+	builder.WriteString(s)
+	builder.WriteString("], totalNum[")
+	builder.WriteString(strconv.FormatInt(mib.totalNum, 10))
+	builder.WriteString("], errorNum[")
+	builder.WriteString(strconv.FormatInt(mib.errorNum, 10))
+	builder.WriteString("], addNum[")
+	builder.WriteString(strconv.FormatInt(mib.addCounter, 10))
+	builder.WriteString("], delNum[")
+	builder.WriteString(strconv.FormatInt(mib.deleteCounter, 10))
+	builder.WriteString("], timeUsed[")
+	builder.WriteString(d.String())
+	builder.WriteString("], mergeTime[")
+	builder.WriteString(mib.mergeTime.String())
+	builder.WriteString("], IndexInfo[")
+	builder.WriteString(mib.innerIndex.IndexInfo())
+	builder.WriteString("]")
+	return builder.String()
 }
