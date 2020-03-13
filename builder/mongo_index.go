@@ -236,6 +236,8 @@ func (mib *MongoIndexBuilder) InfoStatus(s string, t int64) {
 		builder.WriteString(strconv.FormatInt(mib.addCounter, 10))
 		builder.WriteString("], delNum[")
 		builder.WriteString(strconv.FormatInt(mib.deleteCounter, 10))
+		builder.WriteString("], mergeTime[")
+		builder.WriteString(mib.mergeTime.String())
 		builder.WriteString("], IndexInfo[")
 		builder.WriteString(mib.innerIndex.IndexInfo())
 		builder.WriteString("]")
