@@ -231,7 +231,7 @@ func (mib *MongoIndexBuilder) InfoStatus(s string, t int64) {
 		builder.WriteString("], totalNum[")
 		builder.WriteString(strconv.FormatInt(mib.totalNum, 10))
 		builder.WriteString("], errorNum[")
-		builder.WriteString(strconv.FormatInt(mib.totalNum, 10))
+		builder.WriteString(strconv.FormatInt(mib.errorNum, 10))
 		builder.WriteString("], addNum[")
 		builder.WriteString(strconv.FormatInt(mib.addCounter, 10))
 		builder.WriteString("], delNum[")
