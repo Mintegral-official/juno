@@ -127,6 +127,7 @@ func (mib *MongoIndexBuilder) update(ctx context.Context, name string) error {
 
 func (mib *MongoIndexBuilder) base(name string) (err error) {
 	mib.totalNum, mib.errorNum = 0, 0
+	mib.addCounter = 0
 	if mib.ops.OnBeforeBase != nil {
 		mib.ops.BaseQuery = mib.ops.OnBeforeBase(mib.ops.UserData)
 	}
@@ -151,6 +152,7 @@ func (mib *MongoIndexBuilder) base(name string) (err error) {
 		}
 		mib.totalNum++
 		_ = baseIndex.Add(r.Value)
+		mib.addCounter++
 	}
 	mib.innerIndex = baseIndex
 	if mib.ops.OnFinishBase != nil {

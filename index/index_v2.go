@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	MaxNumIndex = 5000
+	MaxNumIndex = 50000
 )
 
 type IndexerV2 struct {
@@ -275,7 +275,7 @@ func (i *IndexerV2) IndexInfo() string {
 	builder.WriteString(strconv.FormatInt(int64(i.count), 10))
 	builder.WriteString("], invertIndex[")
 	builder.WriteString(strconv.Itoa(i.GetInvertedIndex().Count()))
-	builder.WriteString("], [")
+	builder.WriteString("], storageIndex[")
 	builder.WriteString(strconv.Itoa(i.GetStorageIndex().Count()))
 	builder.WriteString("]")
 	return builder.String()
