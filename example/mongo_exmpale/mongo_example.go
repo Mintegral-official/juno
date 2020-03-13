@@ -180,7 +180,7 @@ func main() {
 			if !ok {
 				return nil
 			}
-			incQuery := bson.M{"advertiserId": 903, "publisherId": 0, "status": 1, "system": 5, "updated": bson.M{"$gte": ud.UpTime - 5, "$lte": time.Now().Unix()}}
+			incQuery := bson.M{"advertiserId": 903, "publisherId": 0, "system": 5, "updated": bson.M{"$gte": ud.UpTime - 5, "$lte": time.Now().Unix()}}
 			return incQuery
 		},
 		OnFinishInc: func(userData interface{}) {
