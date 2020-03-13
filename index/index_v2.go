@@ -213,7 +213,6 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 		return true
 	})
 
-	fmt.Println("target count:", target.count, "mergeIndex.count:", i.count)
 	// merge by id
 	for id := uint64(0); id < target.count; id++ {
 		docId := target.idMap[id]
