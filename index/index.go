@@ -11,6 +11,8 @@ type Index interface {
 	Delete(fieldName string)
 	Del(docInfo *document.DocInfo)
 
+	IndexInfo() string
+
 	GetName() string
 	GetInvertedIndex() InvertedIndex
 	GetStorageIndex() StorageIndex

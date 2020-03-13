@@ -256,3 +256,7 @@ func (i *Indexer) GetId(id document.DocId) (document.DocId, error) {
 	}
 	return 0, errors.New("id not found")
 }
+
+func (i *Indexer) IndexInfo() string {
+	return ""
+}

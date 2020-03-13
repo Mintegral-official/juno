@@ -7,20 +7,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"strconv"
+	"strings"
 	"time"
 )
 
 type MongoIndexBuilder struct {
-	ops        *MongoIndexManagerOps
-	innerIndex index.Index
-	totalNum   int64
-	errorNum   int64
-	client     *mongo.Client
-	collection *mongo.Collection
-	findOpt    *options.FindOptions
-	start      int64
-	end        int64
-	mergeTime  time.Duration
+	ops           *MongoIndexManagerOps
+	innerIndex    index.Index
+	totalNum      int64
+	errorNum      int64
+	client        *mongo.Client
+	collection    *mongo.Collection
+	findOpt       *options.FindOptions
+	start         int64
+	end           int64
+	addCounter    int64
+	deleteCounter int64
+	mergeTime     time.Duration
 }
 
 func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error) {
@@ -171,7 +175,10 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 		_ = cur.Close(c)
 	}()
 
+	mib.deleteCounter = 0
+	mib.addCounter = 0
 	tmpIndex := index.NewIndex(mib.innerIndex.GetName())
+	mib.totalNum++
 	for cur.Next(nil) {
 		if cur.Err() != nil {
 			mib.errorNum++
@@ -183,23 +190,29 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 			continue
 		}
 		if r.DataMod == DataAddOrUpdate {
-			if e := tmpIndex.Add(r.Value); e != nil {
+			if e := tmpIndex.Add(r.Value); e == nil {
+				mib.addCounter++
+			} else {
 				mib.ops.Logger.Warnf("load inc error[%s]", e.Error())
 				mib.errorNum++
 			}
 		} else {
 			mib.innerIndex.Del(r.Value)
+			mib.deleteCounter++
 		}
 	}
 	t := tmpIndex.(*index.IndexerV2)
 	now := time.Now()
-	t.MergeIndex(mib.innerIndex.(*index.IndexerV2))
+	if err := t.MergeIndex(mib.innerIndex.(*index.IndexerV2)); err != nil {
+		return err
+	}
+
 	mib.innerIndex = t
 	mib.mergeTime = time.Now().Sub(now)
 	if mib.ops.OnFinishInc != nil {
 		mib.ops.OnFinishInc(mib)
 	}
-	return err
+	return nil
 }
 
 func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {
@@ -208,9 +221,23 @@ func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {
 
 func (mib *MongoIndexBuilder) InfoStatus(s string, t int64) {
 	if mib.ops.Logger != nil {
-		mib.ops.Logger.Infof("mongo_[%s]:[%s], totalNum:[%d], errorNum:[%d], "+
-			"invert index:[%d], storage index:[%d], load time:[%dms], merge time[%s]", mib.innerIndex.GetName(), s, mib.totalNum,
-			mib.errorNum, mib.innerIndex.GetInvertedIndex().Count(), mib.innerIndex.GetStorageIndex().Count(), t/1e6, mib.mergeTime.String())
+		var builder strings.Builder
+		builder.WriteString("mongo_index[")
+		builder.WriteString(mib.innerIndex.GetName())
+		builder.WriteString("]:[")
+		builder.WriteString(s)
+		builder.WriteString("], totalNum[")
+		builder.WriteString(strconv.FormatInt(mib.totalNum, 10))
+		builder.WriteString("], errorNum[")
+		builder.WriteString(strconv.FormatInt(mib.totalNum, 10))
+		builder.WriteString("], addNum[")
+		builder.WriteString(strconv.FormatInt(mib.addCounter, 10))
+		builder.WriteString("], delNum[")
+		builder.WriteString(strconv.FormatInt(mib.deleteCounter, 10))
+		builder.WriteString("], IndexInfo[")
+		builder.WriteString(mib.innerIndex.IndexInfo())
+		builder.WriteString("]")
+		mib.ops.Logger.Info(builder.String())
 	}
 }
 

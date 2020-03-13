@@ -194,9 +194,9 @@ func (i *IndexerV2) WarnStatus(name string, value interface{}, err string) {
 	}
 }
 
-func (i *IndexerV2) MergeIndex(target *IndexerV2) {
+func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 
-	invertIters := make(map[string]datastruct.Iterator, i.invertedIndex.Count())
+	invertIters := make(map[string]datastruct.Iterator, target.invertedIndex.Count())
 	target.invertedIndex.Range(func(key, value interface{}) bool {
 		k := key.(string)
 		items := strings.Split(k, SEP)
@@ -205,7 +205,7 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) {
 		return true
 	})
 
-	storageIters := make(map[string]datastruct.Iterator, i.storageIndex.Count())
+	storageIters := make(map[string]datastruct.Iterator, target.storageIndex.Count())
 	target.storageIndex.Range(func(key, value interface{}) bool {
 		k := key.(string)
 		iter := target.storageIndex.Iterator(k)
@@ -213,14 +213,16 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) {
 		return true
 	})
 
+	fmt.Println("target count:", target.count, "mergeIndex.count:", i.count)
 	// merge by id
 	for id := uint64(0); id < target.count; id++ {
-		if gid, err := target.GetId(document.DocId(id)); err == nil {
-			if _, ok := target.GetCampaignMap().Get(DocId(gid)); !ok {
-				continue
-			}
-		}
 		docId := target.idMap[id]
+		// already deleted
+		if _, ok := target.campaignMapping.Get(DocId(docId)); !ok {
+			continue
+		}
+
+		// new index updated
 		if _, ok := i.campaignMapping.Get(DocId(docId)); ok {
 			continue
 		}
@@ -251,8 +253,13 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) {
 		i.campaignMapping.Set(DocId(docId), i.count)
 		i.idMap[i.count] = docId
 		i.count++
+
+		if i.count > MaxNumIndex {
+			return fmt.Errorf("merge index error, index is full, maxsize[%d], current[%d]", MaxNumIndex, i.count)
+		}
 	}
 
+	return nil
 }
 
 func (i *IndexerV2) GetId(id document.DocId) (document.DocId, error) {
@@ -260,4 +267,16 @@ func (i *IndexerV2) GetId(id document.DocId) (document.DocId, error) {
 		return 0, errors.New("id not found")
 	}
 	return i.idMap[id], nil
+}
+
+func (i *IndexerV2) IndexInfo() string {
+	var builder strings.Builder
+	builder.WriteString("index[")
+	builder.WriteString(strconv.FormatInt(int64(i.count), 10))
+	builder.WriteString("], invertIndex[")
+	builder.WriteString(strconv.Itoa(i.GetInvertedIndex().Count()))
+	builder.WriteString("], [")
+	builder.WriteString(strconv.Itoa(i.GetStorageIndex().Count()))
+	builder.WriteString("]")
+	return builder.String()
 }
