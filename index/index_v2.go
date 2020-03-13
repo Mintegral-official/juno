@@ -249,7 +249,7 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 				continue
 			}
 		}
-		i.campaignMapping.Set(DocId(docId), i.count)
+		i.campaignMapping.Set(DocId(docId), document.DocId(i.count))
 		i.idMap[i.count] = docId
 		i.count++
 
