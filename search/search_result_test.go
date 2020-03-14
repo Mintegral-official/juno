@@ -428,10 +428,11 @@ func TestIndexV2(t *testing.T) {
 				query.NewTermQuery(idx1.GetInvertedIndex().Iterator("fieldName", "3")),
 			}, nil)
 			s := Searcher{}
-			s.Debug(idx1, q.Marshal(), []document.DocId{0})
+			s.Debug(idx1, q.Marshal(), []document.DocId{30})
 			fmt.Println(s.FilterInfo)
 			fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxx")
 			fmt.Println(q.Marshal())
+			fmt.Println("111111111111111111", idx1.GetValueById(0))
 		})
 
 	})

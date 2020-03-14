@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"github.com/MintegralTech/juno/builder"
 	"github.com/MintegralTech/juno/check"
@@ -14,6 +15,10 @@ import (
 	"os/signal"
 	"strconv"
 	"time"
+)
+
+var (
+	uri string
 )
 
 type CampaignInfo struct {
@@ -157,13 +162,16 @@ func (c *CampaignParser) Parse(bytes []byte, userData interface{}) *builder.Pars
 }
 
 func main() {
+
+	flag.StringVar(&uri, "uri", "", "uri")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// build index
 	logger := logrus.New()
 	b, e := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
-		URI:            "mongodb://13.250.108.190:27017",
+		URI:            uri,
 		IncInterval:    5,
 		BaseInterval:   120,
 		IncParser:      &CampaignParser{},

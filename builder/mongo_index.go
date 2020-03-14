@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,7 @@ type MongoIndexBuilder struct {
 	addCounter    int64
 	deleteCounter int64
 	mergeTime     time.Duration
+	lock          sync.RWMutex
 }
 
 func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error) {
@@ -72,6 +74,8 @@ func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error)
 }
 
 func (mib *MongoIndexBuilder) GetIndex() index.Index {
+	mib.lock.RLock()
+	defer mib.lock.RUnlock()
 	return mib.innerIndex
 }
 
@@ -150,7 +154,9 @@ func (mib *MongoIndexBuilder) base(name string) (err error) {
 		_ = baseIndex.Add(r.Value)
 		mib.addCounter++
 	}
+	mib.lock.Lock()
 	mib.innerIndex = baseIndex
+	mib.lock.Unlock()
 	if mib.ops.OnFinishBase != nil {
 		mib.ops.OnFinishBase(mib)
 	}
@@ -205,7 +211,9 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 		return err
 	}
 
+	mib.lock.Lock()
 	mib.innerIndex = t
+	mib.lock.Unlock()
 	mib.mergeTime = time.Now().Sub(now)
 	if mib.ops.OnFinishInc != nil {
 		mib.ops.OnFinishInc(mib)
