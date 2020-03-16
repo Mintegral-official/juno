@@ -228,6 +228,11 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 
 		// invert List
 		for k, v := range invertIters {
+
+			for id > uint64(v.Current().Key()) {
+				v.Next()
+			}
+
 			if id == uint64(v.Current().Key()) {
 				// add invert index
 				if e := i.invertedIndex.Add(k, document.DocId(i.count)); e != nil {
@@ -239,6 +244,11 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 
 		// storage List
 		for k, v := range storageIters {
+
+			for id > uint64(v.Current().Key()) {
+				v.Next()
+			}
+
 			if id == uint64(v.Current().Key()) {
 				// add storage index
 				if e := i.storageIndex.Add(k, document.DocId(i.count), v.Current().Value()); e != nil {

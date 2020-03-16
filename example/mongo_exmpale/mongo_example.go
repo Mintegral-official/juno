@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/MintegralTech/juno/builder"
@@ -41,7 +42,8 @@ type CampaignParser struct {
 }
 
 type UserData struct {
-	UpTime int64
+	UpTime    int64
+	Campaigns []int64
 }
 
 func MakeInfo(info *CampaignInfo) *document.DocInfo {
@@ -155,6 +157,9 @@ func (c *CampaignParser) Parse(bytes []byte, userData interface{}) *builder.Pars
 	if campaign.Status == 1 {
 		mode = builder.DataAddOrUpdate
 	}
+	d, _ := json.Marshal(info)
+	ud.Campaigns = append(ud.Campaigns, campaign.CampaignId)
+	fmt.Println("docInfo: ", d)
 	return &builder.ParserResult{
 		DataMod: mode,
 		Value:   info,
@@ -170,8 +175,9 @@ func main() {
 
 	// build index
 	logger := logrus.New()
+	ud := &UserData{}
 	b, e := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
-		URI:            uri,
+		URI:            "mongodb://127.0.0.1:27017",
 		IncInterval:    5,
 		BaseInterval:   120,
 		IncParser:      &CampaignParser{},
@@ -181,7 +187,7 @@ func main() {
 		Collection:     "campaign",
 		ConnectTimeout: 10000,
 		ReadTimeout:    20000,
-		UserData:       &UserData{},
+		UserData:       ud,
 		Logger:         logger,
 		OnBeforeInc: func(userData interface{}) interface{} {
 			ud, ok := userData.(*UserData)
@@ -219,6 +225,11 @@ func main() {
 	var p = []float64{2.3, 1.4, 3.65, 2.46, 2.5}
 	var a0 = []int64{647, 658, 670}
 	//var dev = []int64{4, 5}
+
+	for _, v := range ud.Campaigns {
+		d, _ := json.Marshal(tIndex.GetValueById(document.DocId(v)))
+		fmt.Printf("IndexInfo %d: %s\n", v, string(d))
+	}
 
 	for i := 0; i < 0; i++ {
 		q := query.NewOrQuery([]query.Query{
