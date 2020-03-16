@@ -223,6 +223,12 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 
 		// new index updated
 		if _, ok := i.campaignMapping.Get(DocId(docId)); ok {
+			for _, v := range invertIters {
+				v.Next()
+			}
+			for _, v := range storageIters {
+				v.Next()
+			}
 			continue
 		}
 
