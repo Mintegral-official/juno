@@ -5,13 +5,19 @@ import (
 	"github.com/MintegralTech/juno/document"
 )
 
+type IndexInfo struct {
+	DocSize           int `json:"doc_size"`
+	InvertedIndexSize int `json:"inverted_index_szie"`
+	StorageIndex      int `json:"storage_index_size"`
+}
+
 type Index interface {
 	Add(docInfo *document.DocInfo) error
 	UpdateIds(fieldName string, ids []document.DocId)
 	Delete(fieldName string)
 	Del(docInfo *document.DocInfo)
 
-	IndexInfo() string
+	GetIndexInfo() *IndexInfo
 
 	GetName() string
 	GetInvertedIndex() InvertedIndex
