@@ -13,17 +13,19 @@ import (
 )
 
 type MongoIndexBuilder struct {
-	ops           *MongoIndexManagerOps
-	innerIndex    index.Index
-	totalNum      int64
-	errorNum      int64
-	client        *mongo.Client
-	collection    *mongo.Collection
-	findOpt       *options.FindOptions
-	addCounter    int64
-	deleteCounter int64
-	mergeTime     time.Duration
-	lock          sync.RWMutex
+	ops             *MongoIndexManagerOps
+	innerIndex      index.Index
+	totalNum        int64
+	errorNum        int64
+	client          *mongo.Client
+	collection      *mongo.Collection
+	findOpt         *options.FindOptions
+	addCounter      int64
+	deleteCounter   int64
+	mergeTime       time.Duration
+	lastBaseUpdated time.Time
+	lastIncUpdated  time.Time
+	lock            sync.RWMutex
 }
 
 func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error) {
@@ -159,6 +161,7 @@ func (mib *MongoIndexBuilder) base(name string) (err error) {
 	if mib.ops.OnFinishBase != nil {
 		mib.ops.OnFinishBase(mib)
 	}
+	mib.lastBaseUpdated = time.Now()
 	return err
 }
 
@@ -217,6 +220,7 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 	if mib.ops.OnFinishInc != nil {
 		mib.ops.OnFinishInc(mib)
 	}
+	mib.lastIncUpdated = time.Now()
 	return nil
 }
 
@@ -243,12 +247,13 @@ func (mib *MongoIndexBuilder) Info(s string, d time.Duration) string {
 
 func (mib *MongoIndexBuilder) GetBuilderInfo() *BuildInfo {
 	return &BuildInfo{
-		TotalNumber: mib.totalNum,
-		ErrorNumber: mib.errorNum,
-		AddNum:      mib.addCounter,
-		DeleteNum:   mib.deleteCounter,
-		MergeTime:   0,
-		LastUpdated: time.Time{},
-		IndexInfo:   mib.GetIndex().GetIndexInfo(),
+		TotalNumber:     mib.totalNum,
+		ErrorNumber:     mib.errorNum,
+		AddNum:          mib.addCounter,
+		DeleteNum:       mib.deleteCounter,
+		MergeTime:       mib.mergeTime,
+		LastBaseUpdated: mib.lastBaseUpdated,
+		LastIncUpdated:  mib.lastIncUpdated,
+		IndexInfo:       mib.GetIndex().GetIndexInfo(),
 	}
 }

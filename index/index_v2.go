@@ -278,6 +278,6 @@ func (i *IndexerV2) GetIndexInfo() *IndexInfo {
 	return &IndexInfo{
 		DocSize:           int(i.count),
 		InvertedIndexSize: i.GetInvertedIndex().Count(),
-		StorageIndex:      0,
+		StorageIndex:      i.GetStorageIndex().Count(),
 	}
 }
