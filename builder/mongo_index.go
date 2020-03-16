@@ -152,8 +152,13 @@ func (mib *MongoIndexBuilder) base(name string) (err error) {
 			continue
 		}
 		mib.totalNum++
-		_ = baseIndex.Add(r.Value)
-		mib.addCounter++
+		if e := baseIndex.Add(r.Value); e == nil {
+			mib.addCounter++
+		} else {
+			mib.ops.Logger.Warnf("load base error[%s]", e.Error())
+			mib.errorNum++
+		}
+		//mib.addCounter++
 	}
 	mib.lock.Lock()
 	mib.innerIndex = baseIndex
