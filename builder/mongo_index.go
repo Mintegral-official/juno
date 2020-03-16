@@ -2,29 +2,30 @@ package builder
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
 
 type MongoIndexBuilder struct {
-	ops           *MongoIndexManagerOps
-	innerIndex    index.Index
-	totalNum      int64
-	errorNum      int64
-	client        *mongo.Client
-	collection    *mongo.Collection
-	findOpt       *options.FindOptions
-	addCounter    int64
-	deleteCounter int64
-	mergeTime     time.Duration
-	lock          sync.RWMutex
+	ops             *MongoIndexManagerOps
+	innerIndex      index.Index
+	totalNum        int64
+	errorNum        int64
+	client          *mongo.Client
+	collection      *mongo.Collection
+	findOpt         *options.FindOptions
+	addCounter      int64
+	deleteCounter   int64
+	mergeTime       time.Duration
+	lastBaseUpdated time.Time
+	lastIncUpdated  time.Time
+	lock            sync.RWMutex
 }
 
 func NewMongoIndexBuilder(ops *MongoIndexManagerOps) (*MongoIndexBuilder, error) {
@@ -160,6 +161,7 @@ func (mib *MongoIndexBuilder) base(name string) (err error) {
 	if mib.ops.OnFinishBase != nil {
 		mib.ops.OnFinishBase(mib)
 	}
+	mib.lastBaseUpdated = time.Now()
 	return err
 }
 
@@ -218,6 +220,7 @@ func (mib *MongoIndexBuilder) inc(ctx context.Context) (err error) {
 	if mib.ops.OnFinishInc != nil {
 		mib.ops.OnFinishInc(mib)
 	}
+	mib.lastIncUpdated = time.Now()
 	return nil
 }
 
@@ -238,27 +241,19 @@ func (mib *MongoIndexBuilder) WarnStatus(s string, d time.Duration) {
 }
 
 func (mib *MongoIndexBuilder) Info(s string, d time.Duration) string {
-	var builder strings.Builder
-	builder.WriteString("time[")
-	builder.WriteString(time.Now().String())
-	builder.WriteString("], mongo_index[")
-	builder.WriteString(mib.innerIndex.GetName())
-	builder.WriteString("]:[")
-	builder.WriteString(s)
-	builder.WriteString("], totalNum[")
-	builder.WriteString(strconv.FormatInt(mib.totalNum, 10))
-	builder.WriteString("], errorNum[")
-	builder.WriteString(strconv.FormatInt(mib.errorNum, 10))
-	builder.WriteString("], addNum[")
-	builder.WriteString(strconv.FormatInt(mib.addCounter, 10))
-	builder.WriteString("], delNum[")
-	builder.WriteString(strconv.FormatInt(mib.deleteCounter, 10))
-	builder.WriteString("], timeUsed[")
-	builder.WriteString(d.String())
-	builder.WriteString("], mergeTime[")
-	builder.WriteString(mib.mergeTime.String())
-	builder.WriteString("], IndexInfo[")
-	builder.WriteString(mib.innerIndex.IndexInfo())
-	builder.WriteString("]")
-	return builder.String()
+	data, _ := json.Marshal(mib.GetBuilderInfo())
+	return string(data)
+}
+
+func (mib *MongoIndexBuilder) GetBuilderInfo() *BuildInfo {
+	return &BuildInfo{
+		TotalNumber:     mib.totalNum,
+		ErrorNumber:     mib.errorNum,
+		AddNum:          mib.addCounter,
+		DeleteNum:       mib.deleteCounter,
+		MergeTime:       mib.mergeTime,
+		LastBaseUpdated: mib.lastBaseUpdated,
+		LastIncUpdated:  mib.lastIncUpdated,
+		IndexInfo:       mib.GetIndex().GetIndexInfo(),
+	}
 }

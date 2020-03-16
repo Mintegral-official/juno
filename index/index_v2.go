@@ -234,7 +234,6 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 					i.logger.Warnf("MergeIndex add inverted index error, docId[%d], id[%d]", docId, i.count)
 				}
 				v.Next()
-				continue
 			}
 		}
 
@@ -243,10 +242,9 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 			if id == uint64(v.Current().Key()) {
 				// add storage index
 				if e := i.storageIndex.Add(k, document.DocId(i.count), v.Current().Value()); e != nil {
-					i.logger.Warnf("MergeIndex add inverted index error, docId[%d], id[%d]", docId, i.count)
+					i.logger.Warnf("MergeIndex add storage index error, docId[%d], id[%d]", docId, i.count)
 				}
 				v.Next()
-				continue
 			}
 		}
 		i.campaignMapping.Set(DocId(docId), document.DocId(i.count))
@@ -276,14 +274,10 @@ func (i *IndexerV2) GetInnerId(id document.DocId) (document.DocId, error) {
 	return v.(document.DocId), nil
 }
 
-func (i *IndexerV2) IndexInfo() string {
-	var builder strings.Builder
-	builder.WriteString("index[")
-	builder.WriteString(strconv.FormatInt(int64(i.count), 10))
-	builder.WriteString("], invertIndex[")
-	builder.WriteString(strconv.Itoa(i.GetInvertedIndex().Count()))
-	builder.WriteString("], storageIndex[")
-	builder.WriteString(strconv.Itoa(i.GetStorageIndex().Count()))
-	builder.WriteString("]")
-	return builder.String()
+func (i *IndexerV2) GetIndexInfo() *IndexInfo {
+	return &IndexInfo{
+		DocSize:           int(i.count),
+		InvertedIndexSize: i.GetInvertedIndex().Count(),
+		StorageIndex:      i.GetStorageIndex().Count(),
+	}
 }

@@ -265,6 +265,10 @@ func (i *Indexer) GetInnerId(id document.DocId) (document.DocId, error) {
 	return v.(document.DocId), nil
 }
 
-func (i *Indexer) IndexInfo() string {
-	return ""
+func (i *Indexer) GetIndexInfo() *IndexInfo {
+	return &IndexInfo{
+		DocSize:           int(i.count),
+		InvertedIndexSize: i.GetInvertedIndex().Count(),
+		StorageIndex:      i.GetStorageIndex().Count(),
+	}
 }
