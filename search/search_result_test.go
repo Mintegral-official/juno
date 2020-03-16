@@ -2,6 +2,7 @@ package search
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/MintegralTech/juno/check"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
@@ -340,6 +341,100 @@ func TestNewSearcher_Inc_Index(t *testing.T) {
 		s1 = NewSearcher()
 		s1.Search(idx, q)
 		So(s1.Docs[0], ShouldEqual, 0)
+	})
+
+}
+
+func TestIndexV2(t *testing.T) {
+	var doc1 = &document.DocInfo{
+		Id: 0,
+		Fields: []*document.Field{
+			{
+				Name:      "field1",
+				IndexType: 1,
+				Value:     1,
+				ValueType: document.IntFieldType,
+			},
+			{
+				Name:      "field2",
+				IndexType: 0,
+				Value:     "2",
+				ValueType: document.StringFieldType,
+			},
+		},
+	}
+	var doc2 = &document.DocInfo{
+		Id: 30,
+		Fields: []*document.Field{
+			{
+				Name:      "fieldName",
+				IndexType: 0,
+				Value:     "1",
+				ValueType: document.StringFieldType,
+			},
+			{
+				Name:      "fieldNeme",
+				IndexType: 0,
+				Value:     "2",
+				ValueType: document.StringFieldType,
+			},
+			{
+				Name:      "fieldName",
+				IndexType: 0,
+				Value:     "3",
+				ValueType: document.StringFieldType,
+			},
+			{
+				Name:      "fieldName",
+				IndexType: 0,
+				Value:     "5",
+				ValueType: document.StringFieldType,
+			},
+			{
+				Name:      "fieldName",
+				IndexType: 1,
+				Value:     3,
+				ValueType: document.StringFieldType,
+			},
+		},
+	}
+
+	Convey("testIndex", t, func() {
+		idx1 := index.NewIndexV2("abc")
+		So(idx1.Add(doc1), ShouldBeNil)
+		So(idx1.Add(doc2), ShouldBeNil)
+		q := query.NewAndQuery([]query.Query{
+			query.NewTermQuery(idx1.GetInvertedIndex().Iterator("fieldName", "3")),
+		}, nil)
+		s := Searcher{}
+		s.Search(idx1, q)
+		So(len(s.Docs), ShouldEqual, 1)
+		So(s.Docs[0], ShouldEqual, 30)
+
+		Convey("testMerge", func() {
+			idx2 := index.NewIndexV2("merged")
+			So(idx2.MergeIndex(idx1), ShouldBeNil)
+			q := query.NewAndQuery([]query.Query{
+				query.NewTermQuery(idx1.GetInvertedIndex().Iterator("fieldName", "3")),
+			}, nil)
+			s := Searcher{}
+			s.Search(idx2, q)
+			So(len(s.Docs), ShouldEqual, 1)
+			So(s.Docs[0], ShouldEqual, 30)
+		})
+
+		Convey("test debug", func() {
+			q := query.NewAndQuery([]query.Query{
+				query.NewTermQuery(idx1.GetInvertedIndex().Iterator("fieldName", "3")),
+			}, nil)
+			s := Searcher{}
+			s.Debug(idx1, q.Marshal(), []document.DocId{30})
+			fmt.Println(s.FilterInfo)
+			fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxx")
+			fmt.Println(q.Marshal())
+			fmt.Println("111111111111111111", idx1.GetValueById(0))
+		})
+
 	})
 
 }

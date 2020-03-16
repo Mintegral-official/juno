@@ -121,6 +121,8 @@ func TestMergeIndexV2(t *testing.T) {
 		idx := NewIndexV2("")
 		So(idx.Add(doc1), ShouldBeNil)
 		So(idx.Add(doc2), ShouldBeNil)
+		So(idx.GetInvertedIndex().Count(), ShouldEqual, 2)
+		So(idx.GetStorageIndex().Count(), ShouldEqual, 2)
 		Convey("GetValueById add", func() {
 			realMap := idx.GetValueById(0)
 			expectMap := [2]map[string][]string{
@@ -136,6 +138,12 @@ func TestMergeIndexV2(t *testing.T) {
 			So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
 		})
 		idx2 := NewIndexV2("1234")
+		Convey("merge nil index", func() {
+			idx2.MergeIndex(idx)
+			So(idx.GetInvertedIndex().Count(), ShouldEqual, 2)
+			So(idx.GetStorageIndex().Count(), ShouldEqual, 2)
+		})
+
 		So(idx2.Add(doc5), ShouldBeNil)
 		So(idx2.Add(doc3), ShouldBeNil)
 
@@ -168,6 +176,17 @@ func TestMergeIndexV2(t *testing.T) {
 			}
 			fmt.Println(realMap)
 			So(reflect.DeepEqual(realMap, expectMap), ShouldBeTrue)
+			id, ok := idx2.campaignMapping.Get(DocId(2))
+			So(id, ShouldEqual, 1)
+			So(ok, ShouldBeTrue)
+
+			id, ok = idx2.campaignMapping.Get(DocId(0))
+			So(id, ShouldEqual, 0)
+			So(ok, ShouldBeTrue)
+
+			id, ok = idx2.campaignMapping.Get(DocId(1))
+			So(id, ShouldEqual, 2)
+			So(ok, ShouldBeTrue)
 		})
 	})
 }

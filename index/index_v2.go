@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	MaxNumIndex = 5000
+	MaxNumIndex = 50000
 )
 
 type IndexerV2 struct {
@@ -38,7 +38,7 @@ func NewIndexV2(name string) (i *IndexerV2) {
 		campaignMapping: concurrent_map.CreateConcurrentMap(128),
 		kvType:          concurrent_map.CreateConcurrentMap(128),
 		idMap:           make([]document.DocId, MaxNumIndex),
-		count:           1,
+		count:           0,
 		name:            name,
 		logger:          logrus.New(),
 	}
@@ -116,7 +116,7 @@ func (i *IndexerV2) Add(doc *document.DocInfo) error {
 }
 
 func (i *IndexerV2) Del(doc *document.DocInfo) {
-	println("IndexerV2 not support delete")
+	i.campaignMapping.Del(DocId(doc.Id))
 }
 
 func (i *IndexerV2) Update(filename string) error {
@@ -194,32 +194,37 @@ func (i *IndexerV2) WarnStatus(name string, value interface{}, err string) {
 	}
 }
 
-func (i *IndexerV2) MergeIndex(target *IndexerV2) {
+func (i *IndexerV2) MergeIndex(target *IndexerV2) error {
 
-	invertIters := make(map[string]datastruct.Iterator, i.invertedIndex.Count())
-	i.invertedIndex.Range(func(key, value interface{}) bool {
+	invertIters := make(map[string]datastruct.Iterator, target.invertedIndex.Count())
+	target.invertedIndex.Range(func(key, value interface{}) bool {
 		k := key.(string)
 		items := strings.Split(k, SEP)
-		iter := i.invertedIndex.Iterator(items[0], items[1])
+		iter := target.invertedIndex.Iterator(items[0], items[1])
 		invertIters[k] = iter
 		return true
 	})
 
-	storageIters := make(map[string]datastruct.Iterator, i.storageIndex.Count())
-	i.storageIndex.Range(func(key, value interface{}) bool {
+	storageIters := make(map[string]datastruct.Iterator, target.storageIndex.Count())
+	target.storageIndex.Range(func(key, value interface{}) bool {
 		k := key.(string)
-		iter := i.storageIndex.Iterator(k)
-		invertIters[k] = iter
+		iter := target.storageIndex.Iterator(k)
+		storageIters[k] = iter
 		return true
 	})
 
 	// merge by id
-	for id := uint64(1); id < target.count; id++ {
-		docId := i.idMap[id]
+	for id := uint64(0); id < target.count; id++ {
+		docId := target.idMap[id]
+		// already deleted
+		if _, ok := target.campaignMapping.Get(DocId(docId)); !ok {
+			continue
+		}
+
+		// new index updated
 		if _, ok := i.campaignMapping.Get(DocId(docId)); ok {
 			continue
 		}
-		i.count++
 
 		// invert List
 		for k, v := range invertIters {
@@ -244,10 +249,16 @@ func (i *IndexerV2) MergeIndex(target *IndexerV2) {
 				continue
 			}
 		}
-		i.campaignMapping.Set(DocId(docId), i.count)
+		i.campaignMapping.Set(DocId(docId), document.DocId(i.count))
 		i.idMap[i.count] = docId
+		i.count++
+
+		if i.count > MaxNumIndex {
+			return fmt.Errorf("merge index error, index is full, maxsize[%d], current[%d]", MaxNumIndex, i.count)
+		}
 	}
 
+	return nil
 }
 
 func (i *IndexerV2) GetId(id document.DocId) (document.DocId, error) {
@@ -255,4 +266,24 @@ func (i *IndexerV2) GetId(id document.DocId) (document.DocId, error) {
 		return 0, errors.New("id not found")
 	}
 	return i.idMap[id], nil
+}
+
+func (i *IndexerV2) GetInnerId(id document.DocId) (document.DocId, error) {
+	v, ok := i.GetCampaignMap().Get(DocId(id))
+	if !ok {
+		return 0, errors.New("id not found")
+	}
+	return v.(document.DocId), nil
+}
+
+func (i *IndexerV2) IndexInfo() string {
+	var builder strings.Builder
+	builder.WriteString("index[")
+	builder.WriteString(strconv.FormatInt(int64(i.count), 10))
+	builder.WriteString("], invertIndex[")
+	builder.WriteString(strconv.Itoa(i.GetInvertedIndex().Count()))
+	builder.WriteString("], storageIndex[")
+	builder.WriteString(strconv.Itoa(i.GetStorageIndex().Count()))
+	builder.WriteString("]")
+	return builder.String()
 }

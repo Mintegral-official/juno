@@ -1,7 +1,8 @@
-package mongo_exmpale
+package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"github.com/MintegralTech/juno/builder"
 	"github.com/MintegralTech/juno/check"
@@ -14,6 +15,10 @@ import (
 	"os/signal"
 	"strconv"
 	"time"
+)
+
+var (
+	uri string
 )
 
 type CampaignInfo struct {
@@ -36,7 +41,7 @@ type CampaignParser struct {
 }
 
 type UserData struct {
-	upTime int64
+	UpTime int64
 }
 
 func MakeInfo(info *CampaignInfo) *document.DocInfo {
@@ -142,8 +147,8 @@ func (c *CampaignParser) Parse(bytes []byte, userData interface{}) *builder.Pars
 	if err := bson.Unmarshal(bytes, &campaign); err != nil {
 		fmt.Println("bson.Unmarshal error:" + err.Error())
 	}
-	if ud.upTime < campaign.Uptime {
-		ud.upTime = campaign.Uptime
+	if ud.UpTime < campaign.Uptime {
+		ud.UpTime = campaign.Uptime
 	}
 	var info = MakeInfo(campaign)
 	var mode builder.DataMod = builder.DataDel
@@ -157,31 +162,41 @@ func (c *CampaignParser) Parse(bytes []byte, userData interface{}) *builder.Pars
 }
 
 func main() {
+
+	flag.StringVar(&uri, "uri", "", "uri")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// build index
+	logger := logrus.New()
 	b, e := builder.NewMongoIndexBuilder(&builder.MongoIndexManagerOps{
-		URI:            "mongodb://13.250.108.190:27017",
+		URI:            uri,
 		IncInterval:    5,
 		BaseInterval:   120,
 		IncParser:      &CampaignParser{},
 		BaseParser:     &CampaignParser{},
-		BaseQuery:      bson.M{"status": 1},
-		IncQuery:       bson.M{"updated": bson.M{"$gte": time.Now().Unix() - 5, "$lte": time.Now().Unix()}},
+		BaseQuery:      bson.M{"advertiserId": 903, "publisherId": 0, "status": 1, "system": 5},
 		DB:             "new_adn",
 		Collection:     "campaign",
 		ConnectTimeout: 10000,
 		ReadTimeout:    20000,
 		UserData:       &UserData{},
-		Logger:         logrus.New(),
+		Logger:         logger,
 		OnBeforeInc: func(userData interface{}) interface{} {
 			ud, ok := userData.(*UserData)
 			if !ok {
 				return nil
 			}
-			incQuery := bson.M{"updated": bson.M{"$gte": ud.upTime - 5, "$lte": time.Now().Unix()}}
+			incQuery := bson.M{"advertiserId": 903, "publisherId": 0, "system": 5, "updated": bson.M{"$gte": ud.UpTime - 5, "$lte": time.Now().Unix()}}
 			return incQuery
+		},
+		OnFinishInc: func(userData interface{}) {
+			ud, ok := userData.(*UserData)
+			if !ok {
+				return
+			}
+			fmt.Printf("OnFinishInc[%d], [%d]", time.Now().UnixNano(), ud.UpTime)
 		},
 	})
 	if e != nil {
@@ -205,7 +220,7 @@ func main() {
 	var a0 = []int64{647, 658, 670}
 	//var dev = []int64{4, 5}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 0; i++ {
 		q := query.NewOrQuery([]query.Query{
 			// ==
 			query.NewOrQuery([]query.Query{
@@ -215,21 +230,6 @@ func main() {
 			query.NewOrQuery([]query.Query{
 				query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
 			}, nil),
-			/* special example */
-			// [campaign] <-> [condition]
-			//// or in , one in
-			//query.NewOrQuery([]query.Query{
-			//	query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
-			//}, []check.Checker{
-			//	check.NewInChecker(storageIdx.Iterator("DeviceTypeV2"), dev, &myOperation{}, false),
-			//}),
-			//// or not
-			//query.NewOrQuery([]query.Query{
-			//	query.NewTermQuery(storageIdx.Iterator("DeviceTypeV2")),
-			//}, []check.Checker{
-			//	check.NewNotChecker(storageIdx.Iterator("DeviceTypeV2"), dev, &myOperation{}, false),
-			//}),
-			// and
 			query.NewAndQuery([]query.Query{
 				// in
 				query.NewAndQuery([]query.Query{
@@ -243,20 +243,7 @@ func main() {
 				}, []check.Checker{
 					check.NewNotChecker(storageIdx.Iterator("AdvertiserId"), a0, nil, false),
 				})}, nil),
-			//// !=
-			//query.NewNotAndQuery([]query.Query{
-			//	query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-			//	query.NewTermQuery(invertIdx.Iterator("AdvertiserId", "457")),
-			//}, nil),
-			//// !=
-			//query.NewAndQuery([]query.Query{
-			//	query.NewTermQuery(storageIdx.Iterator("AdvertiserId")),
-			//}, []check.Checker{
-			//	check.NewChecker(storageIdx.Iterator("AdvertiserId"), 457, operation.NE, nil, false),
-			//}),
-		},
-			nil,
-		)
+		}, nil)
 
 		q.SetDebug(1)
 
@@ -269,39 +256,6 @@ func main() {
 		fmt.Println(r1.Docs[0])
 		fmt.Println(invertIdx.GetValueById(document.DocId(1526540701)))
 		fmt.Println(r1.QueryDebug)
-		//res := q.Marshal(tIndex) // query marshal params: index
-		//jf := &query.JSONFormatter{}
-		//str, _ := jf.Marshal(res) // 转换成json的形式
-		//fmt.Println(str)
-		//rr1, _ := jf.Unmarshal(str)     // 反序列化
-		//rr := q.Unmarshal(tIndex, rr1, nil) // unmarshal query  params:   1. index   2. query marshal结果  3. operation
-		//r2 := search.NewSearcher()
-		//r2.Search(tIndex, rr)
-		//fmt.Println(rr.DebugInfo())
-		//fmt.Println("+****************************+")
-		//fmt.Println(r1.QueryDebug)
-		//fmt.Println("+****************************+")
-		//fmt.Println(r1.IndexDebug)
-		//fmt.Println("+****************************+")
-
-		//tIndex.UnsetDebug()
-		//
-		//a := "AdvertiserId=457 or Platform=1 or (Price in [2.3, 1.4, 3.65, 2.46, 2.5] and AdvertiserId !in [647, 658, 670])"
-		//
-		//tsql := time.Now()
-		//sq := query.NewSqlQuery(a, nil, false)
-		//m := sq.LRD(tIndex)
-		//fmt.Println("sql parse: ", time.Since(tsql))
-		//r2 := search.NewSearcher()
-		//r2.Search(tIndex, m)
-		//fmt.Println("sql: ", time.Since(tsql))
-		//
-		////fmt.Println(r2.QueryDebug)
-		////fmt.Println(r2.IndexDebug)
-		//fmt.Println("+****************************+")
-		//fmt.Println("res: ", len(r2.Docs), r2.Time)
-		//
-		//fmt.Println(SliceEqual(r1.Docs, r2.Docs))
 	}
 
 	c := make(chan os.Signal)
@@ -391,22 +345,4 @@ func (o *myOperation) In(value interface{}) bool {
 
 func (o *myOperation) SetValue(value interface{}) {
 	o.value = value
-}
-
-func SliceEqual(a, b []document.DocId) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	if (a == nil) != (b == nil) {
-		return false
-	}
-
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-
-	return true
 }

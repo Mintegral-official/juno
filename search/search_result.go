@@ -51,7 +51,7 @@ func (s *Searcher) Debug(idx index.Index, q map[string]interface{}, ids []docume
 	queryMarshal := q
 	var res = make(map[document.DocId]map[string]interface{}, len(ids))
 	for _, id := range ids {
-		tmp, ok := idx.GetId(id)
+		tmp, ok := idx.GetInnerId(id)
 		if ok != nil {
 			continue
 		}
