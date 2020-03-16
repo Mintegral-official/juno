@@ -17,9 +17,8 @@ type Index interface {
 	Delete(fieldName string)
 	Del(docInfo *document.DocInfo)
 
-	GetIndexInfo() *IndexInfo
-
 	GetName() string
+	GetIndexInfo() *IndexInfo
 	GetInvertedIndex() InvertedIndex
 	GetStorageIndex() StorageIndex
 	GetDataType(fieldName string) document.FieldType
