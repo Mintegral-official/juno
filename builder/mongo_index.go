@@ -235,13 +235,13 @@ func (mib *MongoIndexBuilder) Build(ctx context.Context, name string) error {
 
 func (mib *MongoIndexBuilder) InfoStatus(s string, d time.Duration) {
 	if mib.ops.Logger != nil {
-		mib.ops.Logger.Info(mib.Info(s, d))
+		mib.ops.Logger.Info(s, mib.Info(s, d))
 	}
 }
 
 func (mib *MongoIndexBuilder) WarnStatus(s string, d time.Duration) {
 	if mib.ops.Logger != nil {
-		mib.ops.Logger.Info(mib.Info(s, d))
+		mib.ops.Logger.Info(s, mib.Info(s, d))
 	}
 }
 
