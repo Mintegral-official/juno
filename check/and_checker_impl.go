@@ -5,6 +5,7 @@ import (
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/marshal"
 )
 
 type AndChecker struct {
@@ -47,6 +48,38 @@ func (a *AndChecker) Marshal() map[string]interface{} {
 	}
 	res["and_check"] = tmp
 	return res
+}
+
+func (a *AndChecker) MarshalV2() *marshal.MarshalInfo {
+	if a == nil {
+		return nil
+	}
+	info := &marshal.MarshalInfo{
+		Operation: "or",
+		Nodes:     make([]*marshal.MarshalInfo, 0),
+	}
+	for _, v := range a.c {
+		m := v.MarshalV2()
+		if m != nil {
+			info.Nodes = append(info.Nodes, m)
+		}
+	}
+	return info
+}
+
+func (a *AndChecker) UnmarshalV2(idx index.Index, info *marshal.MarshalInfo) Checker {
+	if info == nil {
+		return nil
+	}
+	var c []Checker
+	uq := &unmarshalV2{}
+	for _, v := range info.Nodes {
+		m := uq.UnmarshalV2(idx, v)
+		if m != nil {
+			c = append(c, m.(Checker))
+		}
+	}
+	return NewAndChecker(c)
 }
 
 func (a *AndChecker) Unmarshal(idx index.Index, res map[string]interface{}) Checker {

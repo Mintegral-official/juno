@@ -120,6 +120,9 @@ func TestUtilCheck(t *testing.T) {
 		So(cc.Check(1), ShouldBeFalse)
 		So(cc.Check(8), ShouldBeTrue)
 		So(cc.Check(9), ShouldBeTrue)
+		tmp1 := c.MarshalV2()
+		res, _ = json.Marshal(tmp1)
+		fmt.Println(string(res))
 	})
 }
 

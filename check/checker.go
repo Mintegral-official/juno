@@ -4,6 +4,7 @@ import (
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/marshal"
 	"github.com/MintegralTech/juno/operation"
 )
 
@@ -13,6 +14,9 @@ type Checker interface {
 	SetDebug(level int)
 	Marshal() map[string]interface{}
 	Unmarshal(idx index.Index, res map[string]interface{}) Checker
+
+	MarshalV2() *marshal.MarshalInfo
+	UnmarshalV2(idx index.Index, marshalInfo *marshal.MarshalInfo) Checker
 }
 
 var OpMap = map[operation.OP]string{

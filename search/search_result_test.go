@@ -260,9 +260,26 @@ func TestSearcher(t *testing.T) {
 
 		q.SetLabel("test label q")
 		q1.SetLabel("test label q1")
-		a := Replay(ss, q.Marshal(), []document.DocId{1, 10})
+		a := Replay(ss, q.MarshalV2(), []document.DocId{1, 10})
 		res, _ = json.Marshal(a)
 		fmt.Println(string(res))
+
+		res, _ = json.Marshal(q.MarshalV2())
+		fmt.Println(string(res))
+		uq := &query.UnmarshalV2{}
+		r := uq.UnmarshalV2(ss, q.MarshalV2()).(query.Query)
+		fmt.Println(r.Current())
+		r.Next()
+		fmt.Println(r.Current())
+		r.Next()
+		fmt.Println(r.Current())
+		r.Next()
+		fmt.Println(r.Current())
+		r.Next()
+		fmt.Println(r.Current())
+		r.Next()
+		fmt.Println(r.Current())
+		r.Next()
 	})
 
 }
@@ -429,7 +446,7 @@ func TestIndexV2(t *testing.T) {
 			q := query.NewAndQuery([]query.Query{
 				query.NewTermQuery(idx1.GetInvertedIndex().Iterator("fieldName", "3")),
 			}, nil)
-			filter := Replay(idx1, q.Marshal(), []document.DocId{30})
+			filter := Replay(idx1, q.MarshalV2(), []document.DocId{30})
 			fmt.Println(filter)
 			fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxx")
 			fmt.Println(q.Marshal())

@@ -7,6 +7,7 @@ import (
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/marshal"
 	"github.com/MintegralTech/juno/operation"
 	"github.com/MintegralTech/juno/register"
 )
@@ -111,6 +112,36 @@ func (i *InChecker) Marshal() map[string]interface{} {
 	tmp = append(tmp, i.transfer)
 	res["in_check"] = tmp
 	return res
+}
+
+func (i *InChecker) MarshalV2() *marshal.MarshalInfo {
+	if i == nil {
+		return nil
+	}
+	info := &marshal.MarshalInfo{
+		Name:       i.si.(*datastruct.SkipListIterator).FieldName,
+		QueryValue: i.value,
+		Operation:  "in_check",
+		Transfer:   i.transfer,
+		Nodes:      nil,
+	}
+	if i.e != nil {
+		info.SelfOperation = true
+	} else {
+		info.SelfOperation = false
+	}
+	return info
+}
+
+func (i *InChecker) UnmarshalV2(idx index.Index, info *marshal.MarshalInfo) Checker {
+	if info == nil {
+		return nil
+	}
+	if info.SelfOperation {
+		return NewInChecker(idx.GetStorageIndex().Iterator(info.Name), info.QueryValue, register.FieldMap[info.Name],
+			info.Transfer)
+	}
+	return NewInChecker(idx.GetStorageIndex().Iterator(info.Name), info.QueryValue, nil, info.Transfer)
 }
 
 func (i *InChecker) Unmarshal(idx index.Index, res map[string]interface{}) Checker {

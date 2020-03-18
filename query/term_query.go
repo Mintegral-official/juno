@@ -7,6 +7,7 @@ import (
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/helpers"
 	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/marshal"
 	"strings"
 )
 
@@ -86,6 +87,29 @@ func (tq *TermQuery) Marshal() map[string]interface{} {
 	fields := strings.Split(tq.iterator.(*datastruct.SkipListIterator).FieldName, index.SEP)
 	res["="] = []string{fields[0], fields[1]}
 	return res
+}
+
+func (tq *TermQuery) MarshalV2() *marshal.MarshalInfo {
+	if tq == nil {
+		return nil
+	}
+	fields := strings.Split(tq.iterator.(*datastruct.SkipListIterator).FieldName, index.SEP)
+	info := &marshal.MarshalInfo{
+		Name:       fields[0],
+		QueryValue: fields[1],
+		Operation:  "=",
+		Nodes:      nil,
+	}
+	if tq.label != "" {
+		info.Label = tq.label
+	}
+	return info
+}
+func (tq *TermQuery) UnmarshalV2(idx index.Index, marshalInfo *marshal.MarshalInfo) Query {
+	if marshalInfo == nil || marshalInfo.Operation != "=" {
+		return nil
+	}
+	return NewTermQuery(idx.GetInvertedIndex().Iterator(marshalInfo.Name, fmt.Sprintf("%s", marshalInfo.QueryValue)))
 }
 
 func (tq *TermQuery) Unmarshal(idx index.Index, res map[string]interface{}) Query {

@@ -5,9 +5,9 @@ import (
 	"github.com/MintegralTech/juno/check"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/marshal"
 	"github.com/MintegralTech/juno/query"
 	"github.com/sirupsen/logrus"
-	"strconv"
 	"time"
 )
 
@@ -36,93 +36,60 @@ func Search(iIndexer index.Index, query query.Query) *SearcherResult {
 	return s
 }
 
-func Replay(idx index.Index, q map[string]interface{}, ids []document.DocId) map[document.DocId][]map[string]interface{} {
-	uq, queryMarshal := query.Unmarshal{}, q
-	var res = make(map[document.DocId][]map[string]interface{}, len(ids))
+func Replay(idx index.Index, info *marshal.MarshalInfo, ids []document.DocId) map[document.DocId]*marshal.MarshalInfo {
+	if info == nil {
+		return nil
+	}
+	uq, marshalInfo := query.UnmarshalV2{}, info
+	var res = make(map[document.DocId]*marshal.MarshalInfo, len(ids))
 	for _, id := range ids {
-		tmp, ok := idx.GetInnerId(id)
+		innerId, ok := idx.GetInnerId(id)
 		if ok != nil {
+			res[id] = nil
 			continue
 		}
-		var tmpRes []map[string]interface{}
-		for k, v := range queryMarshal {
-			switch k {
-			case "and", "or", "not":
-				value := v.([]map[string]interface{})
-				q := uq.Unmarshal(idx, map[string]interface{}{k: value}).(query.Query)
-				if label, ok := value[len(value)-1]["label"]; ok && label != "" {
-					tmpRes = append(tmpRes, map[string]interface{}{"label": label})
-					if res, err := q.GetGE(tmp); err != nil || res != id {
-						tmpRes = append(tmpRes, map[string]interface{}{"result": "not match"})
-					} else if res == id {
-						tmpRes = append(tmpRes, map[string]interface{}{"result": "match"})
-					}
+		switch marshalInfo.Operation {
+		case "and", "or", "not":
+			q := uq.UnmarshalV2(idx, marshalInfo).(query.Query)
+			if resId, err := q.GetGE(innerId); err != nil || resId != innerId {
+				marshalInfo.Result = false
+			} else if resId == innerId {
+				marshalInfo.Result = true
+			}
+			for _, v := range marshalInfo.Nodes {
+				if v != nil {
+					Replay(idx, v, []document.DocId{id})
 				}
-				replay(v, idx, tmp)
-			case "and_check", "or_check", "not_and_check":
-				replay(v, idx, tmp)
-			case "=":
-				if res, err := uq.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).(query.Query).GetGE(tmp); err != nil || res != id {
-					queryMarshal[k] = append(v.([]string), "id not found")
-				} else if res == id {
-					queryMarshal[k] = append(v.([]string), "id found")
+			}
+		case "=":
+			q := uq.UnmarshalV2(idx, marshalInfo).(query.Query)
+			marshalInfo.IndexValue = idx.GetIndexDebugInfoById(id).InvertIndex[marshalInfo.Name]
+			if resId, err := q.GetGE(innerId); err != nil || resId != innerId {
+				marshalInfo.Result = false
+			} else if resId == innerId {
+				marshalInfo.Result = true
+			}
+		case "and_check", "or_check", "not_and_check":
+			c := uq.UnmarshalV2(idx, marshalInfo).(check.Checker)
+			marshalInfo.Result = c.Check(innerId)
+			for _, v := range marshalInfo.Nodes {
+				if v != nil {
+					Replay(idx, v, []document.DocId{id})
 				}
-			case "check":
-				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(uq.Unmarshal(idx, map[string]interface{}{k: v}).(check.Checker).Check(tmp))))
-			case "in_check":
-				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(uq.Unmarshal(idx, map[string]interface{}{k: v}).(check.Checker).Check(tmp))))
-			case "not_check":
-				queryMarshal[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(uq.Unmarshal(idx, map[string]interface{}{k: v}).(check.Checker).Check(tmp))))
+			}
+		case "in_check", "not_check":
+			c := uq.UnmarshalV2(idx, marshalInfo).(check.Checker)
+			marshalInfo.Result = c.Check(innerId)
+			marshalInfo.IndexValue = idx.GetIndexDebugInfoById(id).StorageIndex[marshalInfo.Name]
+		default:
+			if marshalInfo.Operation != "" {
+				fmt.Println(marshalInfo)
+				c := uq.UnmarshalV2(idx, marshalInfo).(check.Checker)
+				marshalInfo.Result = c.Check(innerId)
+				marshalInfo.IndexValue = idx.GetIndexDebugInfoById(id).StorageIndex[marshalInfo.Name]
 			}
 		}
-		tmpRes = append(tmpRes, map[string]interface{}{"detail": queryMarshal})
-		res[id] = tmpRes
-		tmpRes = []map[string]interface{}{}
+		res[id] = marshalInfo
 	}
 	return res
-}
-
-func replay(res interface{}, idx index.Index, id document.DocId) {
-	uq := &query.Unmarshal{}
-	for i, value := range res.([]map[string]interface{}) {
-		for k, v := range value {
-			switch k {
-			case "and", "or", "not":
-				var tmpRes []map[string]interface{}
-				value := v.([]map[string]interface{})
-				q := uq.Unmarshal(idx, map[string]interface{}{k: value}).(query.Query)
-				if label, ok := value[len(value)-1]["label"]; ok && label != "" {
-					tmpRes = append(tmpRes, map[string]interface{}{"label": label})
-					if res, err := q.GetGE(id); err != nil || res != id {
-						tmpRes = append(tmpRes, map[string]interface{}{"result": "not match"})
-					} else if res == id {
-						tmpRes = append(tmpRes, map[string]interface{}{"result": "match"})
-					}
-				}
-				tmpRes = append(tmpRes, map[string]interface{}{"detail": map[string]interface{}{k: value}})
-				res.([]map[string]interface{})[i] = map[string]interface{}{k: tmpRes}
-				replay(v, idx, id)
-			case "and_check", "or_check", "not_and_check":
-				replay(v, idx, id)
-			case "=":
-				if res, err := uq.Unmarshal(idx, map[string]interface{}{k: v.([]string)}).(query.Query).GetGE(id); err != nil || res != id {
-					value[k] = append(v.([]string), "id not found")
-				} else if res == id {
-					value[k] = append(v.([]string), "id found")
-				}
-			case "check":
-				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(uq.Unmarshal(idx, map[string]interface{}{k: v}).(check.Checker).Check(id))))
-			case "in_check":
-				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(uq.Unmarshal(idx, map[string]interface{}{k: v}).(check.Checker).Check(id))))
-			case "not_check":
-				value[k] = append(v.([]interface{}), fmt.Sprintf("check result %s",
-					strconv.FormatBool(uq.Unmarshal(idx, map[string]interface{}{k: v}).(check.Checker).Check(id))))
-			}
-		}
-	}
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/MintegralTech/juno/debug"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
+	"github.com/MintegralTech/juno/marshal"
 )
 
 type OrChecker struct {
@@ -47,6 +48,38 @@ func (o *OrChecker) Marshal() map[string]interface{} {
 	}
 	res["or_check"] = tmp
 	return res
+}
+
+func (o *OrChecker) MarshalV2() *marshal.MarshalInfo {
+	if o == nil {
+		return nil
+	}
+	info := &marshal.MarshalInfo{
+		Operation: "or_check",
+		Nodes:     make([]*marshal.MarshalInfo, 0),
+	}
+	for _, v := range o.c {
+		m := v.MarshalV2()
+		if m != nil {
+			info.Nodes = append(info.Nodes, m)
+		}
+	}
+	return info
+}
+
+func (o *OrChecker) UnmarshalV2(idx index.Index, info *marshal.MarshalInfo) Checker {
+	if info == nil {
+		return nil
+	}
+	var c []Checker
+	uq := &unmarshalV2{}
+	for _, v := range info.Nodes {
+		m := uq.UnmarshalV2(idx, v)
+		if m != nil {
+			c = append(c, m.(Checker))
+		}
+	}
+	return NewOrChecker(c)
 }
 
 func (o *OrChecker) Unmarshal(idx index.Index, res map[string]interface{}) Checker {

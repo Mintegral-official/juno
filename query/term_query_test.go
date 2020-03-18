@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"github.com/MintegralTech/juno/document"
 	"github.com/MintegralTech/juno/index"
 	. "github.com/smartystreets/goconvey/convey"
@@ -60,5 +61,18 @@ func TestTermQuery_GetGE(t *testing.T) {
 		id, err := tq.GetGE(8)
 		So(id, ShouldEqual, 0)
 		So(err, ShouldNotBeNil)
+	})
+}
+
+func TestTermQuery_MarshalV2(t *testing.T) {
+	ss := index.NewIndex("")
+	s := ss.GetInvertedIndex()
+	Convey("term query next", t, func() {
+		So(s.Add("fieldName\0071", document.DocId(1)), ShouldBeNil)
+		tq := NewTermQuery(s.Iterator("fieldName", "1"))
+		fmt.Println(tq.MarshalV2())
+		tq1 := &TermQuery{}
+		q := tq1.UnmarshalV2(ss, tq.MarshalV2())
+		fmt.Println(q.Current())
 	})
 }
