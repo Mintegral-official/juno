@@ -14,7 +14,7 @@ type InvertedIndex interface {
 	Iterator(name, value string) datastruct.Iterator
 	Range(func(key, value interface{}) bool)
 	Count() int
-	GetValueById(id document.DocId) map[string][]string
+	GetInvertIndexDebugInfoById(id document.DocId) map[string][]string
 	SetDebug(level int)
 	DebugInfo() *debug.Debug
 }

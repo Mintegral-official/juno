@@ -69,12 +69,15 @@ func (i *IndexerV2) SetDebug(level int) {
 	}
 }
 
-func (i *IndexerV2) GetValueById(id document.DocId) [2]map[string][]string {
-	var res [2]map[string][]string
+func (i *IndexerV2) GetIndexDebugInfoById(id document.DocId) *IndexDebugInfo {
+	var res = &IndexDebugInfo{}
 	docId, ok := i.campaignMapping.Get(DocId(id))
 	if ok {
-		res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
-		res[1] = i.GetStorageIndex().GetValueById(docId.(document.DocId))
+		if _, err := i.GetId(docId.(document.DocId)); err != nil {
+			return res
+		}
+		res.InvertIndex = i.GetInvertedIndex().GetInvertIndexDebugInfoById(docId.(document.DocId))
+		res.StorageIndex = i.GetStorageIndex().GetStorageIndexDebugInfoById(docId.(document.DocId))
 	}
 	return res
 }

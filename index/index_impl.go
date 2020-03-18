@@ -70,15 +70,15 @@ func (i *Indexer) SetDebug(level int) {
 
 }
 
-func (i *Indexer) GetValueById(id document.DocId) [2]map[string][]string {
-	var res [2]map[string][]string
+func (i *Indexer) GetIndexDebugInfoById(id document.DocId) *IndexDebugInfo {
+	var res = &IndexDebugInfo{}
 	docId, ok := i.campaignMapping.Get(DocId(id))
 	if ok {
 		if _, ok := i.bitmap.Get(DocId(docId.(document.DocId))); !ok {
 			return res
 		}
-		res[0] = i.GetInvertedIndex().GetValueById(docId.(document.DocId))
-		res[1] = i.GetStorageIndex().GetValueById(docId.(document.DocId))
+		res.InvertIndex = i.GetInvertedIndex().GetInvertIndexDebugInfoById(docId.(document.DocId))
+		res.StorageIndex = i.GetStorageIndex().GetStorageIndexDebugInfoById(docId.(document.DocId))
 	}
 	return res
 }

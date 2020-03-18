@@ -2,12 +2,13 @@ package register
 
 import "github.com/MintegralTech/juno/operation"
 
-var FieldMap = make(map[string]operation.Operation, 16)
+var FieldMap map[string]operation.Operation
 
 type Register struct {
 }
 
 func NewRegister() *Register {
+	FieldMap = make(map[string]operation.Operation, 16)
 	return &Register{}
 }
 

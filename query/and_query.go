@@ -13,6 +13,7 @@ type AndQuery struct {
 	queries  []Query
 	checkers []check.Checker
 	curIdx   int
+	label    string
 	debugs   *debug.Debug
 }
 
@@ -34,6 +35,12 @@ func NewAndQuery(queries []Query, checkers []check.Checker) (aq *AndQuery) {
 	}
 	aq.next()
 	return aq
+}
+
+func (aq *AndQuery) SetLabel(label string) {
+	if aq != nil {
+		aq.label = label
+	}
 }
 
 func (aq *AndQuery) Next() {
@@ -170,6 +177,9 @@ func (aq *AndQuery) Marshal() map[string]interface{} {
 		if m := v.Marshal(); m != nil {
 			queryInfo = append(queryInfo, m)
 		}
+	}
+	if aq.label != "" {
+		queryInfo = append(queryInfo, map[string]interface{}{"label": aq.label})
 	}
 	if len(aq.checkers) != 0 {
 		for _, v := range aq.checkers {

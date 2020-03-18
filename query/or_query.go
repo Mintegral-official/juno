@@ -12,6 +12,7 @@ import (
 type OrQuery struct {
 	checkers []check.Checker
 	h        Heap
+	label    string
 	debugs   *debug.Debug
 	lastId   *document.DocId
 }
@@ -36,6 +37,12 @@ func NewOrQuery(queries []Query, checkers []check.Checker) (oq *OrQuery) {
 	oq.h = *h
 	oq.next()
 	return oq
+}
+
+func (oq *OrQuery) SetLabel(label string) {
+	if oq != nil {
+		oq.label = label
+	}
 }
 
 func (oq *OrQuery) Next() {
@@ -146,6 +153,9 @@ func (oq *OrQuery) Marshal() map[string]interface{} {
 	res := make(map[string]interface{}, len(oq.h))
 	for _, v := range oq.h {
 		queryInfo = append(queryInfo, v.Marshal())
+	}
+	if oq.label != "" {
+		queryInfo = append(queryInfo, map[string]interface{}{"label": oq.label})
 	}
 	if len(oq.checkers) != 0 {
 		for _, v := range oq.checkers {

@@ -8,7 +8,7 @@ type unmarshal struct {
 }
 
 func (u *unmarshal) Unmarshal(idx index.Index, res map[string]interface{}) Checker {
-	if _, ok := res["=_check"]; ok {
+	if _, ok := res["check"]; ok {
 		var checkImpl = &CheckerImpl{}
 		return checkImpl.Unmarshal(idx, res)
 	}

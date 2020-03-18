@@ -94,11 +94,11 @@ func TestNewIndex(t *testing.T) {
 		So(index.Add(doc2), ShouldBeNil)
 		So(index.Add(doc3), ShouldBeNil)
 
-		So(index.GetValueById(2), ShouldNotBeNil)
+		So(index.GetIndexDebugInfoById(2), ShouldNotBeNil)
 		if1 := index.GetInvertedIndex().Iterator("field1", "1")
-		So(index.GetValueById(1), ShouldNotBeNil)
+		So(index.GetIndexDebugInfoById(1), ShouldNotBeNil)
 		index.UpdateIds("test\007tt", []document.DocId{1, 2, 100})
-		So(index.GetValueById(1), ShouldNotBeNil)
+		So(index.GetIndexDebugInfoById(1), ShouldNotBeNil)
 		c := 0
 		for if1.HasNext() {
 			if if1.Current() != nil {
@@ -319,14 +319,14 @@ func TestNewStorageIndexer(t *testing.T) {
 	idx := NewIndexImpl("")
 	_ = idx.Add(doc4)
 	Convey("GetValueById add", t, func() {
-		realMap := idx.GetValueById(0)
-		expectMap := [2]map[string][]string{
-			{
+		realMap := idx.GetIndexDebugInfoById(0)
+		expectMap := &IndexDebugInfo{
+			map[string][]string{
 				"field2": []string{"2"},
 				"field3": []string{"3"},
 				"field4": []string{"34"},
 			},
-			{
+			map[string][]string{
 				"field1": []string{"1"},
 			},
 		}
@@ -335,13 +335,13 @@ func TestNewStorageIndexer(t *testing.T) {
 	idx.Del(doc5)
 	_ = idx.Add(doc5)
 	Convey("GetValueById del & add", t, func() {
-		realMap := idx.GetValueById(0)
-		expectMap := [2]map[string][]string{
-			{
+		realMap := idx.GetIndexDebugInfoById(0)
+		expectMap := &IndexDebugInfo{
+			map[string][]string{
 				"field2": []string{"20", "200"},
 				"field3": []string{"30", "300"},
 			},
-			{
+			map[string][]string{
 				"field1": []string{"10"},
 			},
 		}

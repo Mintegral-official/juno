@@ -13,7 +13,7 @@ type StorageIndex interface {
 	Iterator(fieldName string) datastruct.Iterator
 	Count() int
 	Range(func(key, value interface{}) bool)
-	GetValueById(id document.DocId) map[string][]string
+	GetStorageIndexDebugInfoById(id document.DocId) map[string][]string
 	SetDebug(level int)
 	DebugInfo() *debug.Debug
 }

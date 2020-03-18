@@ -12,6 +12,7 @@ import (
 
 type TermQuery struct {
 	iterator datastruct.Iterator
+	label    string
 	debugs   *debug.Debug
 }
 
@@ -21,6 +22,12 @@ func NewTermQuery(iter datastruct.Iterator) (tq *TermQuery) {
 	}
 	return &TermQuery{
 		iterator: iter,
+	}
+}
+
+func (tq *TermQuery) SetLabel(label string) {
+	if tq != nil {
+		tq.label = label
 	}
 }
 

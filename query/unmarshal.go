@@ -25,7 +25,7 @@ func (u *Unmarshal) Unmarshal(idx index.Index, res map[string]interface{}) inter
 		var termQuery = &TermQuery{}
 		return termQuery.Unmarshal(idx, res)
 	}
-	if _, ok := res["=_check"]; ok {
+	if _, ok := res["check"]; ok {
 		var checkImpl = &check.CheckerImpl{}
 		return checkImpl.Unmarshal(idx, res)
 	}

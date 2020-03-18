@@ -14,4 +14,5 @@ type Query interface {
 	Unmarshal(idx index.Index, res map[string]interface{}) Query
 	DebugInfo() *debug.Debug
 	SetDebug(level int)
+	SetLabel(label string)
 }

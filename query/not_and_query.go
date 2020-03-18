@@ -13,6 +13,7 @@ type NotAndQuery struct {
 	subQuery Query
 	checkers []check.Checker
 	curIdx   int
+	label    string
 	debugs   *debug.Debug
 }
 
@@ -31,6 +32,12 @@ func NewNotAndQuery(queries []Query, checkers []check.Checker) (naq *NotAndQuery
 	}
 	naq.next()
 	return naq
+}
+
+func (naq *NotAndQuery) SetLabel(label string) {
+	if naq != nil {
+		naq.label = label
+	}
 }
 
 func (naq *NotAndQuery) next() {
@@ -121,7 +128,9 @@ func (naq *NotAndQuery) Marshal() map[string]interface{} {
 	res := make(map[string]interface{}, 2)
 	queryInfo = append(queryInfo, naq.q.Marshal())
 	queryInfo = append(queryInfo, naq.subQuery.Marshal())
-
+	if naq.label != "" {
+		queryInfo = append(queryInfo, map[string]interface{}{"label": naq.label})
+	}
 	if len(naq.checkers) != 0 {
 		for _, v := range naq.checkers {
 			checkInfo = append(checkInfo, v.Marshal())

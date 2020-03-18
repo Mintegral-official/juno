@@ -11,6 +11,11 @@ type IndexInfo struct {
 	StorageIndex      int `json:"storage_index_size"`
 }
 
+type IndexDebugInfo struct {
+	InvertIndex  map[string][]string
+	StorageIndex map[string][]string
+}
+
 type Index interface {
 	Add(docInfo *document.DocInfo) error
 	UpdateIds(fieldName string, ids []document.DocId)
@@ -18,17 +23,18 @@ type Index interface {
 	Del(docInfo *document.DocInfo)
 
 	GetName() string
-	GetIndexInfo() *IndexInfo
 	GetInvertedIndex() InvertedIndex
 	GetStorageIndex() StorageIndex
 	GetDataType(fieldName string) document.FieldType
-	GetValueById(id document.DocId) [2]map[string][]string
+
 	GetId(id document.DocId) (document.DocId, error)
 	GetInnerId(id document.DocId) (document.DocId, error)
 
 	Dump(filename string) error
 	Load(filename string) error
 
+	GetIndexInfo() *IndexInfo
+	GetIndexDebugInfoById(id document.DocId) *IndexDebugInfo
 	DebugInfo() *debug.Debug
 }
 
